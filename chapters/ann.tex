@@ -1,0 +1,38 @@
+\section{Artificial Neural Network}
+The notation used to refer The implemented \textit{ANN} can be seen as a \textit{fully connected multilayer Perceptron} as referred in the literature and as shown in \cite{MLmitchell}. An \textit{ANN} is composed by an interconnection of units that can represented as the composition of two functions that will determine the real-valued output of \todo{magari descrivere che cosa è un perceptron}the unit. The two functions will be referred as the \textit{network function} and the \textit{activation function}, where the former computes the scalar product of the input vector with the weight vector of the current unit, the latter is the function that will directly determine the output of the current unit. As we will see, the choice of the activation function is particularly important and is preferred to be a nonlinear combination of its inputs, maintaining the property of being differentiable.
+
+The implemented \textit{ANN} will be structured with multiple layers, each layer will have all the units fully connected with the adjacent layers and, as convention, we will refer to the first layer as \textit{input layer} and to the last layer as \textit{output layer}. The others will be referred as \textit{hidden layers}. Another important aspect when implementing an \textit{ANN} is the choice of the number of units. Later in this report will be shown how the exact number of units in each layer will be chosen, but we can already describe the structure of the input and the output layer. The former will contain a number of units that is the same as the number of features contained in the data that will be fed up to the \textit{ANN}, instead the latter will contain one binary output units for classification tasks and one real-output unit for regression tasks.\newline
+
+In the following sections we will describe in more details which are the main aspects of the implemented \textit{ANN} like the network structure, the functions used to compute the output of each unit and the algorithm used to let the network learn the task at hand.
+
+\subsection{Network structure}
+As already pointed out in the previous section, the network structure will be composed of multiple layers. The number of layers and consequently, the number of units per layer will be determined by an empirical approach that will target the minimization of the empirical error on the tested data. This will be explained in more detail in the testing section.\newline
+
+The input and the output layer will be of fixed dimensions, as the number of units for the former will be determined by the size of the input data and the dimension of the latter will be determined by the task to be completed. As we will see, the number of units in the output layer will be always of one, what will change instead is the type of the units, because for classification tasks we will use a binary unit, instead for a regression task we will use a real-output unit.
+
+\subsection{Activation function}
+The choice of the activation function is a crucial step for the construction of the \textit{ANN}. This function will directly determine what is the output of each of the units in the network, depending on the result of the scalar product of the unit input and the unit weights vectors. The activation function, to be useful, needs to have determined properties, like differentiability, \textbf{AGGIUNGERE ALTRE PROPRIETà CHE LA RETE DEVE AVERE}.\newline
+
+The mainly used ones, which will be used also for the purposes of this project, are:
+\begin{itemize}
+    \item Sigmoid
+    \item TanH
+\end{itemize}
+
+\subsection{Loss function}
+The loss function is used to estimate the error at the output of the network given the vector of the expected values for the data that are fed up into the network. The loss function is also the function to be minimized as the main aim for the learning algorithm. The error computed via the loss function is usually used as a termination condition for the learning algorithm. This is done via various algorithm, and in particular for our case via subgradient methods and standard momentum descent approach.\newline
+
+In our case we decided to use as a function to measure the error in the prediction the \textit{MSE} that represents the sum, over all the available data, of the squared differences between the predicted value and the actual one.\newline
+
+\subsubsection{Derivation of Loss function}
+As a preliminary step for the backpropagation algorithm, we illustrate here how the gradient of the loss function is computed. The result is then used to update the value of the weight vector for each unit. In the following the derivation of the loss function.\newline\newline
+\textbf{QUI INSERIRE DERIVAZIONE LOSS FUNCTION}
+
+\subsection{Backpropagation algorithm}
+The backpropagation algorithm \cite{haykin_neural_2009} is used to learn weight vectors for a multilayer network, given the network inputs and the fixed network structure (i.e. units and interconnections). This algorithm employs a gradient descent approach to attempt to minimize the squared error between the network output values $\textbf{y}$ and the target values $\hat{\textbf{y}}$ associated to these outputs. This algorithm is described in \cite{MLmitchell} and is composed by two main parts:
+\begin{itemize}
+    \item \textbf{Forward phase}: data traverse the network from the input units to the output units, in such a way the result of the network with the given input and the current weight vector value can be compared to the expected output to estimate the error;
+    \item \textbf{backward phase}: the gradient of the loss function is used to update the weight vectors of each layer in a way that the next step will have a smaller value for the error function.
+\end{itemize}
+The main aim for the backpropagation algorithm is to minimize the error function via automatic fine-tuning of the weight vector. This minimization can be achieved in different ways utilizing the gradient of the loss function computed with the results obtained with the forward phase.\newline
+\cite{MLmitchell}
