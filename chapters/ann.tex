@@ -1,26 +1,27 @@
 \section{Artificial Neural Network}
-The notation used to refer The implemented \textit{ANN} can be seen as a \textit{fully connected multilayer Perceptron} as referred in the literature and as shown in \cite{MLmitchell}. An \textit{ANN} is composed by an interconnection of units that can represented as the composition of two functions that will determine the real-valued output of \todo[inline]{magari descrivere che cosa è un perceptron}the unit. The two functions will be referred as the \textit{network function} and the \textit{activation function}, where the former computes the scalar product of the input vector with the weight vector of the current unit, the latter is the function that will directly determine the output of the current unit. As we will see, the choice of the activation function is particularly important and is preferred to be a nonlinear combination of its inputs, maintaining the property of being differentiable.
+The implemented \textit{ANN} can be seen as a \textit{fully connected multilayer Perceptron}. An \textit{ANN} is composed by an interconnection of units, each one of them can be represented as the composition of two functions that will determine the its real-valued output given the fixed weight vector and the input from the previous layer. The two functions will be referred as the \textit{network function} and the \textit{activation function}, where the former computes the scalar product of the input vector with the weight vector of the current unit, the latter is the function that will directly determine the output of the current unit. In our particular case the activation function is required to be a \textit{piecewise-linear activation function}.
 
 The implemented \textit{ANN} will be structured with multiple layers, each layer will have all the units fully connected with the adjacent layers and, as convention, we will refer to the first layer as \textit{input layer} and to the last layer as \textit{output layer}. The others will be referred as \textit{hidden layers}. Another important aspect when implementing an \textit{ANN} is the choice of the number of units. Later in this report will be shown how the exact number of units in each layer will be chosen, but we can already describe the structure of the input and the output layer. The former will contain a number of units that is the same as the number of features contained in the data that will be fed up to the \textit{ANN}, instead the latter will contain one binary output units for classification tasks and one real-output unit for regression tasks.\newline
 
+To simplify the development of the \textit{ANN} we plan to fix the number of hidden layer and the number of units per layer, changing only the input/output layers depending on the task to be performed. The process involved in the determination of this fixed characteristics of the \textit{ANN} will be described in the testing section.\newline
 In the following sections we will describe in more details which are the main aspects of the implemented \textit{ANN} like the network structure, the functions used to compute the output of each unit and the algorithm used to let the network learn the task at hand.
-
-\subsection{Network structure}
-As already pointed out in the previous section, the network structure will be composed of multiple layers. The number of layers and consequently, the number of units per layer will be determined by an empirical approach that will target the minimization of the empirical error on the tested data. This will be explained in more detail in the testing section.\newline
-
-The input and the output layer will be of fixed dimensions, as the number of units for the former will be determined by the size of the input data and the dimension of the latter will be determined by the task to be completed. As we will see, the number of units in the output layer will be always of one, what will change instead is the type of the units, because for classification tasks we will use a binary unit, instead for a regression task we will use a real-output unit.
 
 \subsection{Activation function}
 \todo[inline]{Qui bisogna usare piecewise-linear activation function. Questo vuol dire che la funzione usata per determinare l'output di ogni unit all'interno della NN non è lineare e non è differenziabile. Ad esempio ReLu. Si possono illustrare i vantaggi nell'utilizzo di questo tipo di funzioni (come ad esempio non si ha fenomeno di vanishing gradient) e gli svantaggi (non si può calcolare derivata e quindi vanno usati metodi specifici) come ad esempio subgradient methods.}
 \todo[inline]{In pratica per questo tipo di activation function si "aggira" il problema assegnando un valore arbitrario alla derivata nell'unico punto di non derivabilità della funzione. Ad esempio si può dire che $f'(x) = 0\ \forall x<0\ \land f'(x) = 1\ elsewhere $. Va spiegato poi come "reagisce" il momentum approach a questa scelta di calcolare la derivata.}
-\todo[inline]{Usare una piecewise-linear activation function in teoria dovrebbe causare problemi allo standard descent con momentum, dato che in quel caso si minimizza una funzione derivabile. Magari questo è la parte in cui dobbiamo adattare il metodo al problema assegnato. (i.e. usare momentum descent su funzione non derivabile)}
-The choice of the activation function is a crucial step for the construction of the \textit{ANN}. This function will directly determine what is the output of each of the units in the network, depending on the result of the scalar product of the unit input and the unit weights vectors. The activation function, to be useful, needs to have determined properties, like differentiability, \textbf{AGGIUNGERE ALTRE PROPRIETà CHE LA RETE DEVE AVERE}.\newline
-
-The mainly used ones, which will be used also for the purposes of this project, are:
+The choice of the activation function is a crucial step for the construction of the \textit{ANN}. This function will directly determine what is the output of each of the units in the network, depending on the result of the scalar product of the received input vector and the unit weights vectors.\newline
+The activation function, for this project, is required to be a \textit{pieceweise-linear function}, so the choice can be restricted between the two most popular among them:
 \begin{itemize}
-    \item Sigmoid
-    \item TanH
+    \item \textbf{ReLU}: defined as $f(x) = max(0,x)$;
+    \item \textbf{Leaky ReLU}: defined as $f(x) = max(0.1x, x)$
 \end{itemize}
+The main characteristics of these functions are:
+\begin{itemize}
+    \item Sparse activation;
+    \item Helps avoiding vanishing gradient;
+    \item Efficient computation;
+\end{itemize}
+These functions are widely used due to the fact that they can help avoiding the problem of \textit{vanishing gradients} when using the backpropagation algorithm described in \S\ref{backprop}. Our main choice is related to the use of the ReLU function due to its simplicity. The only problem is that it is not entirely differentiable, in particular there is only one point (i.e. $x=0$) where the derivative is not defined. As shown in \todo[inline]{trovare qualche paper che spiega come ReLU con derivata "fixata" vada bene comunque} the slight modification of the derivative with $f'(x) = 0\ \forall x\leq0 \land \ f'(x) = 1\ elsewhere$ leads to good results and do not improve the convergence of the learning algorithm.
 
 \subsection{Loss function}
 \todo[inline]{In particolare parlare di MSE, perché viene usata questa metrica per stimare l'errore e quali proprietà ha questa funzione.}
@@ -30,9 +31,10 @@ In our case we decided to use as a function to measure the error in the predicti
 
 \subsubsection{Derivation of Loss function}
 As a preliminary step for the backpropagation algorithm, we illustrate here how the gradient of the loss function is computed. The result is then used to update the value of the weight vector for each unit. In the following the derivation of the loss function.\newline\newline
-\textbf{QUI INSERIRE DERIVAZIONE LOSS FUNCTION}
+\todo[inline]{qui interire derivazione loss function}
 
 \subsection{Backpropagation algorithm}
+\label{backprop}
 \todo[inline]{Attenzione perché backprop è riferito in \cite{bengio} come l'algoritmo utilizzato per calcolare il gradiente e non i pesi. L'algoritmo che cambia i pesi è ad esempio SGD.}
 The backpropagation algorithm \parencite[see][chapter 4]{haykin_neural_2009} is used to learn weight vectors for a multilayer network, given the network inputs and the fixed network structure (i.e. units and interconnections). This algorithm employs a gradient descent approach to attempt to minimize the squared error between the network output values $\textbf{y}$ and the target values $\hat{\textbf{y}}$ associated to these outputs. This algorithm is also described in \cite{MLmitchell} and is composed by two main parts:
 \begin{itemize}
