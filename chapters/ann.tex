@@ -7,13 +7,32 @@ To simplify the development of the \textit{ANN} we plan to fix the number of hid
 In the following sections we will describe in more details which are the main aspects of the implemented \textit{ANN} like the network structure, the functions used to compute the output of each unit and the algorithm used to let the network learn the task at hand.
 
 \subsection{Activation function}
-\todo[inline]{Qui bisogna usare piecewise-linear activation function. Questo vuol dire che la funzione usata per determinare l'output di ogni unit all'interno della NN non è lineare e non è differenziabile. Ad esempio ReLu. Si possono illustrare i vantaggi nell'utilizzo di questo tipo di funzioni (come ad esempio non si ha fenomeno di vanishing gradient) e gli svantaggi (non si può calcolare derivata e quindi vanno usati metodi specifici) come ad esempio subgradient methods.}
-\todo[inline]{In pratica per questo tipo di activation function si "aggira" il problema assegnando un valore arbitrario alla derivata nell'unico punto di non derivabilità della funzione. Ad esempio si può dire che $f'(x) = 0\ \forall x<0\ \land f'(x) = 1\ elsewhere $. Va spiegato poi come "reagisce" il momentum approach a questa scelta di calcolare la derivata.}
 The choice of the activation function is a crucial step for the construction of the \textit{ANN}. This function will directly determine what is the output of each of the units in the network, depending on the result of the scalar product of the received input vector and the unit weights vectors.\newline
 The activation function, for this project, is required to be a \textit{pieceweise-linear function}, so the choice can be restricted between the two most popular among them:
 \begin{itemize}
-    \item \textbf{ReLU}: defined as $f(x) = max(0,x)$;
-    \item \textbf{Leaky ReLU}: defined as $f(x) = max(0.1x, x)$
+    \item \textbf{ReLU}:
+        \begin{itemize}
+            \item defined as: $f(x) = max(0,x)$;
+            \item we can impose the derivative to be:
+            $f'(x) = \begin{cases} 
+                0 & x<0 \\
+                1 & x\geq 0 
+                \end{cases}$
+        \end{itemize}
+    \item \textbf{Leaky ReLU}:
+        \begin{itemize}
+            \item defined as:
+            $f(x) = \begin{cases}
+                \alpha x & x\leq 0 \\
+                x & x>0
+            \end{cases}$
+            \item also in this case we can impose the derivative to be:
+            $f'(x) = \begin{cases}
+                \alpha & x\leq0 \\
+                1 & x>0
+            \end{cases}$
+        \end{itemize}
+        Where $\alpha$ determines the slope of the negative part of the function, and usually is chosen like $\alpha=0.01$.\newline
 \end{itemize}
 The main characteristics of these functions are:
 \begin{itemize}
@@ -21,26 +40,62 @@ The main characteristics of these functions are:
     \item Helps avoiding vanishing gradient;
     \item Efficient computation;
 \end{itemize}
-These functions are widely used due to the fact that they can help avoiding the problem of \textit{vanishing gradients} when using the backpropagation algorithm described in \S\ref{backprop}. Our main choice is related to the use of the ReLU function due to its simplicity. The only problem is that it is not entirely differentiable, in particular there is only one point (i.e. $x=0$) where the derivative is not defined. As shown in \todo[inline]{trovare qualche paper che spiega come ReLU con derivata "fixata" vada bene comunque} the slight modification of the derivative with $f'(x) = 0\ \forall x\leq0 \land \ f'(x) = 1\ elsewhere$ leads to good results and do not improve the convergence of the learning algorithm.
+These functions are widely used due to the fact that they can help avoiding the problem of \textit{vanishing gradients} when using the backpropagation algorithm described in \S\ref{backprop}. Our main choice is related to the use of the ReLU function due to its simplicity. The only problem is that it is not entirely differentiable, in particular there is only one point (i.e. $x=0$) where the derivative is not defined. As shown in \todo[inline]{trovare qualche paper che spiega come ReLU con derivata "fixata" vada bene comunque} the slight modification of the derivative with $f'(0) = 1$ leads to good results and do not improve the convergence of the learning algorithm.
+
+\subsection{Backpropagation algorithm}
+\label{backprop}
+The backpropagation algorithm \parencite[see][Chap. 6.5]{bengio}, in a multi-layer neural network, is used to compute the gradient of the cost function and it will be used by the learning algorithm to minimize the squared error between the network output values $\hat{\textbf{y}}$ and the target values $\textbf{y}$ associated to these outputs. The backpropagation algorithm can then be used to efficiently compute the derivative of the composition of functions resulting from the \textit{ANN} computation.\\newline
+This algorithm is also described in \cite{MLmitchell} and is composed by two main parts:
+\begin{itemize}
+    \item \textbf{Forward phase}: data traverse the network from the input units to the output units, in such a way the network's output value is generated and used in the next phase to be compared with the expected output to estimate the error. The procedure is shown in \hyperref[alg:fp]{\textbf{Algorithm \ref{alg:fp}}}.
+    \item \textbf{Backward phase}: the error is computed by comparing the network's output with the expected one. The computed error at each layer is then propagated back in the previous layer. At each backward step the \textit{Chain Rule of Calculus} is used to compute the partial derivative of the unit function related to the current layer's weights. This phase is defined in \hyperref[alg:bp]{\textbf{Algorithm \ref{alg:bp}}}.
+\end{itemize}
+
+\begin{algorithm}[H]
+	\caption{Forward propagation}
+	\label{alg:fp}
+	\begin{algorithmic}[1]
+		\Procedure{Forward propagation}{}
+		\State $\mathbf{\hat{y}}_{0} = \mathbf{x}$
+		\For{$k = 1, \ldots, l$}
+		\State $\mathbf{a}_{k} = \mathbf{b}_{k} + \mathbf{W}_{k}\mathbf{\hat{y}}_{k - 1}$
+		\State $\mathbf{\hat{y}}_{k} = f(\mathbf{a}_{k})$
+		\EndFor
+		\State $\mathbf{\hat{y}} = \mathbf{\hat{y}}_{l}$
+		\State $J = L(\mathbf{\hat{y}}, \mathbf{y}) + \lambda \Omega(\theta)$
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+\hyperref[alg:fp]{\textbf{Algorithm \ref{alg:fp}}} proceeds to compute the composition of functions that represents the network until the output unit are reached where the network's output value ${\hat{\textbf{y}}}$ is produced. Each of the ${\hat{\textbf{y}}}_i$ represents the output vector coming from the layer $\textit{i}$. Once the predicted output is produced, the algorithm proceeds into computing the loss function $L(\mathbf{\hat{\textbf{y}}}, \mathbf{\textbf{y}})$ that will estimate the error for the given output vector and, by adding this value to a regularizer $\Omega(\theta)$ we obtain the total cost $\textit{J}$.\newline
+
+The gradient of the cost will then be computed by the next phase and passed to the optimizer. 
+
+\begin{algorithm}[H]
+	\caption{Backward computation}
+	\label{alg:bp}
+	\begin{algorithmic}[1]
+		\Procedure{Backward propagation}{}
+		\State $\mathbf{g} \leftarrow \nabla_{\hat{\mathbf{y}}}J = \nabla_{\hat{\mathbf{y}}}
+		L(\mathbf{\hat{y}}, \mathbf{y})$
+		\For{$k = l, l - 1, \ldots, 1$}
+		\State $\mathbf{g} \leftarrow \nabla_{\mathbf{a}_{k}}J = \mathbf{g} \ \odot \
+		f'(\mathbf{a}_{k})$
+		\State $\nabla_{\mathbf{b}_{k}}J = \mathbf{g} \ + \ \lambda \nabla_{\mathbf{b}_{k}}
+		\Omega(\theta)$
+		\State $\nabla_{\mathbf{W}_{k}}J = \mathbf{g}\mathbf{\hat{y}}_{k - 1}^{T} \ + \ \lambda
+		\nabla_{\mathbf{W}_{k}} \Omega(\theta)$
+		\State $\mathbf{g} = \nabla_{\mathbf{\hat{y}}_{k - 1}}J = \mathbf{W}_{k}^{T}\mathbf{g}$
+		\EndFor
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+\todo[inline]{Questo non è compito principale della backpropagation, ma è il compito principale dell'algoritmo di ottimizzazione, come ad esempio momentum etc.}
+The main aim for the backpropagation algorithm is to minimize the error function via automatic fine-tuning of the weight vector. Each layer will proceed to update its weight vector depending on the layer's contribute on the total error. This minimization can be achieved in different ways utilizing the gradient of the loss function computed with the results obtained with the forward phase, adding a momentum.\newline
 
 \subsection{Loss function}
 \todo[inline]{In particolare parlare di MSE, perché viene usata questa metrica per stimare l'errore e quali proprietà ha questa funzione.}
 The loss function is used to estimate the error at the output of the network given the vector of the expected values for the data that are fed up into the network. The loss function is also the function to be minimized as the main aim for the learning algorithm. The error computed via the loss function is usually used as a termination condition for the learning algorithm. This is done via various algorithm, and in particular for our case via subgradient methods and standard momentum descent approach.\newline
 
 In our case we decided to use as a function to measure the error in the prediction the \textit{MSE} that represents the sum, over all the available data, of the squared differences between the predicted value and the actual one.\newline
-
-\subsubsection{Derivation of Loss function}
-As a preliminary step for the backpropagation algorithm, we illustrate here how the gradient of the loss function is computed. The result is then used to update the value of the weight vector for each unit. In the following the derivation of the loss function.\newline\newline
-\todo[inline]{qui interire derivazione loss function}
-
-\subsection{Backpropagation algorithm}
-\label{backprop}
-\todo[inline]{Attenzione perché backprop è riferito in \cite{bengio} come l'algoritmo utilizzato per calcolare il gradiente e non i pesi. L'algoritmo che cambia i pesi è ad esempio SGD.}
-The backpropagation algorithm \parencite[see][chapter 4]{haykin_neural_2009} is used to learn weight vectors for a multilayer network, given the network inputs and the fixed network structure (i.e. units and interconnections). This algorithm employs a gradient descent approach to attempt to minimize the squared error between the network output values $\textbf{y}$ and the target values $\hat{\textbf{y}}$ associated to these outputs. This algorithm is also described in \cite{MLmitchell} and is composed by two main parts:
-\begin{itemize}
-    \item \textbf{Forward phase}: data traverse the network from the input units to the output units, in such a way the network's output value is generated and used in the next phase to be compared with the expected output to estimate the error.
-    \item \textbf{Backward phase}: the error is computed by comparing the network's output with the expected one. The computed error at each layer is then propagated back in the previous layer. At each backward step an update rule is used to modify the weight vectors of each layer in order to have smaller error in the next iteration.
-\end{itemize}
-The main aim for the backpropagation algorithm is to minimize the error function via automatic fine-tuning of the weight vector. Each layer will proceed to update its weight vector depending on the layer's contribute on the total error. This minimization can be achieved in different ways utilizing the gradient of the loss function computed with the results obtained with the forward phase, adding a momentum.\newline
-\todo[inline]{qui si potrebbe spiegare la differenza tra batch e online learning, dove il secondo è consigliato (in Haykin) per grandi problemi di classificazione etc, i quali richiederebbero grandi risorse in termini di spazio. Nel nostro caso, con il MONK dataset questo non è il caso, quindi si è preferito usare batch.}
-
