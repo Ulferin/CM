@@ -1,0 +1,102 @@
+\section{Methods}
+This section will give detailed information about the required methods that will be implemented and applied to the optimization problems described in \S\ref{sec:ann} and \S\ref{sec:ls}. The main methods to be implemented are:
+\begin{itemize}
+    \item Standard momentum descent approach applied to the \textit{ANN};
+    \item Deflected subgradient method applied to the \textit{ANN};
+    \item Direct linear least square solver applied to the \textit{Least Square problem}.
+\end{itemize}
+
+\subsection{Direct solver for Linear Least Square}
+\label{sec:qr}
+We have chosen to implement the direct solver via \textit{QR factorization}. This section will give a detailed description of all the properties needed for a \textit{least square problem} to be solved via this method and all the expected results for this kind of implementation. In a successive section we plan to insert the comparison between the theoretical results shown in this section and the actual result obtained in testing the implemented algorithm.
+\subsubsection{QR factorization}
+\label{subsec:qr}
+As described in \parencite[Chap. 5]{elden}, \textit{QR decomposition} (or factorization) is a factorization of a matrix $A$ in a product of an orthogonal matrix and a triangular matrix obtained via successive orthogonal transformations.
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lemma}[thm]{Lemma}
+\begin{thm}
+\label{thm:qr}
+Any matrix $A\in \mathbb{R}^{m\times n},\ m\geq n$, can be transformed to upper triangular form by an orthogonal matrix. The transformation is equivalent to a decomposition
+\begin{align*}
+    A = Q\begin{bmatrix}R \\ 0\end{bmatrix},
+\end{align*} where $Q\in \mathbb{R}^{n\times n}$ is upper triangular. If the columns of $A$ are linearly independent, then $R$ is nonsingular.
+\end{thm}
+\todo[inline]{proof of this theorem is on \cite{elden} page 59}
+If we partition $Q = (Q_1\ Q_2)$ where $Q_1\in \mathbb{R}^{m\times n}$, noting that in the multiplication $Q_2$ is multiplied by zero, we can write:
+\begin{equation}
+\label{eq:thinqr}
+    A = \begin{bmatrix}Q_1 Q_2\end{bmatrix}\begin{bmatrix}R \\ 0\end{bmatrix} = Q_1R
+\end{equation}
+Where \hyperref[eq:thinqr]{equation (\ref{eq:thinqr})} refers to the \textbf{thin QR factorization}. This form of the \textit{QR factorization} will be the one used from now on to solve the \textit{linear least square problem} due to its efficiency in space and time.
+\todo[inline]{trovare giustificazione per questa affermazione. Magari mostrare quali sono i vantaggi rispetto al QR normale.}
+
+\begin{lemma}
+For every $v\in \mathbb{R}^m$, the matrix $H = I - \frac{2}{v^Tv}vv^T = I - \frac{2}{\norm{v}^2}vv^T
+ = I - 2uu^T,\ (where\ u=\frac{1}{\norm{v}}v\text{ has norm 1})$ is orthogonal.
+\end{lemma}
+\begin{lemma}
+Let $x, y$ be two vectors such that $\norm{x} = \norm{y}$. If one chooses $v=x-y$, then $H = I - \frac{2}{v^Tv}vv^T$ is such that $Hx = y$.
+\end{lemma}
+By choosing $y = \norm{x}e_1 = \begin{bmatrix}\norm{x}\\0\\ \vdots \\0\end{bmatrix}$ we can build a procedure to find the householder vector $\textbf{u}$ of a generic vector $\textbf{x}$. The pseudocode for this procedure is shown in Algorithm \ref{alg:hh}.
+\begin{algorithm}[H]
+	\caption{Householder vector}
+	\label{alg:hh}
+	\begin{algorithmic}[1]
+		\Function{householder\_vector}{x}
+		\State $\mathbf{s} \leftarrow norm(x)$
+		\State $\mathbf{v} \leftarrow x$
+		\State $\mathbf{v}[1] \leftarrow \mathbf{v}[1] - s$
+		\State $\mathbf{u} \leftarrow \mathbf{v} / norm(\mathbf{v})$
+	\end{algorithmic}
+\end{algorithm}
+\todo[inline]{aggiungere riferimento a capitolo \cite{elden} in cui si definiscono householder transformations}
+\todo[inline]{magari aggiungere pseudocodice con cui si calcola householder vector}
+Now we illustrate the method used to compute this factorization through the \textit{Householder transformation}. By a sequence of orthogonal transformation we can transform any matrix $A\in \mathbb{R}^{m\times n}, m\geq n$,
+\begin{align*}
+    A \to Q^TA = \begin{bmatrix}R \\ 0\end{bmatrix}, R \in \mathbb{R}^{n\times n}
+\end{align*}
+where $R$ is upper triangular and $Q\in \mathbb{R}^{m\times m}$ is orthogonal. As shown in \parencite[Chap. 5.1]{elden} we can illustrate the procedure using a smaller matrix $A\in \mathbb{R}^{5\times 4}$. Basically the algorithm proceeds by zeroing the elements under the main diagonal, where at each step $i$ the elements below the element $a_{i,i}$ are zeroed by left-multiplying the current matrix $A_i$ to a matrix $H_{i+1}$.
+
+In the first step we zero the elements below the main diagonal in the first column:
+\begin{align*}
+    H_1A = H_1\begin{pmatrix}\text{x} & \text{x} & \text{x} & \text{x} \\ \text{x} & \text{x} & \text{x} & \text{x} \\ \text{x} & \text{x} & \text{x} & \text{x} \\ \text{x} & \text{x} & \text{x} & \text{x} \\ \text{x} & \text{x} & \text{x} & \text{x}\end{pmatrix} = \begin{pmatrix}\text{+} & \text{+} & \text{+} & \text{+} \\ 0 & \text{+} & \text{+} & \text{+} \\ 0 & \text{+} & \text{+} & \text{+} \\ 0 & \text{+} & \text{+} & \text{+} \\ 0 & \text{+} & \text{+} & \text{+}\end{pmatrix} = A_1,
+\end{align*}
+where \textbf{+} denotes an element that has changed in the transformation. The orthogonal matrix $H_1$ can be taken equal to a \textit{Householder transformation}. In the second step we use an embedded \textit{Householder transformation} to zero the elements below the diagonal of the second column of matrix $A_1$:
+\begin{align*}
+    H_2A_1 = H_2\begin{pmatrix}\text{x} & \text{x} & \text{x} & \text{x} \\ 0 & \text{x} & \text{x} & \text{x} \\ 0 & \text{x} & \text{x} & \text{x} \\ 0 & \text{x} & \text{x} & \text{x} \\ 0 & \text{x} & \text{x} & \text{x}\end{pmatrix} = \begin{pmatrix}\text{x} & \text{x} & \text{x} & \text{x} \\ 0 & \text{+} & \text{+} & \text{+} \\ 0 & 0 & \text{+} & \text{+} \\ 0 & 0 & \text{+} & \text{+} \\ 0 & 0 & \text{+} & \text{+}\end{pmatrix} = A_2
+\end{align*}
+And so on, after the fourth step we have computed the upper triangular matrix $R$. The sequence of transformations is summarized as:
+\begin{align*}
+    Q^TA = \begin{bmatrix}R \\ 0\end{bmatrix},\ Q^T=H_4H_3H_2H_1.
+\end{align*}
+Assuming $A\in \mathbb{R}^{m\times n}$ the matrices $H_i$ have the following structure:
+\begin{flalign*}
+    & H_1 = I - 2u_1u_1^T,\ u_1\in \mathbb{R}^m \\
+    & H_2 = \begin{pmatrix}1 & 0 \\ 0 & P_2\end{pmatrix},\ P_2 = I - 2u_2u_2^T,\ u_2\in \mathbb{R}^{m-1} \\
+    & H_3 = \begin{pmatrix}1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & P_3\end{pmatrix},\ P_3 = I - 2u_3u_3^T,\ u_3\in \mathbb{R}^{m-2}
+\end{flalign*}
+Noting that vector $u_i$, obtained with the procedure defined in Algorithm \ref{alg:hh}, becomes shorter at each step, we include \textit{Householder transformations} of increasingly smaller dimensions in identity matrices.
+
+\subsubsection{Solving Least Square via QR factorization}
+In this section we show how \textit{QR factorization}, shown in \S\ref{subsec:qr}, can be used to solve the \textit{linear least square problem} defined in equation (\ref{eq:ls}).\newline
+In the following we use the fact that the Euclidean vector norm is invariant under orthogonal transformations, i.e. $\norm{Qy} = \norm{y}$.
+
+\begin{thm}
+\label{thm:ls_qr}
+Let the matrix $A\in \mathbb{R}^{m\times n}$ have full column rank and thin QR decomposition $A = Q_1R$. Then the least squares problem $\min_{x} \norm{b - Ax}$ has the unique solution
+\begin{align*}
+    x = R^{-1}Q_1^Tb.
+\end{align*}
+\end{thm}
+\begin{proof}
+Introducing the QR decomposition of $A$ in the residual vector, we get
+\begin{align*}
+    \norm{r}^2 = \norm{b - Ax}^2 = \norm{b - Q\begin{bmatrix}R \\ 0\end{bmatrix}x}^2 = \norm{Q^Tb-Q^TQ\begin{bmatrix}R \\ 0\end{bmatrix}x)}^2 = \norm{Q^Tb - \begin{bmatrix}R \\ 0\end{bmatrix}x}^2
+\end{align*}
+Then we partition $Q = (Q_1\ Q_2)$, where $Q_1\in \mathbb{R}^{m\times n}$, so we can write
+\begin{equation}
+\label{eq:lsqr}
+    \norm{r}^2 = \norm{\begin{bmatrix}Q_1^Tb \\ Q_2^Tb\end{bmatrix} - \begin{bmatrix}Rx \\ 0\end{bmatrix}}^2 = \norm{Q_1^Tb - Rx}^2 + \norm{Q_2^Tb}^2
+\end{equation}
+Under the assumption that the columns of $A$ are linearly independent and since the second term of equation (\ref{eq:lsqr}) is independent from vector $x$, we can solve $Rx = Q_1^Tb$ and minimize $\norm{r}^2$ by making the first term in \hyperref[eq:lsqr]{equation (\ref{eq:lsqr})} equal to zero.
+\end{proof}
