@@ -102,12 +102,12 @@ The loss function is used to estimate the error at the output of the network giv
 We decided to use, as a function to measure the error in the prediction, the \textit{MSE} that represents the averaged sum, over all the available data, of the squared differences between the predicted value and the desired one.\newline
 This is obtained by the formula: 	
 \begin{equation}
-MSE = \frac{1}{n} \sum_{i=1}^n (h(x) - \widehat{y})_{i}^2
+MSE = \frac{1}{n} \sum_{i=1}^n (y - \widehat{y})_{i}^2
 \end{equation}
 where $n$ represents the number of sample input data we passed into the model. 
 The \textit{Loss Function} can be represented as a composition of the Euclidean norm and the quadratic function
 \begin{equation}
-MSE = \frac{1}{n} \parallel h(x) - \widehat{y} \parallel_{2}^2  
+MSE = \frac{1}{n} \parallel y - \widehat{y} \parallel_{2}^2  
 \end{equation}
 
 Since the purpose of neural networks is to build models that fit data, we want to minimize the \textit{Loss Function} to have a good prediction on unseen data.\newline	
