@@ -1,0 +1,10 @@
+\section{Least Square}
+\label{sec:ls}
+The \textit{Least Square problem} is described in \parencite[Lecture 11]{Bau} and \parencite[Chap. 3]{elden} as the problem of finding a solution of an overdetermined system of equations $Ax = b$ by finding a vector $x$ that minimizes the 2-norm of the residual vector  vdefined as $r = b - Ax$.
+
+The \textit{Least Square problem}, given $A\in\mathbb{R}^{m\times n},\ m\geq n,\ b\in\mathbb{R}^m$, has the following form:
+\begin{equation}
+    \label{eq:ls}
+    \text{find}\ x\in\mathbb{R}^n\ \text{that solves the minimization problem}\ \min_{x}\norm{b - Ax}\ \text{.}
+\end{equation}
+We will see in section \S\ref{sec:qr}, related to the implemented direct solver, that this kind of problems have a unique solution if the matrix $A$ has \textit{full column rank}.
