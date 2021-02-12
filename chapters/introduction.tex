@@ -1,4 +1,17 @@
 \section{Introduction}
-This report is about the project assigned for the course of Computational Mathematics for Learning and Data Analysis. All the work in this project is original content of the authors and is the result of the knowledge gathered from the courses of \textbf{ML} and \textbf{CM}. The report contents that are not directly work of the authors is well referenced and, as requested, we point to the references down to chapter and number of page.\newline
+This report is about the project assigned for the course of Computational Mathematics for Learning and Data Analysis. All the work in this project is the result of the knowledge gathered from the courses of \textbf{ML} and \textbf{CM}. The report contents that are not directly work of the authors is referenced and, as requested, we point to the references down to chapter and number of page (when necessary).
 
-We start by giving a short description of the problem at hand and the methods used to solve it, including all the mathematical derivation needed to adapt the chosen methods to the problem. Next, we will give a brief recap of the expected results for the experiments, properties of the problem that suits our methods and details about the solvability of our problem with the used methods. In the end, we will show the achieved results, comparing them with the expected one describing which are the factors that determined a difference in the results.
+We start by giving a short description of the problem at hand and the methods used to solve it, including all the mathematical derivation needed to adapt the chosen methods to the problem. Next, we give a brief recap of the expected results for the experiments, properties of the problem that suits our methods and details about the solvability of our problem with the used methods. In the end, we show the achieved results, comparing them with the expected one describing which are the factors that determined a difference in the results.
+
+The models to be implemented are:
+\begin{itemize}
+    \item \textbf{M1}: a neural network, \textit{ANN} in the following, with piecewise-linear activation function, with possible regularization;
+    \item \textbf{M2}: standard L\_2 linear regression
+\end{itemize}
+The methods to be applied to the models are:
+\begin{itemize}
+    \item \textbf{A1}: standard momentum descent approach applied to \textbf{M1};
+    \item \textbf{A2}: deflected subgradient methods applied to \textbf{M1};
+    \item \textbf{A3}: basic version of one of the direct linear least squares solvers (i.e. normal equations, QR, SVD) applied to \textbf{M2}.
+\end{itemize}
+In the following we describe the main implementation choices and introduce some of the notation used in the rest of the report. The detailed description of the implemented methods is given in the related sections of this document.

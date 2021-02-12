@@ -10,13 +10,31 @@
 \documentclass[a4paper, oneside, openany]{article}
 \usepackage[backend=biber, sorting=none]{biblatex}
 \addbibresource{bibliography.bib}
+\usepackage{setspace}
 \usepackage{todonotes}
 \usepackage{titling}
 \usepackage{graphbox}
 \usepackage{amsmath , amssymb , amsthm}
 \usepackage{comment} 
 % permette di modificare i margini
-\usepackage[top=3.1cm, bottom=3.1cm, left=2.2cm, right=2.2cm]{geometry}
+\usepackage[top=2cm, bottom=2cm, left=2.cm, right=2.cm]{geometry}
+\newgeometry{top=3.5cm}
+
+
+\newtheoremstyle{myplain}
+  {\topsep}   % ABOVESPACE
+  {\topsep}   % BELOWSPACE
+  {\itshape\onehalfspacing}  % BODYFONT
+  {0pt}       % INDENT (empty value is the same as 0pt)
+  {\bfseries} % HEADFONT
+  {.}         % HEADPUNCT
+  {5pt plus 1pt minus 1pt} % HEADSPACE
+  {}       
+\theoremstyle{myplain}
+\newtheorem{thm}{Theorem}[subsection]
+\theoremstyle{plain}
+\newtheorem{assumption}{Assumption}[subsection]
+\newtheorem{lemma}[thm]{Lemma}
 
 \usepackage{lastpage} %info sul # dell'ultima pagina del documento
 \usepackage{fancyhdr} %per modificare dimensioni,margini, intestazioni e righe a piè di pagina
@@ -24,11 +42,11 @@
   % cancella tutti i campi di intestazione e piè di pagina
   \fancyhf{}
   
-  \rfoot{Page \thepage{} of \pageref{LastPage}} %es: pag: 4 di 10
+  \cfoot{Page \thepage{} of \pageref{LastPage}} %es: pag: 4 di 10
 
   %linea orizzontale alle posizioni top e bottom della pagina
-  \renewcommand{\headrulewidth}{0.2	pt}  
-  \renewcommand{\footrulewidth}{0.2pt}
+  \renewcommand{\headrulewidth}{0 pt}  
+  \renewcommand{\footrulewidth}{0 pt}
 }
 \pagestyle{plain} 
 
@@ -162,7 +180,6 @@ backgroundcolor=\color{lbcolor},
 \usepackage{algorithm}% http://ctan.org/pkg/algorithms
 \usepackage{algpseudocode}% http://ctan.org/pkg/algorithmicx
 
- \newgeometry{top=4cm}
 
 \begin{document}
 
@@ -207,7 +224,8 @@ backgroundcolor=\color{lbcolor},
 \input{chapters/ann}
 \input{chapters/ls}
 \input{chapters/methods/methods}
+\newpage
 \printbibliography
-\listoftodos
+% \listoftodos
 
 \end{document}

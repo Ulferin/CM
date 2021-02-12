@@ -1,14 +1,16 @@
 \section{Artificial Neural Network}
 \label{sec:ann}
-The implemented \textit{ANN} can be seen as a \textit{fully connected multilayer Perceptron}. An \textit{ANN} is composed by an interconnection of units, each one of them can be represented as the composition of two functions that will determine the its real-valued output given the fixed weight vector and the input from the previous layer. The two functions will be referred as the \textit{network function} and the \textit{activation function}, where the former computes the scalar product of the input vector with the weight vector of the current unit, the latter is the function that will directly determine the output of the current unit. In our particular case the activation function is required to be a \textit{piecewise-linear activation function}.
+The implemented \textit{ANN} can be seen as a \textit{fully connected multilayer Perceptron}. An \textit{ANN} is composed by an interconnection of units, each one of them can be represented as the composition of two functions that determines the output given the fixed weight vector and the input from the previous layer. The two functions are referred as the \textit{network function} and the \textit{activation function}, where the former computes the scalar product of the input vector with the weight vector of the current unit, the latter is the function that directly determines the output of the current unit. In our particular case the activation function is required to be a \textit{piecewise-linear activation function}.
 
-The implemented \textit{ANN} will be structured with multiple layers, each layer will have all the units fully connected with the adjacent layers and, as convention, we will refer to the first layer as \textit{input layer} and to the last layer as \textit{output layer}. The others will be referred as \textit{hidden layers}. Another important aspect when implementing an \textit{ANN} is the choice of the number of units. Later in this report will be shown how the exact number of units in each layer will be chosen, but we can already describe the structure of the input and the output layer. The former will contain a number of units that is the same as the number of features contained in the data that will be fed up to the \textit{ANN}, instead the latter will contain one binary output units for classification tasks and one real-output unit for regression tasks.\newline
+The \textit{ANN} will be structured with multiple layers, each layer will have all the units fully connected with the adjacent layers and, as convention, we refer to the first layer as \textit{input layer} and to the last layer as \textit{output layer}. The others are referred as \textit{hidden layers}. Another important aspect when implementing an \textit{ANN} is the choice of the number of units. Later in this report we show how the exact number of units in each layer is chosen, but we can already describe the structure of the input and the output layer. The \textit{input layer} will contain a number of units that is the same as the number of features contained in the data that will be fed up to the \textit{ANN}, instead the \textit{output layer} will depend on the task to perform.
 
-To simplify the development of the \textit{ANN} we plan to fix the number of hidden layer and the number of units per layer, changing only the input/output layers depending on the task to be performed. The process involved in the determination of this fixed characteristics of the \textit{ANN} will be described in the testing section.\newline
-In the following sections we will describe in more details which are the main aspects of the implemented \textit{ANN} like the network structure, the functions used to compute the output of each unit and the algorithm used to let the network learn the task at hand.
+To simplify the development of the \textit{ANN} we plan to fix the number of hidden layer and the number of units per layer, changing only the input/output layers depending on the task to be performed. The process involved in the determination of this characteristic of the \textit{ANN} will be described in the testing section.
+
+In the following sections we describe in more details which are the main aspects of the implemented \textit{ANN} like the network structure, the functions used to compute the output of each unit and the algorithm used to let the network learn the task at hand.
 
 \subsection{Activation function}
-The choice of the activation function is a crucial step for the construction of the \textit{ANN}. This function will directly determine what is the output of each of the units in the network, depending on the result of the scalar product of the received input vector and the unit weights vectors.\newline
+\label{sec:af}
+The choice of the activation function is a crucial step for the construction of the \textit{ANN}. This function directly determines what is the output of each of the units in the network, depending on the result of the scalar product of the received input vector and the unit weights vectors.\newline
 The activation function, for this project, is required to be a \textit{pieceweise-linear function}, so the choice can be restricted between the two most popular among them:
 \begin{itemize}
     \item \textbf{ReLU}:
@@ -33,7 +35,7 @@ The activation function, for this project, is required to be a \textit{pieceweis
                 1 & x\geq0
             \end{cases}$
         \end{itemize}
-        Where $\alpha$ determines the slope of the negative part of the function, and usually is chosen like $\alpha=0.01$.\newline
+        Where $\alpha$ determines the slope of the negative part of the function, and usually is chosen as $\alpha=0.01$.\newline
 \end{itemize}
 The main characteristics of these functions are:
 \begin{itemize}
@@ -41,141 +43,139 @@ The main characteristics of these functions are:
     \item Avoid vanishing gradient;
     \item Efficient computation;
 \end{itemize}
-These functions are widely used due to the fact that they can help avoiding the problem of \textit{vanishing gradients} when using the backpropagation algorithm described in \S\ref{backprop}. Our main choice will be the use of the \textbf{Leaky ReLU} activation function due to its simplicity and to the fact that it can help avoiding even more the vanishing gradient problem. The only problem is that it is not entirely differentiable, in particular there is only one point (i.e. $x=0$) where the derivative is not defined. As shown in \parencite[Chap. 6.3]{bengio} the slight modification of the derivative with \textit{$f'(0) = 1$} leads to good results and do not improve the convergence of the learning algorithm.
-\todo[inline]{magari vedere se non è troppo difficile usare maxout}
+
+These functions are widely used to deal with the problem of \textit{vanishing gradients} when using the backpropagation algorithm described in \S\ref{backprop}. Our main choice is using the \textbf{Leaky ReLU} activation function due to its simplicity and to the fact that it can help avoiding the dying ReLU problem related to the \textit{ReLU} activation function. The only problem is that it is not entirely differentiable, in particular there is only one point (i.e. $x=0$) where the derivative is not defined. As shown in \parencite[Chap. 6.3]{bengio} the slight modification of the derivative with \textit{$f'(0) = 1$} leads to good results and does not impair the convergence of the learning algorithm from a practical point of view. As we point out in \textbf{\S\ref{conv_mom}}, this does not mean that this modification leads the optimization algorithm to converge theoretically.
 
 \subsection{Backpropagation algorithm}
 \label{backprop}
-The backpropagation algorithm \parencite[see][Chap. 6.5]{bengio}, in a multi-layer neural network, is used to compute the gradient of the cost function and it will be used by the learning algorithm to minimize the squared error between the network output values $\hat{\textbf{y}}$ and the target values $\textbf{y}$ associated to these outputs. The backpropagation algorithm can then be used to efficiently compute the derivative of the composition of functions resulting from the \textit{ANN} computation.\newline
-This algorithm is also described in \cite{MLmitchell} and is composed by two main parts:
+The backpropagation algorithm \parencite[see][Chap. 6.5.4]{bengio}, in a multi-layer neural network, is used to compute the gradient of the cost function. The resulting gradient is used by the learning algorithm to minimize the squared difference between the network output values $\hat{\textbf{y}}$ and the target values $\textbf{y}$ associated to these outputs. The backpropagation algorithm can then be used to efficiently compute the derivative of the \textit{ANN} seen as a composition of functions.\newline
+This algorithm is also described in \cite{MLmitchell}, \cite{haykin_neural_2009} and is composed by two main parts:
 \begin{itemize}
-    \item \textbf{Forward phase}: data traverse the network from the input units to the output units, in such a way the network's output value is generated and used in the next phase to be compared with the expected output to estimate the error. The procedure is shown in \hyperref[alg:fp]{\textbf{Algorithm \ref{alg:fp}}}.
-    \item \textbf{Backward phase}: the error is computed by comparing the network's output with the expected one. The computed error at each layer is then propagated back in the previous layer. At each backward step the \textit{Chain Rule of Calculus} is used to compute the partial derivative of the unit function related to the current layer's weights. This phase is defined in \hyperref[alg:bp]{\textbf{Algorithm \ref{alg:bp}}}.
+    \item \textbf{Forward phase}: data traverse the network from the input units to the output units, in such a way the network's output value is generated and used to compute the cost function. The procedure is shown in \hyperref[alg:fp]{\textbf{Algorithm \ref{alg:fp}}}.
+    \item \textbf{Backward phase}: the error is computed by comparing the network's output with the expected one. The computed error is then propagated back to all the network's layers. At each backward step the \textit{Chain Rule of Calculus} is used to compute the partial derivative of the unit's function related to the current layer's weights. The gradient at each layer represents how much the current units are responsible for the total error and the result of the backward phase is used by the optimization algorithm to update the weight vector of each layer. This phase is defined in \hyperref[alg:bp]{\textbf{Algorithm \ref{alg:bp}}}.
 \end{itemize}
 
 \begin{algorithm}[H]
 	\caption{Forward propagation}
 	\label{alg:fp}
 	\begin{algorithmic}[1]
-		\Procedure{Forward propagation}{}
-		\State $\mathbf{\hat{y}}_{0} = \mathbf{x}$
+		\State $\mathbf{h}_{0} = \mathbf{x}$
 		\For{$k = 1, \ldots, l$}
-		\State $\mathbf{a}_{k} = \mathbf{b}_{k} + \mathbf{W}_{k}\mathbf{\hat{y}}_{k - 1}$
-		\State $\mathbf{\hat{y}}_{k} = f(\mathbf{a}_{k})$
+		\State $\mathbf{net}_{k} = \mathbf{b}_{k} + \mathbf{W}_{k}\mathbf{h}_{k - 1}$
+		\State $\mathbf{h}_{k} = f(\mathbf{net}_{k})$
 		\EndFor
-		\State $\mathbf{\hat{y}} = \mathbf{\hat{y}}_{l}$
+		\State $\mathbf{\hat{y}} = \mathbf{h}_{l}$
 		\State $J = L(\mathbf{\hat{y}}, \mathbf{y}) + \lambda \Omega(\theta)$
-		\EndProcedure
 	\end{algorithmic}
 \end{algorithm}
 
-\hyperref[alg:fp]{\textbf{Algorithm \ref{alg:fp}}} proceeds to compute the composition of functions that represents the network until the output unit are reached where the network's output value ${\hat{\textbf{y}}}$ is produced. Each of the ${\hat{\textbf{y}}}_i$ represents the output vector coming from the layer $\textit{i}$. Once the predicted output is produced, the algorithm proceeds into computing the loss function $L(\mathbf{\hat{\textbf{y}}}, \mathbf{\textbf{y}})$ that will estimate the error for the given output vector and, by adding this value to a regularizer $\Omega(\theta)$ we obtain the total cost $\textit{J}$.
+\hyperref[alg:fp]{\textbf{Algorithm \ref{alg:fp}}} proceeds to compute the composition of functions that represents the network. The network's output value ${\hat{\textbf{y}}}$ is produced by the \textit{output layer}. Each of the ${\textbf{h}}_i$ represents the output vector coming from the layer $\textit{i}$. Once the predicted output is produced, the algorithm proceeds into computing the loss function $L(\mathbf{\hat{\textbf{y}}}, \mathbf{\textbf{y}})$ that estimates the error for the given output vector and, by adding this value to a regularizer $\Omega(\theta)$ we obtain the total cost $\textit{J}$.
 
-The gradient of the cost will then be computed by the next phase and passed to the optimizer. 
+The gradient of the cost function is computed by the next algorithm and passed to the optimizer. 
 
 \begin{algorithm}[H]
 	\caption{Backward computation}
 	\label{alg:bp}
 	\begin{algorithmic}[1]
-		\Procedure{Backward propagation}{}
 		\State $\mathbf{g} \leftarrow \nabla_{\hat{\mathbf{y}}}J = \nabla_{\hat{\mathbf{y}}}
 		L(\mathbf{\hat{y}}, \mathbf{y})$
 		\For{$k = l, l - 1, \ldots, 1$}
-		\State $\mathbf{g} \leftarrow \nabla_{\mathbf{a}_{k}}J = \mathbf{g} \ \odot \
-		f'(\mathbf{a}_{k})$
+		\State $\mathbf{g} \leftarrow \nabla_{\mathbf{net}_{k}}J = \mathbf{g} \ \odot \
+		f'(\mathbf{net}_{k})$
 		\State $\nabla_{\mathbf{b}_{k}}J = \mathbf{g} \ + \ \lambda \nabla_{\mathbf{b}_{k}}
 		\Omega(\theta)$
-		\State $\nabla_{\mathbf{W}_{k}}J = \mathbf{g}\mathbf{\hat{y}}_{k - 1}^{T} \ + \ \lambda
+		\State $\nabla_{\mathbf{W}_{k}}J = \mathbf{g}\mathbf{h}_{k - 1}^{T} \ + \ \lambda
 		\nabla_{\mathbf{W}_{k}} \Omega(\theta)$
-		\State $\mathbf{g} = \nabla_{\mathbf{\hat{y}}_{k - 1}}J = \mathbf{W}_{k}^{T}\mathbf{g}$
+		\State $\mathbf{g} \leftarrow \nabla_{\mathbf{h}_{k - 1}}J = \mathbf{W}_{k}^{T}\mathbf{g}$
 		\EndFor
-		\EndProcedure
 	\end{algorithmic}
 \end{algorithm}
 
-The gradient produced as a result for the \textit{backward phase} will then be used by the optimization algorithm to minimize the error function via automatic fine-tuning of the weight vector. Each layer will proceed to update its weight vector depending on the layer's contribute on the total error. The way the weight vectors will be update is determined by the type of optimization methods we will use. Detailed information about the way the optimization algorithms work will be give in the related section.
+The gradient produced as a result for the \textit{backward phase} is used by the optimization algorithm to minimize the error function via automatic fine-tuning of the weight vector. Each layer proceeds to update its weight vector depending on the layer's contribute on the total error. The way the weight vectors are updated is determined by the type of optimization methods used. Detailed informations about the way the optimization algorithms work are given in the related section.
 
 \subsection{Loss function}
 \label{Loss:Mse}
-The loss function is used to estimate the error at the output of the network given the vector of the expected values for the data that are fed up into the network. In a supervised learning approach the main aim is the minimization of the \textit{loss function} via automatic tuning of the weight vector $w$. This is done via various algorithm and, in particular for our case, via subgradient methods and standard momentum descent approach.
+The loss function is used to estimate the error at the output of the network. In a supervised learning approach the main aim is the minimization of the \textit{Loss Function} via automatic tuning of the weight $w_k$ at each layer $k$. In our case this is done via \textit{subgradient method} and \textit{standard momentum descent}.
 
-We decided to use, as a function to measure the error in the prediction, the \textit{MSE} that represents the averaged sum, over all the available data, of the squared differences between the predicted value and the desired one.\newline
-This is obtained by the formula: 	
+We use the \textit{MSE} as a measure of error, this is the averaged sum, over all available data, of the squared differences between the predicted value and the desired one.\newline
+This is obtained by: 	
 \begin{equation}
-MSE = \frac{1}{n} \sum_{i=1}^n (y - \widehat{y})_{i}^2
+\label{eq:mse}
+MSE = \frac{1}{2N} \sum_{p=1}^N \sum_{k=1}^K(y_k - \widehat{y}_k)_{p}^2
 \end{equation}
-where $n$ represents the number of sample input data we passed into the model. 
-The \textit{Loss Function} can be represented as a composition of the Euclidean norm and the quadratic function
-\begin{equation}
-MSE = \frac{1}{n} \parallel y - \widehat{y} \parallel_{2}^2  
-\end{equation}
+where $N$ is the total number of examples our network is trained on and $K$ is the total number of output units.
 
-Since the purpose of neural networks is to build models that fit data, we want to minimize the \textit{Loss Function} to have a good prediction on unseen data.\newline	
+As described by \parencite[Chap. 4.3]{haykin_neural_2009}, the equation (\ref{eq:mse}) changes based on the specific algorithm used to train the network. In particular for \textit{batch learning} we have as \textit{Loss Function} the one described above, instead for \textit{online learning} the weights are updated on an \textit{example-by-example} basis, so the function to be minimized is the instantaneous error computed for each pattern that flows into the network. In the following we show the derivation of the \textit{Loss Function}, noting that for the \textit{Stochastic learning} the minimization is performed only on the instantaneous error and for \textit{Batch learning} the minimization is performed on the averaged error over the used patterns.
+
 \subsubsection{Derivation of the loss function}
-The gradient for the MSE concerning $x_{i}$ is defined as:
-\begin{equation}
-\nabla_{x_{i}}MSE(x, \hat{y})= 2*(h(x)-\hat{y})_{i} * h'(x)
-\end{equation}
-\todo[inline]{controllare questa derivazione}
-The $\nabla w $ is equal to:
-\begin{equation}
+We start by defining:
+\begin{align*}
+    & E_{tot} = \frac{1}{N} \sum_{p=1}^N E_p\\
+    & E_p = \frac{1}{2} \sum_{k=1}^K(y_k - \widehat{y}_k)^2
+\end{align*}
+where $E_{tot}$ is the average error over all the used samples and $E_p$ is the instantaneous error for a given pattern $p$.
+
+The $\nabla w $ to be used by the optimization algorithm is equal to:
+\begin{equation*}
 \label{derivationGradient}
-\nabla w= -\frac{\partial MSE(x, \hat{y})}{\partial w} \, =\, - \sum_{i=1}^n \frac{\partial MSE(x, \hat{y})_i}{\partial w} = \sum_{i=1}^n -\frac{\partial MSE(x, \hat{y})_i}{\partial w} = \sum_{i=1}^n \nabla_{i} w
-\end{equation}
-The $\nabla_{i} w $ for a generic \textit{t} is equal to:
-\begin{equation*}
-\nabla_{i} w_{t} \, = \, -\frac{\partial MSE(x, \hat{y})_i}{\partial w_{t}} \, = \, -\frac{\partial MSE(x, \hat{y})_i}{\partial o_{t}} * \frac{\partial o_{t}}{\partial net_{t}}*\frac{\partial net_{t}}{\partial w_{t}}
+\nabla w= -\frac{\partial E_{tot}}{\partial w} \, =\, - \frac{1}{N}\sum_{p=1}^N \frac{\partial E_p}{\partial w} = \frac{1}{N}\sum_{p=1}^N \nabla_{p} w
 \end{equation*}
-where $o_{t} \, = \, f_{t}(net_{t})$, $f_{t}$ is the activation function at layer \textit{t}, $net_{t} \, = \, \sum_{i=1}^n w_{t,i}*o_{t-1,i}$ and $ o_{0} $ are the inputs.
-\\
-So, $\frac{\partial net_{t}}{\partial w_{t,i}}$ is equal to:
+The $\nabla_{p} w $ for a generic unit \textit{t} with inputs coming from unit $i$ is equal to:
 \begin{equation*}
-\frac{\partial net_{t}}{\partial w_{t}} \, = \, \frac{\partial\sum_{r=1}^n  w_{t,r}*o_{t-1,r}}{\partial w_{t,i}} \, = \, o_{t-1,i}
+\nabla_{p} w_{t,i} \, = \, -\frac{\partial E_p}{\partial w_{t,i}} \, = \, -\frac{\partial E_p}{\partial o_{t}} * \frac{\partial o_{t}}{\partial net_{t}}*\frac{\partial net_{t}}{\partial w_{t,i}}
 \end{equation*}
-The term $\frac{\partial o_{t}}{\partial net_{t}}$ is equal to:
-\begin{equation*}
- \frac{\partial o_{t}}{\partial net_{t}} \, = \, f'(net_{t})
-\end{equation*}
-We define:
-\begin{equation*}
-\delta_{t} \,=\, -\frac{\partial MSE(x, \hat{y})_i}{\partial o_{t}} * \frac{\partial o_{t}}{\partial net_{t}}
-\end{equation*}
-Now we have to study two different case for $\frac{\partial MSE(x, \hat{y})_i}{\partial o_{t}}$, when t is the output layer and when t is a hidden layer.
-\\
-Case t = k (where k is the last layer):
-\begin{equation*}
-\frac{\partial MSE(x, \hat{y})_i}{\partial o_{k}} \, = \, -\frac{1}{2} * \frac{\sum_{r=1}^n \partial((h(x) - \widehat{y})_{r}^2)}{\partial o_{k}} \, = \, - \frac{\sum_{r=1}^n (h(x)-\hat{y})_{r} * h'(x) \partial((h(x) - \widehat{y})_{r})}{\partial o_{k}} \, = \, (h(x)-\hat{y}) * h'(x)
-\end{equation*}
-So, $\delta_{t}$ is equal to:
-\begin{equation*}
-\delta_{k} \, = \, (h(x)-\hat{y}) * h'(x) * f'(net_{k})
-\end{equation*}
+by defining:
+\begin{align*}
+    \begin{cases}
+        & o_{t} \, = \, f_{t}(net_{t}),\\
+        & net_{t} \, = \, \sum_{j\in C} w_{t,j}o_{j}\\
+    \end{cases}
+\end{align*}
+where, for a generic unit $t$, $o_t$ is the output of the unit, $f_t$ is the activation function, $net_t$ is the network function and $C$ is the set of all the units that are giving an input to the current one,
+we have that:
+\begin{align*}
+    &\frac{\partial o_{t}}{\partial net_{t}} = {f_t}'(net_{t}),\ \text{ and }\ \frac{\partial net_{t}}{\partial w_{t,i}} = \frac{\partial\sum_{j\in C}  w_{t,j}o_{j}}{\partial w_{t,i}} \, = \, o_{i}
+\end{align*}
+By defining:
+\begin{align*}
+    & \delta_{t} \,=\, -\frac{\partial E_p}{\partial net_t} \, =\, {}-\frac{\partial E_p}{\partial o_{t}} * \frac{\partial o_{t}}{\partial net_{t}}
+\end{align*}
+We have to study two different cases for $-\frac{\partial E_p}{\partial o_{t}}$, depending on wether $o_{t}$ is the output coming from an output unit or an hidden unit.
 
-Case t = j (where j is a hidden layer):
-\begin{equation*}
-\frac{\partial MSE(x, \hat{y})_i}{\partial o_{j}} \,
- = \, -\frac{1}{2} * \sum_{r=j}^k\frac{ \partial((h(x) - \widehat{y})_{r}^2)}{\partial o_{r}} \, 
-= \, -\frac{1}{2} * \sum_{r=j}^k\frac{ \partial((h(x) - \widehat{y})_{r}^2)}{\partial o_{r}} * \frac{\partial o_{r}}{\partial net_{r}} * \frac{\partial net_{r}}{\partial o_{j}}
-\end{equation*}
+\textbf{Case t output unit}:
+\begin{align*}
+& -\frac{\partial E_p}{\partial o_{t}} \, = \, -\frac{1}{2} * \frac{\sum_{k=1}^K \partial((y_k - \widehat{y}_k)^2)}{\partial o_{t}} \, = \, (y_t-\hat{y}_t), \text{ and }\\
+& \delta_t\, =\,  -\frac{\partial E_p}{\partial net_t}\, = \, (y_t-\hat{y}_t) * {f_t}'(net_{t})
+\end{align*}
+We finally have that:
+\begin{align*}
+    & \nabla_p w_{t,i} = \delta_t * o_i = (y_t-\hat{y}_t) * {f_t}'(net_{t}) * o_i
+\end{align*}
 
-\begin{equation}
-\label{retropagation}
-= \, \sum_{k} \delta_{k} * w_{k,j}
-\end{equation}
-Where:
-\begin{equation*}
-\frac{\partial net_{r}}{\partial o_{j}} \, = \, \frac{\sum_{r=1}^n\partial w_{k,r}*o_{r}}{\partial o_{j}} \, = \,  w_{k,j}
-\end{equation*}
-After the derivation we can state that in the output layer $k$ the gradient is defined as: 
-\begin{equation}
-\label{partialOutput}
-\nabla w_{k} \, = \, (h(x)-\hat{y}) * h'(x) * f'(net_{k})  * o_{t-1,i}
-\end{equation}
-and in the hidden layer $j$ is defined as:
-\begin{equation}
-\label{partialHidden}
-\nabla w_{j} \, = \, (\sum_{k} \delta_{k} * w_{k,j}) * f'(net_{j}) * o_{t-1,i}
-\end{equation}
+\textbf{Case t hidden unit}:
+Since a generic hidden unit $t$ contributes to the output generated by all the units $k$ in the layer to the immediate right of $t$, to estimate its contribution on the network error we use the propagated error $\delta_k$:
+\begin{align*}
+    & -\frac{\partial E_p}{\partial o_{t}} \, = \, \sum_{k=1}^K -\frac{\partial E_p}{\partial net_k} \frac{\partial net_k}{o_t}\, =\, \sum_{k=1}^K \delta_kw_{k,t}, \text{ and }\\
+    & \delta_t\, =\, \sum_{k=1}^K \delta_k w_{k,t} * {f_t}'(net_t)
+\end{align*}
+where each $\delta_k$ is the exact result obtained in the previous step of backward computation for the units connected to $t$. This represents a backward step and is the core of the backpropagation algorithm.
 
+We finally have that:
+\begin{align*}
+    & \nabla_p w_{t,i} = \sum_{k=1}^K \delta_k w_{k,t} * {f_t}'(net_t) * o_i
+\end{align*}
 \subsubsection{Properties of loss function}
-\todo[inline]{add properties of loss function, maybe here we can put all the properties needed for a function to guarantee that it can be optimized via descent methods. For example continuity, differentiability, etc}
+In this section we describe general properties of the chosen loss function, in particular discussing continuity, differentiability and convexity.
+We have that:
+\begin{itemize}
+    \item \textbf{Continuity}: the loss function used is represented by the sum of square functions composed with the \textit{ANN} function. Given that the \textit{ANN} can be represented as a composition of Lipschitz continuous functions, in particular \textit{ReLU} activation function and the linear function $W_k\hat{y}_{k-1} + b_k$ at each layer $k$, using \parencite[Claim 12.7]{ml} we can say that the network function is a Lipschitz continuous function. Considering the fact that a square function is Lipschitz continuous only if the input set is bounded, noting that the \textit{ReLU} function output is not bounded, we can conclude that our loss function is not Lipschitz continuous unless we provide a bound on the output values of the different \textit{ReLU} activation functions.
+    \item \textbf{Convexity}: we first study convexity of the \textit{ANN} by representing it as a composition of functions. The functions that builds up the network are composition of the \textit{ReLU} activation functions, which are convex, with the linear function $W_k\hat{y}_{k-1} + b_k$ for each layer $k$. As seen in \parencite[Chap. 3.2.4]{boyd}, given that the composition $f=h\circ g:\mathbb{R}^n\to\mathbb{R}$ of two functions $h:\mathbb{R}\to\mathbb{R}$ and $g:\mathbb{R}^n\to\mathbb{R}$ is convex if:
+        \begin{itemize}
+            \item $h$ is convex;
+            \item $h$ is increasing;
+            \item $g$ is convex.
+        \end{itemize}
+    In our case, the \textit{ANN} is convex. However, the MSE is the composition of convex functions, but the square function is non-increasing in its entire domain, which means that in our case the loss function is not convex.
+    \item \textbf{Differentiability}: using \textit{piecewise-linear functions} as activation functions for the \textit{ANN} leads the loss function to be non-differentiable, however using the assumption made in $\S\ref{sec:af}$, i.e. fixing the value of the activation function's derivative in the points where this is not differentiable, from a practical point of view, does not impair convergence of the algorithm and allows to use the backpropagation algorithm to compute the gradient of the network. The requirement on the differentiability of the loss functions is not needed for the subgradient method as it will be described in a later section of this document.
+\end{itemize}
+Further discussions about the properties of the loss function are needed for the implementation of the subgradient methods, in fact we know that it requires the optimized function to be convex and Lipschitz continuous. 

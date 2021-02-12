@@ -1,11 +1,10 @@
 \subsection{Direct solver for Linear Least Square}
 \label{sec:qr}
-We have chosen to implement the direct solver via \textit{QR factorization}. This section will give a detailed description of all the properties needed for a \textit{least square problem} to be solved via this method and all the expected results for this kind of implementation. In a successive section we plan to insert the comparison between the theoretical results shown in this section and the actual result obtained in testing the implemented algorithm.
+We have chosen to implement the direct solver via \textit{QR factorization}. This section gives a description of all the properties needed for a \textit{least square problem} to be solved via this method and all the expected results for this kind of implementation. In a successive section we plan to insert the comparison between the theoretical results shown in this section and the actual result obtained in testing the implemented algorithm.
 \subsubsection{QR factorization}
 \label{subsec:qr}
 As described in \parencite[Chap. 5]{elden}, \textit{QR decomposition} (or factorization) is a factorization of a matrix $A$ in a product of an orthogonal matrix and a triangular matrix obtained via successive orthogonal transformations.
-\newtheorem{thm}{Theorem}[section]
-\newtheorem{lemma}[thm]{Lemma}
+
 \begin{thm}
 \label{thm:qr}
 Any matrix $A\in \mathbb{R}^{m\times n},\ m\geq n$, can be transformed to upper triangular form by an orthogonal matrix. The transformation is equivalent to a decomposition
@@ -13,16 +12,16 @@ Any matrix $A\in \mathbb{R}^{m\times n},\ m\geq n$, can be transformed to upper 
     A = Q\begin{bmatrix}R \\ 0\end{bmatrix},
 \end{align*} where $Q\in \mathbb{R}^{m\times m}$ is orthogonal and $R\in \mathbb{R}^{n\times n}$ is upper triangular. If the columns of $A$ are linearly independent, then $R$ is nonsingular.
 \end{thm}
-\todo[inline]{proof of this theorem is on \cite{elden} page 59}
+% \todo[inline]{proof of this theorem is on \cite{elden} page 59}
 If we partition $Q = (Q_1\ Q_2)$ where $Q_1\in \mathbb{R}^{m\times n}$, noting that in the multiplication $Q_2$ is multiplied by zero, we can write:
 \begin{equation}
 \label{eq:thinqr}
     A = \begin{bmatrix}Q_1 & Q_2\end{bmatrix}\begin{bmatrix}R \\ 0\end{bmatrix} = Q_1R,
 \end{equation}
-where \hyperref[eq:thinqr]{equation (\ref{eq:thinqr})} refers to the \textbf{thin QR factorization}. This form of the \textit{QR factorization} will be the one used from now on to solve the \textit{linear least square problem} due to its efficiency in space and time.
-\todo[inline]{trovare giustificazione per questa affermazione. Magari mostrare quali sono i vantaggi rispetto al QR normale.}
+where \hyperref[eq:thinqr]{equation (\ref{eq:thinqr})} refers to the \textbf{thin QR factorization}. This form of the \textit{QR factorization} is the one used from now on to solve the \textit{linear least square problem}.
+% \todo[inline]{trovare giustificazione per questa affermazione. Magari mostrare quali sono i vantaggi rispetto al QR normale.}
 
-To implement this factorization we will make use of the \textit{Householder transformations} described in \parencite[Chap. 4.2.2]{elden}.
+To implement this factorization we make use of the \textit{Householder transformations} described in \parencite[Chap. 4.2.2]{elden}.
 
 \begin{lemma}
 For every $\mathbf{v}\in \mathbb{R}^m$, the matrix $\mathbf{H} = I - \frac{2}{v^Tv}vv^T = I - \frac{2}{\norm{v}^2}vv^T
@@ -31,20 +30,19 @@ For every $\mathbf{v}\in \mathbb{R}^m$, the matrix $\mathbf{H} = I - \frac{2}{v^
 \begin{lemma}
 Let $x, y$ be two vectors such that $\norm{x} = \norm{y}$. If one chooses $v=x-y$, then $H = I - \frac{2}{v^Tv}vv^T$ is such that $Hx = y$.
 \end{lemma}
+% \todo[inline]{cercare reference per questi lemma}
 By choosing $y = \norm{x}e_1 = \begin{bmatrix}\norm{x}\\0\\ \vdots \\0\end{bmatrix}$ we can build a procedure to find the householder vector $\textbf{u}$ of a generic vector $\textbf{x}$. The pseudocode for this procedure is shown in Algorithm \ref{alg:hh}.
 \begin{algorithm}[H]
 	\caption{Householder vector}
 	\label{alg:hh}
 	\begin{algorithmic}[1]
-		\Function{householder\_vector}{x}
 		\State $\mathbf{s} \leftarrow norm(x)$
 		\State $\mathbf{v} \leftarrow x$
 		\State $\mathbf{v}[1] \leftarrow \mathbf{v}[1] - s$
 		\State $\mathbf{u} \leftarrow \mathbf{v} / norm(\mathbf{v})$
-		\EndFunction
 	\end{algorithmic}
 \end{algorithm}
-Now we illustrate the method used to compute the QR factorization through the \textit{Householder transformation}. By a sequence of orthogonal transformation we can transform any matrix $A\in \mathbb{R}^{m\times n}, m\geq n$,
+Now we illustrate the method used to compute the QR factorization through the \textit{Householder transformation}. By a sequence of orthogonal transformation we can transform any matrix ${A\in \mathbb{R}^{m\times n}, m\geq n}$,
 \begin{align*}
     A \to Q^TA = \begin{bmatrix}R \\ 0\end{bmatrix}, R \in \mathbb{R}^{n\times n}
 \end{align*}
@@ -69,7 +67,6 @@ Assuming $A\in \mathbb{R}^{m\times n}$ the matrices $H_i$ have the following str
     & H_3 = \begin{pmatrix}1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & P_3\end{pmatrix},\ P_3 = I - 2u_3u_3^T,\ u_3\in \mathbb{R}^{m-2}
 \end{flalign*}
 Thus vectors $\mathbf{u_i}$, obtained with the procedure defined in Algorithm \ref{alg:hh}, become shorter at each step and we embed \textit{Householder transformations} of increasingly smaller dimensions in identity matrices.
-
 \subsubsection{Solving Least Square via QR factorization}
 In this section we show how \textit{QR factorization}, shown in \S\ref{subsec:qr}, can be used to solve the \textit{linear least square problem} defined in equation (\ref{eq:ls}).\newline
 In the following we use the fact that the Euclidean vector norm is invariant under orthogonal transformations, i.e. $\norm{Qy} = \norm{y}$.
@@ -93,37 +90,31 @@ Then we partition $Q = (Q_1\ Q_2)$, where $Q_1\in \mathbb{R}^{m\times n}$, so we
 \end{equation}
 Under the assumption that the columns of $A$ are linearly independent and since the bottom block of equation (\ref{eq:lsqr}) is independent from vector $x$, we can solve $Rx = Q_1^Tb$ and minimize $\norm{r}^2$ by making the upper block in \hyperref[eq:lsqr]{equation (\ref{eq:lsqr})} equal to zero.
 \end{proof}
-
 As shown in \parencite[Lecture 10]{Bau} and \parencite[Chap. 5.3]{elden}, in the solution of (\ref{eq:lsqr}) there is no need in computing $Q$ because we only need the product $Q_1^Tb$ to solve the reduced problem $Rx=Q_1^Tb$ as described by \hyperref[thm:lsqr]{\textbf{Theorem \ref{thm:lsqr}}}. We can exploit this fact and apply the following two algorithms to obtain the upper triangular matrix $R$ (\hyperref[alg:hhqr]{Algorithm \ref{alg:hhqr}}) and the product $Q_1^Tb$ (\hyperref[alg:q1b]{Algorithm \ref{alg:q1b}}).
 
 \begin{algorithm}[H]
 	\caption{Householder QR factorization}
 	\label{alg:hhqr}
 	\begin{algorithmic}[1]
-		\Function{householder\_qr}{A}
 		\For{$k = 1, 2, \ldots, min(m,n)$}
 		\State $[\mathbf{u}, \mathbf{s}] \leftarrow householder\_vector(\mathbf{A_{k:end, k}})$
 		\State $\mathbf{A_{j,j}} \leftarrow \mathbf{s}$
 		\State $\mathbf{A_{j+1:end,j}} \leftarrow 0$
 		\State $\mathbf{A_{j:end,j+1:end}} \leftarrow \mathbf{A_{j:end,j+1:end}}-2u(u^T(\mathbf{A_{j:end,j+1:end}}))$
 		\EndFor
-		\EndFunction
 	\end{algorithmic}
 \end{algorithm}
 
 
 \begin{algorithm}[H]
-	\caption{Implicit calculation of $Q_1^Tb$}
+	\caption{Implicit computation of $Q_1^Tb$}
 	\label{alg:q1b}
 	\begin{algorithmic}[1]
-		\Function{implicit\_qb}{u}
 		\For{$k = 1, 2, \ldots, n$}
 		\State $\mathbf{b_{k:m}} \leftarrow \mathbf{b_{k:m}} - 2\mathbf{v_k}(\mathbf{v_k^T}\mathbf{b_{k:m}})$
 		\EndFor
-		\EndFunction
 	\end{algorithmic}
 \end{algorithm}
-
 As a final step we give the total amount of operations needed (for a \textit{thin QR factorization}) to solve the \textit{Least Square problem} via QR factorization using Householder transformations. As shown in \parencite[Chap. 5.4]{elden}, we can estimate the number of flops for computing R approximately with:
 \begin{align*}
     4\sum_{k=0}^{n-1}(m-k)(n-k) \approx 2mn^2 - \frac{2n^3}{3} + \mathcal{O}(mn),
