@@ -2,9 +2,10 @@ from QR import QR
 import numpy as np
 import random
 from scipy.spatial import distance
+import sys
 
-m = 1000
-n = 1000
+m = int(sys.argv[1])
+n = int(sys.argv[2])
 
 # Generate random matrix for QR decomposition
 def generate(m, n):
