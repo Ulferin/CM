@@ -8,7 +8,7 @@ n = 1000
 
 # Generate random matrix for QR decomposition
 def generate(m, n):
-    M = np.array([ [random.gauss(0,1) for r in range(m)] for c in range(n) ])
+    M = np.array([ [random.gauss(0,1) for r in range(n)] for c in range(m) ])
     b = np.array([random.gauss(0,1) for r in range(m)])
     return M, b
 
