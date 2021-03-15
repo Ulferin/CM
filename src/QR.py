@@ -3,7 +3,8 @@ import numpy as np
 class QR():
 
     def __init__(self):
-        pass
+        self.R = None
+        self.u_list = None
 
 
     def householder_vector(self, x):
@@ -15,12 +16,12 @@ class QR():
         
         s = np.linalg.norm(x)
         if x[0] > 0:
-            s *= -1
+            s = -s
 
         v = np.copy(x)
         v[0] = v[0] - s
 
-        return s, (v/np.linalg.norm(v))  # pay attention here, it returns a numpy array
+        return s, (v/np.linalg.norm(v))
 
 
     def qr(self, A):
@@ -32,7 +33,7 @@ class QR():
 
         m, n = A.shape
         Q = np.eye(m, n)
-        R = np.copy(A)
+        R = np.copy(A).astype(np.float64)
         u_list = []
 
         for j in range(np.min((m,n))):
@@ -42,9 +43,24 @@ class QR():
             R[j, j] = s
             R[j+1:, j] = 0
             first = np.dot(u, R[j:, j+1:])
-            second = 2*np.outer(u, (first))
-            # print(f"first: {first} second")
-            R[j:, j+1:] = R[j:, j+1:] - second
-            # Q[:, j:end] = Q[:, j:end] - Q[:, j:end]*u*2*np.transpose(u)  # Actually there is no need to return this matrix in the solving of LSP
+            second = 2.*np.outer(u, (first))
+            R[j:, j+1:] = -(second - R[j:, j+1:])
 
-        return u_list, R
+        self.u_list = u_list
+        self.R = R
+        return u_list, R[:np.min((m,n)), :np.min((m,n))]
+
+    
+    def implicit_Qb(self, b):
+        if self.u_list == None:
+            print("You must first compute the QR factorization!")
+            return
+
+        m = len(b)
+        b = b.astype(np.float64)
+        for k in range(len(self.u_list)):
+            b[k:m] = b[k:m] - 2.*np.dot(self.u_list[k], np.dot(self.u_list[k], b[k:m]))
+
+        return b
+
+        
