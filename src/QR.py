@@ -1,7 +1,9 @@
 import numpy as np
 
 class QR():
-
+    """This class implements the classic 'thin QR' factorization used to solve the least square
+    problem as described in the CM report.
+    """
     def __init__(self):
         self.R = None
         self.u_list = None

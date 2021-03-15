@@ -41,5 +41,5 @@ qr = QR()
 
 M, b = generate(m, n)
 res = solve(qr, M, b)
-print(f"Distance is: {distance.cosine(np.dot(M, res), b)}")
+print(f"Solved (m x n): ({m},{n}) - Cosine distance is: {distance.cosine(np.dot(M, res), b)} - L2 distance is: {np.linalg.norm(np.dot(M, res) - b)}")
 print("Done!")
