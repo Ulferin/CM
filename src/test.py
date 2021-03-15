@@ -3,6 +3,8 @@ import numpy as np
 import random
 from scipy.spatial import distance
 import sys
+import time
+
 
 m = int(sys.argv[1])
 n = int(sys.argv[2])
@@ -41,6 +43,8 @@ qr = QR()
 # print('\npolyfit:\n', res)
 
 M, b = generate(m, n)
+
+start_time = int(round(time.time() * 1000))
 res = solve(qr, M, b)
-print(f"Solved (m x n): ({m},{n}) - Cosine distance is: {distance.cosine(np.dot(M, res), b)} - L2 distance is: {np.linalg.norm(np.dot(M, res) - b)}")
-print("Done!")
+end_time = int(round(time.time() * 1000)) - start_time
+print(f"Solved (m x n): ({m},{n}) in {end_time}msec- Cosine distance is: {distance.cosine(np.dot(M, res), b)} - L2 distance is: {np.linalg.norm(np.dot(M, res) - b)}\n")
