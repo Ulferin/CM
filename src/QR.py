@@ -48,6 +48,7 @@ class QR():
 
         self.u_list = u_list
         self.R = R
+        # TODO: non serve restituire la u_list
         return u_list, R[:np.min((m,n)), :np.min((m,n))]
 
     
