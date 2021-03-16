@@ -56,7 +56,21 @@ qr = QR()
 
 M, b = generate(m, n)
 
-start_time = int(round(time.time() * 1000))
+# Computes time for LS solver 
+startLS = int(round(time.time() * 1000))
 u_list, R, res = solve(qr, M, b)
-end_time = int(round(time.time() * 1000)) - start_time
-print(f"Solved (m x n): ({m},{n}) in {end_time}msec - Matrix error: {np.linalg.norm( np.dot(revertQ(u_list, m), R) - M)/np.linalg.norm(M)} - L2 distance is: {np.linalg.norm(np.dot(M, res) - b)}\n")
+endLS = int(round(time.time() * 1000)) - startLS
+
+# Computes time for Q and QR reconstruction
+startQ = int(round(time.time() * 1000))
+Q = revertQ(u_list, m)
+R_complete = np.zeros((m,n))
+R_complete[:n, :n] = R_complete[:n, :n] + R 
+QR = np.dot(Q, R_complete)
+endQR = int(round(time.time() * 1000)) - startQ
+
+print(f"Solved (m x n): ({m},{n}) in {endLS} msec \
+- Reverting and reconstruction in {endQR} msec \
+- Matrix error: {np.linalg.norm( QR - M)/np.linalg.norm(M)} \
+- QR error: {np.linalg.norm( M - QR )/np.linalg.norm(QR)} \
+- L2 distance is: {np.linalg.norm(np.dot(M, res) - b)}\n")
