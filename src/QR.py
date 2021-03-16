@@ -1,7 +1,5 @@
 import numpy as np
 
-# TODO: aggiungere costruzione Q per comparare risultati np.qr e mio qr (da notare che Q può essere ricostruita da lista di u)
-# TODO: aggiungere comparazione accuracy tra i due metodi
 
 class QR():
     """This class implements the classic 'thin QR' factorization used to solve the least square

@@ -69,8 +69,24 @@ R_complete[:n, :n] = R_complete[:n, :n] + R
 QR = np.dot(Q, R_complete)
 endQR = int(round(time.time() * 1000)) - startQ
 
+
+# Computes QR factorization using numpy
+startQRnp = int(round(time.time() * 1000))
+Qnp, Rnp = np.linalg.qr(M, mode="complete")
+QRnp = np.dot(Qnp, Rnp)
+endQRnp = int(round(time.time() * 1000)) - startQRnp
+
+# Computes time for LS solver using numpy
+startLSnp = int(round(time.time() * 1000))
+np.linalg.lstsq(M,b,rcond=-1)
+endLSnp = int(round(time.time() * 1000)) - startLSnp
+
+
 print(f"Solved (m x n): ({m},{n}) in {endLS} msec \
+- Solved (m x n) w/ np in {endLSnp} msec \
 - Reverting and reconstruction in {endQR} msec \
+- QR w/ np took: {endQRnp} msec \
 - Matrix error: {np.linalg.norm( QR - M)/np.linalg.norm(M)} \
 - QR error: {np.linalg.norm( M - QR )/np.linalg.norm(QR)} \
+- QR error w/ np: {np.linalg.norm( M - QRnp )/np.linalg.norm(QRnp)} \
 - L2 distance is: {np.linalg.norm(np.dot(M, res) - b)}\n")
