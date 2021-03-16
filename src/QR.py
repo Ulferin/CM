@@ -34,6 +34,8 @@ class QR():
         :returns: The triangular matrix R and a list of householder vectors used to compute the QR factorization
         """
 
+        eps = np.linalg.norm(A)/10**16  # where norm is the frobenius norm
+
         m, n = A.shape
         Q = np.eye(m, n)
         R = np.copy(A).astype(np.float64)  # TODO: in teoria non serve copy se faccio astype
@@ -41,6 +43,13 @@ class QR():
 
         for j in range(np.min((m,n))):   # note that this is always equal to n
             s, u = self.householder_vector(R[j:,j])
+
+            # zero division in machine precision
+            # this change will cause the matrix R to have 0s in the diagonal
+            if np.abs(s) < eps:
+                s = 0
+                u = np.zeros(len(u))
+
             u_list.append(u)
 
             R[j, j] = s
@@ -66,5 +75,18 @@ class QR():
             b[k:m] = b[k:m] - 2.*np.dot(self.u_list[k], np.dot(self.u_list[k], b[k:m]))
 
         return b
+
+    def revertQ(self):
+        n = len(self.u_list)
+        m = len(self.u_list[0])
+
+        Q = np.eye(m,m)
+        for j in range(len(self.u_list)):
+            u = self.u_list[j]
+            first = 2*np.dot(Q[:,j:],u)
+            second = np.outer(first, u)
+            Q[:, j:] = Q[:, j:] - second
+
+        return Q
 
         
