@@ -14,7 +14,7 @@ class QR():
         """Computes the householder vector for the given vector :param x:
 
         :param x: Starting vector used to compute the HH vector
-        :returns: Vector representing the computed HH vector
+        :returns: Vector representing the computed HH vector and norm of :param x:
         """
         
         s = np.linalg.norm(x)
@@ -36,10 +36,10 @@ class QR():
 
         m, n = A.shape
         Q = np.eye(m, n)
-        R = np.copy(A).astype(np.float64)
+        R = np.copy(A).astype(np.float64)  # TODO: in teoria non serve copy se faccio astype
         u_list = []
 
-        for j in range(np.min((m,n))):
+        for j in range(np.min((m,n))):   # note that this is always equal to n
             s, u = self.householder_vector(R[j:,j])
             u_list.append(u)
 
