@@ -32,7 +32,19 @@ def solve(qr, M, b):
     u_list, R = qr.qr(M)
     _, n = R.shape
     implicit = qr.implicit_Qb(b)[:n]
-    return np.dot( np.linalg.inv(R), implicit )
+    return u_list, R, np.dot( np.linalg.inv(R), implicit )
+
+
+def revertQ(u_list, m):
+    Q = np.eye(m,m)
+    for k in range(len(u_list)):
+        u = u_list[k]
+        A = np.eye(m,m)
+        A[k:,k:] = A[k:,k:] - 2*np.outer(u,u) # u*u' has dimension (m-k+1 x m-k+1) 
+        Q = np.dot(Q, A)
+
+    return Q
+
 
 qr = QR()
  
@@ -45,6 +57,6 @@ qr = QR()
 M, b = generate(m, n)
 
 start_time = int(round(time.time() * 1000))
-res = solve(qr, M, b)
+u_list, R, res = solve(qr, M, b)
 end_time = int(round(time.time() * 1000)) - start_time
-print(f"Solved (m x n): ({m},{n}) in {end_time}msec- Cosine distance is: {distance.cosine(np.dot(M, res), b)} - L2 distance is: {np.linalg.norm(np.dot(M, res) - b)}\n")
+print(f"Solved (m x n): ({m},{n}) in {end_time}msec - Matrix error: {np.linalg.norm( np.dot(revertQ(u_list, m), R) - M)/np.linalg.norm(M)} - L2 distance is: {np.linalg.norm(np.dot(M, res) - b)}\n")
