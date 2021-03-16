@@ -1,7 +1,6 @@
 from QR import QR
 import numpy as np
 import random
-from scipy.spatial import distance
 import sys
 import time
 
@@ -35,17 +34,6 @@ def solve(qr, M, b):
     return u_list, R, np.dot( np.linalg.inv(R), implicit )
 
 
-def revertQ(u_list, m):
-    Q = np.eye(m,m)
-    for k in range(len(u_list)):
-        u = u_list[k]
-        A = np.eye(m,m)
-        A[k:,k:] = A[k:,k:] - 2*np.outer(u,u) # u*u' has dimension (m-k+1 x m-k+1) 
-        Q = np.dot(Q, A)
-
-    return Q
-
-
 qr = QR()
  
 # x = np.array((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
@@ -62,12 +50,12 @@ u_list, R, res = solve(qr, M, b)
 endLS = int(round(time.time() * 1000)) - startLS
 
 # Computes time for Q and QR reconstruction
-startQ = int(round(time.time() * 1000))
-Q = revertQ(u_list, m)
+startQR = int(round(time.time() * 1000))
+Q = qr.revertQ()
 R_complete = np.zeros((m,n))
-R_complete[:n, :n] = R_complete[:n, :n] + R 
+R_complete[:n, :n] = R_complete[:n, :n] + R
 QR = np.dot(Q, R_complete)
-endQR = int(round(time.time() * 1000)) - startQ
+endQR = int(round(time.time() * 1000)) - startQR
 
 
 # Computes QR factorization using numpy
@@ -85,8 +73,8 @@ endLSnp = int(round(time.time() * 1000)) - startLSnp
 print(f"Solved (m x n): ({m},{n}) in {endLS} msec \
 - Solved (m x n) w/ np in {endLSnp} msec \
 - Reverting and reconstruction in {endQR} msec \
-- QR w/ np took: {endQRnp} msec \
-- Matrix error: {np.linalg.norm( QR - M)/np.linalg.norm(M)} \
+- QR w/ np took: {endQRnp} msec")
+print(f"Matrix error: {np.linalg.norm( QR - M)/np.linalg.norm(M)} \
 - QR error: {np.linalg.norm( M - QR )/np.linalg.norm(QR)} \
 - QR error w/ np: {np.linalg.norm( M - QRnp )/np.linalg.norm(QRnp)} \
 - L2 distance is: {np.linalg.norm(np.dot(M, res) - b)}\n")
