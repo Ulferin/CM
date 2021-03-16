@@ -10,7 +10,6 @@ for i in $(seq $m $step $last)
 do
 	for j in $(seq $n $step $i)
 	do
-		echo "$i $j"
-		python test.py $i $j >> test_aux.txt
+		python test.py $i $j >> test_script.txt
 	done
 done
