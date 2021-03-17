@@ -51,6 +51,7 @@ endLS = int(round(time.time() * 1000)) - startLS
 
 # Computes time for Q and QR reconstruction
 startQR = int(round(time.time() * 1000))
+_, R = qr.qr(M)
 Q = qr.revertQ()
 R_complete = np.zeros((m,n))
 R_complete[:n, :n] = R_complete[:n, :n] + R
@@ -70,11 +71,7 @@ np.linalg.lstsq(M,b,rcond=-1)
 endLSnp = int(round(time.time() * 1000)) - startLSnp
 
 
-print(f"Solved (m x n): ({m},{n}) in {endLS} msec \
-- Solved (m x n) w/ np in {endLSnp} msec \
-- Reverting and reconstruction in {endQR} msec \
-- QR w/ np took: {endQRnp} msec")
-print(f"Matrix error: {np.linalg.norm( QR - M)/np.linalg.norm(M)} \
-- QR error: {np.linalg.norm( M - QR )/np.linalg.norm(QR)} \
-- QR error w/ np: {np.linalg.norm( M - QRnp )/np.linalg.norm(QRnp)} \
-- L2 distance is: {np.linalg.norm(np.dot(M, res) - b)}\n")
+print(f"Solved (m x n): ({m},{n}) in {endLS} msec, w/ np in {endLSnp} msec \
+- Reverting and reconstruction: {endQR} msec, w/ np took: {endQRnp} msec")
+print(f"QR error: {np.linalg.norm( M - QR )/np.linalg.norm(QR)} \
+- QR error w/ np: {np.linalg.norm( M - QRnp )/np.linalg.norm(QRnp)}\n")
