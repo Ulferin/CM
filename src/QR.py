@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 
 class QR():
@@ -76,16 +77,30 @@ class QR():
 
         return b
 
+
+    # Auxiliary function to compute matrix-vector product
+    # It showed increased performance against np.dot(Q[:,j:],u)
+    def dot_matvec(self, Q, u, k):
+        res = np.zeros(len(Q))
+        for i in range(len(Q)):
+            res[i] = (np.dot(Q[i][k:],u)) 
+
+        return res
+
     def revertQ(self):
         n = len(self.u_list)
         m = len(self.u_list[0])
+        total = 0
 
         Q = np.eye(m,m)
         for j in range(len(self.u_list)):
+            startQR = int(round(time.time() * 1000))
             u = self.u_list[j]
-            first = 2*np.dot(Q[:,j:],u)
-            second = np.outer(first, u)
-            Q[:, j:] = Q[:, j:] - second
+            Q[:,j:] -= np.outer(2*self.dot_matvec(Q, u, j), u)
+            endQR = int(round(time.time() * 1000)) - startQR
+            total += endQR
+
+        # print(f"took: {total} msec w/ an average of {total/len(self.u_list)}")
 
         return Q
 
