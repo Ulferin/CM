@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from datetime import datetime as dt
 
 
 class QR():
@@ -25,7 +26,7 @@ class QR():
         v = np.copy(x)
         v[0] = v[0] - s
 
-        return s, (v/np.linalg.norm(v))
+        return s, np.divide(v,np.linalg.norm(v))
 
 
     def qr(self, A):
@@ -42,9 +43,12 @@ class QR():
         R = np.copy(A).astype(np.float64)  # TODO: in teoria non serve copy se faccio astype
         u_list = []
 
+        total = 0
+
+       
         for j in range(np.min((m,n))):   # note that this is always equal to n
             s, u = self.householder_vector(R[j:,j])
-
+            
             # zero division in machine precision
             # this change will cause the matrix R to have 0s in the diagonal
             if np.abs(s) < eps:
@@ -55,14 +59,22 @@ class QR():
 
             R[j, j] = s
             R[j+1:, j] = 0
-            first = np.dot(u, R[j:, j+1:])
-            second = 2.*np.outer(u, (first))
-            R[j:, j+1:] = -(second - R[j:, j+1:])
-
+            res = np.zeros(len(R[0])-j-1)
+            for i in range(j+1, len(R[0])-j-1):
+                res[i] = (np.dot(u, R[j:,i]))
+            
+            now = dt.now()
+            R[j:, j+1:] -= 2*np.outer(u, res)
+            end = (dt.now() - now)
+            end = end.seconds * 1000 + end.microseconds / 1000
+            total += end
+        
+        
         self.u_list = u_list
         self.R = R
+        print(f"inside: {total}")
         # TODO: non serve restituire la u_list
-        return u_list, R[:np.min((m,n)), :np.min((m,n))]
+        return u_list, R[:n, :n]
 
     
     def implicit_Qb(self, b):
@@ -73,7 +85,7 @@ class QR():
         m = len(b)
         b = b.astype(np.float64)
         for k in range(len(self.u_list)):
-            b[k:m] = b[k:m] - 2.*np.dot(self.u_list[k], np.dot(self.u_list[k], b[k:m]))
+            b[k:m] -= 2.*np.dot(self.u_list[k], np.multiply(self.u_list[k], b[k:m]))
 
         return b
 
