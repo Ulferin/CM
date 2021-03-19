@@ -4,7 +4,6 @@ We have chosen to implement the direct solver via \textit{QR factorization}. Thi
 \subsubsection{QR factorization}
 \label{subsec:qr}
 As described in \parencite[Chap. 5]{elden}, \textit{QR decomposition} (or factorization) is a factorization of a matrix $A$ in a product of an orthogonal matrix and a triangular matrix obtained via successive orthogonal transformations.
-
 \begin{thm}
 \label{thm:qr}
 Any matrix $A\in \mathbb{R}^{m\times n},\ m\geq n$, can be transformed to upper triangular form by an orthogonal matrix. The transformation is equivalent to a decomposition
@@ -119,6 +118,7 @@ As a final step we give the total amount of operations needed (for a \textit{thi
 \begin{align*}
     4\sum_{k=0}^{n-1}(m-k)(n-k) \approx 2mn^2 - \frac{2n^3}{3} + \mathcal{O}(mn),
 \end{align*}
+\newline\newline
 and we can state the behaviour in two common regimes:
 \begin{itemize}
     \item Square matrices ($\mathbf{m = n}$): $\frac{4}{3}n^3$

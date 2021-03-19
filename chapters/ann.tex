@@ -44,7 +44,7 @@ The main characteristics of these functions are:
     \item Efficient computation;
 \end{itemize}
 
-These functions are widely used to deal with the problem of \textit{vanishing gradients} when using the backpropagation algorithm described in \S\ref{backprop}. Our main choice is using the \textbf{Leaky ReLU} activation function due to its simplicity and to the fact that it can help avoiding the dying ReLU problem related to the \textit{ReLU} activation function. The only problem is that it is not entirely differentiable, in particular there is only one point (i.e. $x=0$) where the derivative is not defined. As shown in \parencite[Chap. 6.3]{bengio} the slight modification of the derivative with \textit{$f'(0) = 1$} leads to good results and does not impair the convergence of the learning algorithm from a practical point of view. As we point out in \textbf{\S\ref{conv_mom}}, this does not mean that this modification leads the optimization algorithm to converge theoretically.
+These functions are widely used to deal with the problem of \textit{vanishing gradients} when using the backpropagation algorithm described in \S\ref{backprop}. Our main choice is using the \textbf{Leaky ReLU} activation function due to its simplicity and to the fact that it can help avoiding the dying ReLU problem related to the \textit{ReLU} activation function. The only problem is that it is not entirely differentiable, in particular there is only one point (i.e. $x=0$) where the derivative is not defined. As shown in \parencite[Chap. 6.3]{bengio} the slight modification of the derivative with \textit{$f'(0) = 1$} leads to good results and does not impair the convergence of the learning algorithm from a practical point of view. As we point out in \textbf{\S\ref{conv_mom}}, this modification is not enough to guarantee the optimization algorithm to theoretically converge.
 
 \subsection{Backpropagation algorithm}
 \label{backprop}
@@ -165,6 +165,7 @@ We finally have that:
     & \nabla_p w_{t,i} = \sum_{k=1}^K \delta_k w_{k,t} * {f_t}'(net_t) * o_i
 \end{align*}
 \subsubsection{Properties of loss function}
+\label{subsub:lfprop}
 In this section we describe general properties of the chosen loss function, in particular discussing continuity, differentiability and convexity.
 We have that:
 \begin{itemize}
@@ -175,7 +176,7 @@ We have that:
             \item $h$ is increasing;
             \item $g$ is convex.
         \end{itemize}
-    In our case, the \textit{ANN} is convex. However, the MSE is the composition of convex functions, but the square function is non-increasing in its entire domain, which means that in our case the loss function is not convex.
+    In our case, the \textit{ANN} is convex. However, the MSE is the composition of convex functions, but noting that the square function is increasing only for positive values, it means that in our case the loss function is not convex.
     \item \textbf{Differentiability}: using \textit{piecewise-linear functions} as activation functions for the \textit{ANN} leads the loss function to be non-differentiable, however using the assumption made in $\S\ref{sec:af}$, i.e. fixing the value of the activation function's derivative in the points where this is not differentiable, from a practical point of view, does not impair convergence of the algorithm and allows to use the backpropagation algorithm to compute the gradient of the network. The requirement on the differentiability of the loss functions is not needed for the subgradient method as it will be described in a later section of this document.
 \end{itemize}
 Further discussions about the properties of the loss function are needed for the implementation of the subgradient methods, in fact we know that it requires the optimized function to be convex and Lipschitz continuous. 
