@@ -40,7 +40,7 @@ class QR():
 
         m, n = A.shape
         Q = np.eye(m, n)
-        R = np.copy(A).astype(np.float64)  # TODO: in teoria non serve copy se faccio astype
+        R = A.astype(np.float64)
         u_list = []
 
         total = 0
@@ -63,7 +63,7 @@ class QR():
             res = np.zeros(len(R[0])-j-1)
             for i in range(j+1, len(R[0])):
                 res[i-j-1] = (np.dot(u, R[j:,i]))
-                
+
             R[j:, j+1:] -= 2.*np.outer(u, res)
         end = (dt.now() - start)
         end = end.seconds * 1000 + end.microseconds / 1000
