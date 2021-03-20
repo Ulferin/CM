@@ -45,7 +45,7 @@ class QR():
 
         total = 0
 
-       
+        start = dt.now()
         for j in range(np.min((m,n))):   # note that this is always equal to n
             s, u = self.householder_vector(R[j:,j])
             
@@ -58,21 +58,19 @@ class QR():
             u_list.append(u)
 
             R[j, j] = s
-            R[j+1:, j] = 0
+            R[j+1:, j] = 0            
+
             res = np.zeros(len(R[0])-j-1)
-            for i in range(j+1, len(R[0])-j-1):
-                res[i] = (np.dot(u, R[j:,i]))
-            
-            now = dt.now()
-            R[j:, j+1:] -= 2*np.outer(u, res)
-            end = (dt.now() - now)
-            end = end.seconds * 1000 + end.microseconds / 1000
-            total += end
-        
+            for i in range(j+1, len(R[0])):
+                res[i-j-1] = (np.dot(u, R[j:,i]))
+                
+            R[j:, j+1:] -= 2.*np.outer(u, res)
+        end = (dt.now() - start)
+        end = end.seconds * 1000 + end.microseconds / 1000
+        print(f"end: {end}")
         
         self.u_list = u_list
         self.R = R
-        print(f"inside: {total}")
         # TODO: non serve restituire la u_list
         return u_list, R[:n, :n]
 
