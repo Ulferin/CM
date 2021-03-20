@@ -18,7 +18,7 @@ def generate(m, n):
 
 
 def solve(qr, M, b):
-    _, R = qr.qr(M)
+    R = qr.qr(M)
     _, n = R.shape
     Rinv = np.linalg.inv(R)
 
@@ -46,7 +46,7 @@ endLS = end_time(startLS)
 
 # Computes time for Q and QR reconstruction
 startQR = dt.now()
-_, R = qr.qr(M)
+R = qr.qr(M)
 Q = qr.revertQ()
 R_complete = np.zeros((m,n))
 R_complete[:n, :n] = R_complete[:n, :n] + R
