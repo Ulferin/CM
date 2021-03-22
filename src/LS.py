@@ -137,4 +137,29 @@ class LS():
 
         return Q
 
+    def efficient_revert(self):
+        """Computes efficiently the Q matrix resulting from the QR factorization
+        starting from the HH vectors computed during the factorization process.
+        """
+
+        n = len(self.u_list)
+        m = len(self.u_list[0])
+
+        u = self.u_list[0]
+        Q = -2*np.outer(u,u)
+
+        for k in range(1,n):
+            u = self.u_list[k]
+            subM = -2*np.outer(u,u)
+
+            Q[k-1][k:] = 0
+            Qc = np.copy(Q)
+            for j in range(k,m):
+                print(j)
+                Q[j, k:] = np.dot(Qc[j, k:], Qc[k:,k:])
+                
+
+        return Q
+
+
         
