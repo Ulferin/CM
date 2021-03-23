@@ -1,6 +1,8 @@
 import numpy as np
 
-
+# TODO: controllare il fatto che inversa in calcolo soluzione sia fattibile, altrimenti trovare altro
+# TODO: controllo errori
+# TODO: check doc strings
 class LS():
     """This class implements the least square problem solver for the given data. It uses the thin QR
     factorization, as described in the report file.
@@ -9,9 +11,12 @@ class LS():
 
     def solve(self, A, b):
         """Solves the LS problem (P) given the input matrix A and the vector b.
+        Computes the QR factorization of the coefficient matrix and uses the resulting householder
+        vectors to implicitly compute the product Q1*b.
+        Solves the problem as x = R^(-1)*Q1*b
 
-        :param A: Input matrix for the LS problem
-        :param b: Input vector for the LS problem
+        :param A: Coefficients matrix for the LS problem
+        :param b: Dependend variables vector for the LS problem
         :return: Result vector that minimizes (P)
         """
 
@@ -20,16 +25,13 @@ class LS():
         Rinv = np.linalg.inv(R)
 
         implicit = self.implicit_Qb(b)[:n]
-        
-        res = np.zeros(n)
-        for i in range(n):
-            res[i] = (np.dot(Rinv[i],implicit)) 
+        res = np.matmul(Rinv, implicit)
     
         return res
 
 
     def householder_vector(self, x):
-        """Computes the householder vector for the given vector :param x:
+        """Computes the householder vector for the given vector :param x:.
 
         :param x: Starting vector used to compute the HH vector
         :returns: Vector representing the computed HH vector and norm of :param x:

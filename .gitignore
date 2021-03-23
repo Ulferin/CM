@@ -2,3 +2,4 @@ Pipfile*
 .vscode
 __pycache*
 *.txt
+data*
