@@ -70,10 +70,10 @@ def QR_scaling () :
 
     print("n=50")
     print("m\ttime\tdelta")
-    n = 50
+    n = 500
     t = 10
     time_list = []
-    mrange = range(200,5200,200)
+    mrange = range(500,5500,500)
     prev_a = 0
     ls = LS()
     for m in mrange:
@@ -103,7 +103,7 @@ def QR_scaling () :
 
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
-    plt.savefig("../results/QRscaling_n50_secs.png")
+    plt.savefig("../results/QRscaling_n500_secs.png")
     plt.clf()
 
 
