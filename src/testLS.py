@@ -71,6 +71,7 @@ def QR_scaling () :
     print("n=50")
     print("m\ttime\tdelta")
     n = 50
+    t = 10
     time_list = []
     mrange = range(200,5200,200)
     prev_a = 0
@@ -78,7 +79,7 @@ def QR_scaling () :
     for m in mrange:
         A,_ = generate(m,n)
         mean = 0
-        for i in range(5):
+        for i in range(t):
             startQR = dt.now()
             R = ls.qr(A)
             Q = ls.revertQ()
@@ -88,7 +89,7 @@ def QR_scaling () :
             endQR = end_time(startQR)
             mean += endQR
         
-        mean = mean / 5
+        mean = mean / t
         delta = mean - prev_a 
         print(m,"\t",mean,"\t", delta)
         time_list.append(mean)
