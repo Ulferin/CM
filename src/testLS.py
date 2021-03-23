@@ -89,7 +89,7 @@ def QR_scaling () :
             endQR = end_time(startQR)
             mean += endQR
         
-        mean = mean / t
+        mean = (mean / t) / 1000
         delta = mean - prev_a 
         print(m,"\t",mean,"\t", delta)
         time_list.append(mean)
@@ -103,7 +103,7 @@ def QR_scaling () :
 
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
-    plt.savefig("../results/QRscaling_n50.png")
+    plt.savefig("../results/QRscaling_n50_secs.png")
     plt.clf()
 
 
