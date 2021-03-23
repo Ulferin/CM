@@ -61,12 +61,14 @@ def load_ML_CUP_dataset ( filename ):
 
 
 def QR_scaling () :
-    '''
-        Tests the function thin_qr for several matrices mxn with n=50 and different values of m.
-        
-        Prints a table with the execution time for each value of m
-        Plots the data and saves the image on the file results/QRscaling_n50.png
-    '''
+    """Tests the QR factorization for different matrices with m in [200, 5000] and n=50.
+    Executes each example for a given amount of time and averages the times accordingly. For each result
+    prints the size m and the average execution time, together with the time difference from the previous
+    result.
+
+    At the end of the process, saves an image showing the evolution of execution times over the increase
+    of dimension m. The resulting image is saved in the resource folder as 'QRscaling_n50.png'.
+    """
 
     print("n=50")
     print("m\ttime\tdelta")
