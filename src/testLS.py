@@ -30,10 +30,9 @@ res = ls.solve(M,b)
 endLS = end_time(startLS)
 
 # Computes time for Q and QR reconstruction
-R = ls.qr(M)
 startQR = dt.now()
-# Q = ls.revertQ()
-Q = ls.revert_by_backward_products()
+R = ls.qr(M)
+Q = ls.revertQ()
 R_complete = np.zeros((m,n))
 R_complete[:n, :n] = R_complete[:n, :n] + R
 QR = np.dot(Q, R_complete)
@@ -48,10 +47,12 @@ endQRnp = end_time(startQRnp)
 
 # Computes time for LS solver using numpy
 startLSnp = dt.now()
-np.linalg.lstsq(M,b,rcond=-1)
+resnp, _, _, _ = np.linalg.lstsq(M,b,rcond=-1)
 endLSnp = end_time(startLSnp)
 
 print(f"Solved (m x n): ({m},{n}) in {endLS} msec, w/ np in {endLSnp} msec \
 - Reverting and reconstruction: {endQR} msec, w/ np took: {endQRnp} msec")
+print(f"res error: {np.linalg.norm( b - np.dot(M, res) )/np.linalg.norm(b)} \
+- np_res error: {np.linalg.norm( b - np.dot(M, resnp) )/np.linalg.norm(b)}")
 print(f"QR error: {np.linalg.norm( M - QR )/np.linalg.norm(QR)} \
 - QR error w/ np: {np.linalg.norm( M - QRnp )/np.linalg.norm(QRnp)}\n")

@@ -57,13 +57,10 @@ class LS():
         eps = np.linalg.norm(A)/10**16
 
         m, n = A.shape
-        Q = np.eye(m, n)
         R = A.astype(np.float64)
-        u_list = []
-
+        u_list = np.empty(np.min((m,n)), dtype=np.ndarray)
 
         for j in range(np.min((m,n))):   # note that this is always equal to n in our case
-            
             s, u = self.householder_vector(R[j:,j])
 
             # zero division in machine precision
@@ -72,15 +69,10 @@ class LS():
                 s = 0
                 u = np.zeros(len(u))
 
-            u_list.append(u)
-
+            u_list[j] = u
             R[j, j] = s
-            R[j+1:, j] = 0            
-
-            res = np.zeros(len(R[0])-j-1)
-            for i in range(n-j-1):
-                res[i] = (np.dot(u, R[j:,i+j+1]))
-            R[j:, j+1:] -= 2.*np.outer(u, res)
+            R[j+1:, j] = 0
+            R[j:, j+1:] -= np.outer(u, np.matmul(2*u, R[j:, j+1:]))
 
         self.u_list = u_list
         
@@ -105,41 +97,7 @@ class LS():
         return b
 
 
-    def dot_matvec(self, Q, u, k):
-        """Auxiliary function to compute submatrix-vector product starting from the given index on second axis.
-        During testing it appeared to show increased performance against np.dot(Q[:,j:],u)
-
-        :param Q: Input matrix.
-        :param u: Input vector.
-        :param k: Starting index for submatrix.
-        :return: Matrix-vector multiplication's result vector
-        """
-
-        res = np.zeros(len(Q))
-        for i in range(len(Q)):
-            res[i] = (np.dot(Q[i][k:],u)) 
-
-        return res
-
-
     def revertQ(self):
-        """Builds the orthogonal matrix Q resulting from the QR computation, starting from the
-        Householder vectors built during the factorization.
-
-        :return: Orthogonal matrix Q.
-        """
-
-        n = len(self.u_list)
-        m = len(self.u_list[0])
-
-        Q = np.eye(m,m)
-        for j in range(n):
-            u = self.u_list[j]
-            Q[:,j:] -= np.outer(2*self.dot_matvec(Q, u, j), u)
-
-        return Q
-
-    def revert_by_backward_products(self):
         """Computes the matrix Q of the QR decomposition by computing the product with the column
         of the identity matrix as shown in [Numerical Linear Algebra by Trefethen, Bau - Lecture 10].
 
@@ -147,6 +105,8 @@ class LS():
         the resulting Q is here reconstructed by using the 'implicit calculation of a product Q*x'.
         The process is repeated for all the columns of the identity matrix {I in R^(m x m)} and the result is
         transposed. This due to a better efficiency of numpy in accessing rows rather than columns in a matrix.
+        
+        :return: Orthogonal matrix Q
         """
 
         n = len(self.u_list)
