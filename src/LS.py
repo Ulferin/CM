@@ -98,7 +98,7 @@ class LS():
         m = len(b)
         if b.dtype != np.float64:
             b = b.astype(np.float64)
-            
+
         for k in range(len(self.u_list)):
             b[k:m] -= 2*np.dot(self.u_list[k], np.dot(self.u_list[k], b[k:m]))
 
@@ -139,29 +139,28 @@ class LS():
 
         return Q
 
-    def efficient_revert(self):
-        """Computes efficiently the Q matrix resulting from the QR factorization
-        starting from the HH vectors computed during the factorization process.
+    def revert_by_backward_products(self):
+        """Computes the matrix Q of the QR decomposition by computing the product with the column
+        of the identity matrix as shown in [Numerical Linear Algebra by Trefethen, Bau - Lecture 10].
+
+        The construction of the matrix Q starts from the Householder vectors found during the QR factorization,
+        the resulting Q is here reconstructed by using the 'implicit calculation of a product Q*x'.
+        The process is repeated for all the columns of the identity matrix {I in R^(m x m)} and the result is
+        transposed. This due to a better efficiency of numpy in accessing rows rather than columns in a matrix.
         """
 
         n = len(self.u_list)
         m = len(self.u_list[0])
 
-        u = self.u_list[0]
-        Q = -2*np.outer(u,u)
+        Q = np.zeros((m,m))
+        for i in range(m):
+            e_i = np.zeros(m)
+            e_i[i] = 1.0
+            for k in range(n-1, -1, -1):
+                e_i[k:m] -= 2*np.dot( self.u_list[k], np.dot(self.u_list[k], e_i[k:m]) )
+                Q[i] = e_i
 
-        for k in range(1,n):
-            u = self.u_list[k]
-            subM = -2*np.outer(u,u)
-
-            Q[k-1][k:] = 0
-            Qc = np.copy(Q)
-            for j in range(k,m):
-                print(j)
-                Q[j, k:] = np.dot(Qc[j, k:], Qc[k:,k:])
-                
-
-        return Q
+        return Q.T
 
 
         
