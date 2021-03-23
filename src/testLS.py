@@ -3,11 +3,13 @@ import numpy as np
 import random
 import sys
 import time
+import matplotlib.pyplot as plt
 
 from datetime import datetime as dt
 
 CUP_TEST = 'cup'
 RANDOM_TEST = 'random'
+QR_SCALING = 'scaling'
 
 
 def generate(m, n):
@@ -56,6 +58,52 @@ def load_ML_CUP_dataset ( filename ):
                 b.append (b_el)
 
     return np.array(M), np.array(b)
+
+
+def QR_scaling () :
+    '''
+        Tests the function thin_qr for several matrices mxn with n=50 and different values of m.
+        
+        Prints a table with the execution time for each value of m
+        Plots the data and saves the image on the file results/QRscaling_n50.png
+    '''
+
+    print("n=50")
+    print("m\ttime\tdelta")
+    n = 50
+    time_list = []
+    mrange = range(200,5200,200)
+    prev_a = 0
+    ls = LS()
+    for m in mrange:
+        A,_ = generate(m,n)
+        mean = 0
+        for i in range(5):
+            startQR = dt.now()
+            R = ls.qr(A)
+            Q = ls.revertQ()
+            R_complete = np.zeros((m,n))
+            R_complete[:n, :n] = R_complete[:n, :n] + R
+            QR = np.dot(Q, R_complete)
+            endQR = end_time(startQR)
+            mean += endQR
+        
+        mean = mean / 5
+        delta = mean - prev_a 
+        print(m,"\t",mean,"\t", delta)
+        time_list.append(mean)
+        prev_a = mean
+
+    plt.plot (mrange, time_list, "bo-")
+
+    plt.xlabel ("m")
+    plt.ylabel ("time (sec)")
+    plt.title ("Qr factorizzation of a matrix mx50")
+
+    plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
+
+    plt.savefig("../results/QRscaling_n50.png")
+    plt.clf()
 
 
 def test_random_dataset(m, n):
@@ -149,3 +197,5 @@ if __name__ == "__main__":
         m = int(sys.argv[2])    # number of rows
         n = int(sys.argv[3])    # number of cols
         test_random_dataset(m, n)
+    elif test == QR_SCALING:
+        QR_scaling()
