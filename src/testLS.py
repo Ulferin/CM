@@ -30,10 +30,10 @@ res = ls.solve(M,b)
 endLS = end_time(startLS)
 
 # Computes time for Q and QR reconstruction
-startQR = dt.now()
 R = ls.qr(M)
-# Q = ls.revertQ()
-Q = ls.efficient_revert()
+startQR = dt.now()
+Q = ls.revertQ()
+# Q = ls.efficient_revert()
 R_complete = np.zeros((m,n))
 R_complete[:n, :n] = R_complete[:n, :n] + R
 QR = np.dot(Q, R_complete)

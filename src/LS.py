@@ -96,9 +96,11 @@ class LS():
         """
 
         m = len(b)
-        b = b.astype(np.float64)
+        if b.dtype != np.float64:
+            b = b.astype(np.float64)
+            
         for k in range(len(self.u_list)):
-            b[k:m] -= 2.*np.dot(self.u_list[k], np.multiply(self.u_list[k], b[k:m]))
+            b[k:m] -= 2*np.dot(self.u_list[k], np.dot(self.u_list[k], b[k:m]))
 
         return b
 
