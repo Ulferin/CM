@@ -2,7 +2,8 @@ import numpy as np
 
 # TODO: controllare il fatto che inversa in calcolo soluzione sia fattibile, altrimenti trovare altro
 # TODO: controllo errori
-# TODO: check doc strings
+# TODO: check rank deficiency
+
 class LS():
     """This class implements the least square problem solver for the given data. It uses the thin QR
     factorization, as described in the report file.

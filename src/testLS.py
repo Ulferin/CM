@@ -151,10 +151,10 @@ def test_random_dataset(m, n):
     # ---------- TEST ON RANDOM DATASET ----------
 
 
-def test_cup():
+def test_cup(dataset):
     # ---------- TEST ON CUP DATASET ----------
     ls = LS()
-    M, b = load_ML_CUP_dataset("../data/ML-CUP18-TR.csv")
+    M, b = load_ML_CUP_dataset(dataset)
 
     m = len(M)
     n = len(M[0])
@@ -183,18 +183,43 @@ def test_cup():
     print(f"---------- CUP DATASET ----------")
     print(f"Solved (m x n): ({len(M)},{len(M[0])}) in {endLS} msec, w/ np in {endLSnp} msec")
     print(f"res error: {np.linalg.norm( b - np.dot(M, res) )/np.linalg.norm(b)} \
-    - np_res error: {np.linalg.norm( b - np.dot(M, resnp) )/np.linalg.norm(b)}")
+- np_res error: {np.linalg.norm( b - np.dot(M, resnp) )/np.linalg.norm(b)}")
     print(f"QR error: {np.linalg.norm( M - QR )/np.linalg.norm(QR)} \
-    - QR error w/ np: {np.linalg.norm( M - QRnp )/np.linalg.norm(QRnp)}\n")
+- QR error w/ np: {np.linalg.norm( M - QRnp )/np.linalg.norm(QRnp)}\n")
 
     # ---------- TEST ON CUP DATASET ----------
 
 
 if __name__ == "__main__":
-    test = sys.argv[1]      # test type ('cup' or 'random')
+    """This file provides various test suites, needed to check the accuracy of the implemented
+    methods, as well as printing the execution times for the given dimension. In the following
+    are listed all the implemented tests and what they're supposed to do.
+
+    - CUP dataset test: ran specifying as first execution parameter the 'cup' string. It needs
+                        an additional parameter that represents the CUP dataset as a .csv file.
+                        It runs the QR factorization on this dataset with both the implemented
+                        QR factorization and the off-the-shelf version with numpy. It checks both
+                        the accuracy achieved in the factorization and the execution time.
+
+    - Random dataset test: ran specifying as first execution parameter the 'random' string. It needs
+                           two more parameters to be specified that describes the maximum number of rows
+                           and columns for the dataset. It checks the execution time, the accuracy in the
+                           LS problem result and in the QR factorization for each generated dataset.
+
+    - Scaling test: ran specifying as first execution parameter the 'scaling' string. It checks the scalability
+                    of the implemented algorithm, running various random datasets with increasing sizes.
+                    It shows the execution times for each dataset as well as the difference in computing times
+                    from a dataset dimension to the previous one. We expect for this test to show a linear time
+                    increasing with the m dimension of the dataset matrix.
+                    Finally, it saves an image showing the time taken for each m dimension of the datasets used for testing.
+
+    """
+
+    test = sys.argv[1]      # test type ('cup', 'random' or 'scaling')
 
     if test == CUP_TEST:
-        test_cup()
+        assert len(sys.argv) == 3, "This kind of test requires dataset path to be defined."
+        test_cup(sys.argv[2])
     elif test == RANDOM_TEST:
         assert len(sys.argv) == 4, "This kind of test requires 'm' and 'n' dimensions to be defined."
         m = int(sys.argv[2])    # number of rows
