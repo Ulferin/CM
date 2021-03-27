@@ -115,8 +115,8 @@ class LS():
         n = len(self.u_list)
         m = len(self.u_list[0])
 
-        Q = np.zeros((m,m))
-        for i in range(m):
+        Q = np.zeros((n,m))
+        for i in range(n):
             e_i = np.zeros(m)
             e_i[i] = 1.0
             for k in range(n-1, -1, -1):

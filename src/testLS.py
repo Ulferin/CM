@@ -60,7 +60,7 @@ def load_ML_CUP_dataset ( filename ):
     return np.array(M), np.array(b)
 
 
-def QR_scaling () :
+def QR_scaling (m, n, step, t) :
     """Tests the QR factorization for different matrices with m in [200, 5000] and n=50.
     Executes each example for a given amount of time and averages the times accordingly. For each result
     prints the size m and the average execution time, together with the time difference from the previous
@@ -70,12 +70,12 @@ def QR_scaling () :
     of dimension m. The resulting image is saved in the resource folder as 'QRscaling_n50.png'.
     """
 
-    print("n=50")
+    starting_m = 500
+
+    print(f"n={n}, m={m}, t={t}")
     print("m\ttime\tdelta")
-    n = 500
-    t = 10
     time_list = []
-    mrange = range(500,5500,500)
+    mrange = range(starting_m,m,step)
     prev_a = 0
     ls = LS()
     for m in mrange:
@@ -85,9 +85,7 @@ def QR_scaling () :
             startQR = dt.now()
             R = ls.qr(A)
             Q = ls.revertQ()
-            R_complete = np.zeros((m,n))
-            R_complete[:n, :n] = R_complete[:n, :n] + R
-            QR = np.dot(Q, R_complete)
+            QR = np.dot(Q, R)
             endQR = end_time(startQR)
             mean += endQR
         
@@ -105,7 +103,7 @@ def QR_scaling () :
 
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
-    plt.savefig("../results/QRscaling_n500_secs.png")
+    plt.savefig(f"../results/QRscaling_n{n}m{m}_secs.png")
     plt.clf()
 
 
@@ -123,15 +121,13 @@ def test_random_dataset(m, n):
     startQR = dt.now()
     R = ls.qr(M)
     Q = ls.revertQ()
-    R_complete = np.zeros((m,n))
-    R_complete[:n, :n] = R_complete[:n, :n] + R
-    QR = np.dot(Q, R_complete)
+    QR = np.dot(Q, R)
     endQR = end_time(startQR)
 
 
     # Computes QR factorization using numpy
     startQRnp = dt.now()
-    Qnp, Rnp = np.linalg.qr(M, mode="complete")
+    Qnp, Rnp = np.linalg.qr(M)
     QRnp = np.dot(Qnp, Rnp)
     endQRnp = end_time(startQRnp)
 
@@ -226,4 +222,9 @@ if __name__ == "__main__":
         n = int(sys.argv[3])    # number of cols
         test_random_dataset(m, n)
     elif test == QR_SCALING:
-        QR_scaling()
+        assert len(sys.argv) == 6, "This kind of test requires 'm', 'n', 'step' and 't'."
+        m = int(sys.argv[2])
+        n = int(sys.argv[3])
+        step = int(sys.argv[4])
+        t = int(sys.argv[5])
+        QR_scaling(m, n, step, t)
