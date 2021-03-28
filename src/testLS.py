@@ -70,7 +70,7 @@ def QR_scaling (m, n, step, t) :
     of dimension m. The resulting image is saved in the resource folder as 'QRscaling_n50.png'.
     """
 
-    starting_m = 500
+    starting_m = 5000
 
     print(f"n={n}, m={m}, t={t}")
     print("m\ttime\tdelta")
