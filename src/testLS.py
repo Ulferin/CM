@@ -60,7 +60,7 @@ def load_ML_CUP_dataset ( filename ):
     return np.array(M), np.array(b)
 
 
-def QR_scaling (m, n, step, t) :
+def QR_scaling (starting_m, m, n, step, t) :
     """Tests the QR factorization for different matrices with m in [200, 5000] and n=50.
     Executes each example for a given amount of time and averages the times accordingly. For each result
     prints the size m and the average execution time, together with the time difference from the previous
@@ -69,8 +69,6 @@ def QR_scaling (m, n, step, t) :
     At the end of the process, saves an image showing the evolution of execution times over the increase
     of dimension m. The resulting image is saved in the resource folder as 'QRscaling_n50.png'.
     """
-
-    starting_m = 500
 
     print(f"n={n}, m={m}, t={t}")
     print("m\ttime\tdelta")
@@ -161,9 +159,7 @@ def test_cup(dataset):
 
     R = ls.qr(M)
     Q = ls.revertQ()
-    R_complete = np.zeros((m,n))
-    R_complete[:n, :n] = R_complete[:n, :n] + R
-    QR = np.dot(Q, R_complete)
+    QR = np.dot(Q, R)
 
     endLS = end_time(startLS)
 
@@ -171,7 +167,7 @@ def test_cup(dataset):
     startLSnp = dt.now()
     resnp, _, _, _ = np.linalg.lstsq(M,b,rcond=-1)
 
-    Qnp, Rnp = np.linalg.qr(M, mode="complete")
+    Qnp, Rnp = np.linalg.qr(M)
     QRnp = np.dot(Qnp, Rnp)
 
     endLSnp = end_time(startLSnp)
@@ -222,9 +218,10 @@ if __name__ == "__main__":
         n = int(sys.argv[3])    # number of cols
         test_random_dataset(m, n)
     elif test == QR_SCALING:
-        assert len(sys.argv) == 6, "This kind of test requires 'm', 'n', 'step' and 't'."
-        m = int(sys.argv[2])
-        n = int(sys.argv[3])
-        step = int(sys.argv[4])
-        t = int(sys.argv[5])
-        QR_scaling(m, n, step, t)
+        assert len(sys.argv) == 7, "This kind of test requires 'm', 'n', 'step' and 't'."
+        starting_m = int(sys.argv[2])
+        m = int(sys.argv[3])
+        n = int(sys.argv[4])
+        step = int(sys.argv[5])
+        t = int(sys.argv[6])
+        QR_scaling(starting_m, m, n, step, t)
