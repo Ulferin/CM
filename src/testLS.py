@@ -159,9 +159,7 @@ def test_cup(dataset):
 
     R = ls.qr(M)
     Q = ls.revertQ()
-    R_complete = np.zeros((m,n))
-    R_complete[:n, :n] = R_complete[:n, :n] + R
-    QR = np.dot(Q, R_complete)
+    QR = np.dot(Q, R)
 
     endLS = end_time(startLS)
 
@@ -169,7 +167,7 @@ def test_cup(dataset):
     startLSnp = dt.now()
     resnp, _, _, _ = np.linalg.lstsq(M,b,rcond=-1)
 
-    Qnp, Rnp = np.linalg.qr(M, mode="complete")
+    Qnp, Rnp = np.linalg.qr(M)
     QRnp = np.dot(Qnp, Rnp)
 
     endLSnp = end_time(startLSnp)
