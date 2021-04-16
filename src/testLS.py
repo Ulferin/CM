@@ -97,7 +97,7 @@ def QR_scaling (starting_m, m, n, step, t) :
 
     plt.xlabel ("m")
     plt.ylabel ("time (sec)")
-    plt.title ("Qr factorizzation of a matrix mx50")
+    plt.title (f"QR factorizzation of a matrix {m}x{n}")
 
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
