@@ -75,7 +75,7 @@ class LS():
             u_list[j] = u
             R[j, j] = s
             R[j+1:, j] = 0
-            R[j:, j+1:] -= np.outer(u, np.matmul(2*u, R[j:, j+1:]))
+            R[j:, j+1:] -= np.outer(u, np.matmul(2*u.T, R[j:, j+1:]))
 
         self.u_list = u_list
         
@@ -95,7 +95,7 @@ class LS():
             b = b.astype(np.float64)
 
         for k in range(len(self.u_list)):
-            b[k:m] -= 2*np.dot(self.u_list[k], np.dot(self.u_list[k], b[k:m]))
+            b[k:m] -= 2*np.dot(self.u_list[k], np.dot((self.u_list[k]).T, b[k:m]))
 
         return b
 
@@ -120,7 +120,7 @@ class LS():
             e_i = np.zeros(m)
             e_i[i] = 1.0
             for k in range(n-1, -1, -1):
-                e_i[k:m] -= 2*np.dot( self.u_list[k], np.dot(self.u_list[k], e_i[k:m]) )
+                e_i[k:m] -= 2*np.dot( self.u_list[k], np.dot((self.u_list[k]).T, e_i[k:m]) )
                 Q[i] = e_i
 
         return Q.T
