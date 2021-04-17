@@ -6,6 +6,7 @@ import time
 import matplotlib.pyplot as plt
 
 from datetime import datetime as dt
+import time
 
 CUP_TEST = 'cup'
 RANDOM_TEST = 'random'
@@ -20,8 +21,8 @@ def generate(m, n):
     :return: The coefficient matrix M and the dependent variables vector b.
     """
 
-    M = np.array([ [random.gauss(0,1) for r in range(n)] for c in range(m) ])
-    b = np.array([random.gauss(0,1) for r in range(m)])
+    M = np.array([ [random.gauss(0,1) for r in range(n)] for c in range(m) ], dtype=np.single)
+    b = np.array([random.gauss(0,1) for r in range(m)], dtype=np.single)
     return M, b
 
 
@@ -51,8 +52,8 @@ def load_ML_CUP_dataset ( filename ):
         for line in fin:
             if not line=="\n" and not line.startswith ("#"): 
                 line_split = line.split(",")
-                row = [ float(x) for x in line_split[1:-2] ]
-                b_el = float(line_split[-1])
+                row = [ np.single(x) for x in line_split[1:-2] ]
+                b_el = np.single(line_split[-1])
                 
                 M.append (row)
                 b.append (b_el)
@@ -73,12 +74,15 @@ def QR_scaling (starting_m, m, n, step, t) :
     print(f"n={n}, m={m}, t={t}")
     print("m\ttime\tdelta")
     time_list = []
+    time_np = []
     mrange = range(starting_m,m,step)
     prev_a = 0
+    prev = 0
     ls = LS()
     for m in mrange:
         A,_ = generate(m,n)
         mean = 0
+        mean_np = 0
         for i in range(t):
             startQR = dt.now()
             R = ls.qr(A)
@@ -86,14 +90,26 @@ def QR_scaling (starting_m, m, n, step, t) :
             QR = np.dot(Q, R)
             endQR = end_time(startQR)
             mean += endQR
+
+            startQRnp = dt.now()
+            Qnp, Rnp = np.linalg.qr(A)
+            QRnp = np.dot(Qnp, Rnp)
+            endQRnp = end_time(startQRnp)
+            mean_np += endQRnp
         
         mean = (mean / t) / 1000
-        delta = mean - prev_a 
-        print(m,"\t",mean,"\t", delta)
+        mean_np = (mean_np / t) / 1000
+        delta = mean - prev_a
+        delta_np = mean_np - prev
+        print(m,"\t",mean,"\t", delta, "\t", mean_np, "\t", delta_np)
         time_list.append(mean)
+        time_np.append(mean_np)
         prev_a = mean
+        prev = mean_np
 
-    plt.plot (mrange, time_list, "bo-")
+    plt.plot (mrange, time_list, "bo-", label="mio")
+    plt.plot(mrange, time_np, "r^-", label="np")
+    plt.legend()
 
     plt.xlabel ("m")
     plt.ylabel ("time (sec)")
@@ -101,7 +117,7 @@ def QR_scaling (starting_m, m, n, step, t) :
 
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
-    plt.savefig(f"../results/QRscaling_n{n}m{m}_secs.png")
+    plt.savefig(f"../results/QRscaling_n{n}m{m}_d{time.time()}.png")
     plt.clf()
 
 

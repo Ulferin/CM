@@ -1,8 +1,10 @@
 import numpy as np
+from datetime import datetime as dt
 
 # TODO: controllare il fatto che inversa in calcolo soluzione sia fattibile, altrimenti trovare altro
 # TODO: controllo errori
 # TODO: check rank deficiency
+# TODO: check this for performance improvement: https://shihchinw.github.io/2019/03/performance-tips-of-numpy-ndarray.html
 
 class LS():
     """This class implements the least square problem solver for the given data. It uses the thin QR
@@ -60,7 +62,7 @@ class LS():
         eps = np.linalg.norm(A)/10**16
 
         m, n = A.shape
-        R = A.astype(np.float64)
+        R = A.astype(np.single)
         u_list = np.empty(np.min((m,n)), dtype=np.ndarray)
 
         for j in range(np.min((m,n))):   # note that this is always equal to n in our case
@@ -91,13 +93,23 @@ class LS():
         """
 
         m = len(b)
-        if b.dtype != np.float64:
-            b = b.astype(np.float64)
-
-        for k in range(len(self.u_list)):
-            b[k:m] -= 2*np.dot(self.u_list[k], np.dot(self.u_list[k], b[k:m]))
+        if b.dtype != np.single:
+            b = b.astype(np.single)
+            
+        for k, u in enumerate(self.u_list):
+            b[k:m] -= 2*np.dot(u, np.dot(u, b[k:m]))
 
         return b
+
+
+    def implicit_Qx(self, e_i):
+        m = len(e_i)
+        n = len(self.u_list)
+
+        for k in range(n-1, -1, -1):
+                e_i[k:m] -= np.dot( self.u_list[k], np.dot(self.u_list[k], 2*e_i[k:m]) )
+
+        return e_i
 
 
     def revertQ(self):
@@ -115,15 +127,15 @@ class LS():
         n = len(self.u_list)
         m = len(self.u_list[0])
 
-        Q = np.zeros((n,m))
+        Q = []
+        # we have to form the first n columns of Q
         for i in range(n):
-            e_i = np.zeros(m)
+            e_i = np.zeros(m, dtype=np.single)
             e_i[i] = 1.0
-            for k in range(n-1, -1, -1):
-                e_i[k:m] -= 2*np.dot( self.u_list[k], np.dot(self.u_list[k], e_i[k:m]) )
-                Q[i] = e_i
-
-        return Q.T
+            e_i = self.implicit_Qx(e_i)
+            Q.append(e_i)
+            
+        return (np.array(Q)).T
 
 
         
