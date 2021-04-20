@@ -13,6 +13,6 @@ do
 	# for each value of n from 'n' to 'lastn' with step 'lastn'
 	for j in $(seq $n $stepn $lastn)
 	do
-		python testLS.py 'random' $i $j >> "test${lastm}_${lastn}.txt"
+		python LS/testLS.py 'random' $i $j >> "test${lastm}_${lastn}.txt"
 	done
 done
