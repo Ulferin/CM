@@ -77,7 +77,7 @@ class LS():
             u_list[j] = u
             R[j, j] = s
             R[j+1:, j] = 0
-            R[j:, j+1:] -= np.outer(u, np.matmul(2*u, R[j:, j+1:]))
+            R[j:, j+1:] -= np.outer(u, np.matmul(2*u.T, R[j:, j+1:]))
 
         self.u_list = u_list
         

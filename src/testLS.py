@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 from datetime import datetime as dt
 import time
 
-CUP_TEST = 'cup'
-RANDOM_TEST = 'random'
+CUP_TEST = 'CUP'
+RANDOM_TEST = 'RANDOM'
 QR_SCALING = 'scaling'
 
 
@@ -52,13 +52,12 @@ def load_ML_CUP_dataset ( filename ):
         for line in fin:
             if not line=="\n" and not line.startswith ("#"): 
                 line_split = line.split(",")
-                row = [ np.single(x) for x in line_split[1:-2] ]
-                b_el = np.single(line_split[-1])
-                
+                row = [ float(x) for x in line_split[1:-2] ]
+                b_el = np.array([float(line_split[-2]), float(line_split[-1])])
                 M.append (row)
                 b.append (b_el)
 
-    return np.array(M), np.array(b)
+    return np.matrix(M), np.matrix(b)
 
 
 def QR_scaling (starting_m, m, n, step, t) :
@@ -120,11 +119,10 @@ def QR_scaling (starting_m, m, n, step, t) :
     plt.savefig(f"../results/QRscaling_n{n}m{m}_d{time.time()}.png")
     plt.clf()
 
-
-def test_random_dataset(m, n):
-    # ---------- TEST ON RANDOM DATASET ----------
+def automatized_test(M, b, test_type):
     ls = LS()
-    M, b = generate(m, n)
+    m = M.shape[0]
+    n = M.shape[1]
 
     # Computes time for LS solver 
     startLS = dt.now()
@@ -150,52 +148,13 @@ def test_random_dataset(m, n):
     resnp, _, _, _ = np.linalg.lstsq(M,b,rcond=-1)
     endLSnp = end_time(startLSnp)
 
-    print(f"---------- RANDOM DATASET ----------")
+    print(f"---------- {test_type} DATASET ----------")
     print(f"Solved (m x n): ({m},{n}) in {endLS} msec, w/ np in {endLSnp} msec \
     - Reverting and reconstruction: {endQR} msec, w/ np took: {endQRnp} msec")
     print(f"res error: {np.linalg.norm( b - np.dot(M, res) )/np.linalg.norm(b)} \
     - np_res error: {np.linalg.norm( b - np.dot(M, resnp) )/np.linalg.norm(b)}")
     print(f"QR error: {np.linalg.norm( M - QR )/np.linalg.norm(QR)} \
     - QR error w/ np: {np.linalg.norm( M - QRnp )/np.linalg.norm(QRnp)}\n")
-
-    # ---------- TEST ON RANDOM DATASET ----------
-
-
-def test_cup(dataset):
-    # ---------- TEST ON CUP DATASET ----------
-    ls = LS()
-    M, b = load_ML_CUP_dataset(dataset)
-
-    m = len(M)
-    n = len(M[0])
-
-    # Computes time for LS solver 
-    startLS = dt.now()
-    res = ls.solve(M,b)
-
-    R = ls.qr(M)
-    Q = ls.revertQ()
-    QR = np.dot(Q, R)
-
-    endLS = end_time(startLS)
-
-    # Computes time for LS solver using numpy
-    startLSnp = dt.now()
-    resnp, _, _, _ = np.linalg.lstsq(M,b,rcond=-1)
-
-    Qnp, Rnp = np.linalg.qr(M)
-    QRnp = np.dot(Qnp, Rnp)
-
-    endLSnp = end_time(startLSnp)
-
-    print(f"---------- CUP DATASET ----------")
-    print(f"Solved (m x n): ({len(M)},{len(M[0])}) in {endLS} msec, w/ np in {endLSnp} msec")
-    print(f"res error: {np.linalg.norm( b - np.dot(M, res) )/np.linalg.norm(b)} \
-- np_res error: {np.linalg.norm( b - np.dot(M, resnp) )/np.linalg.norm(b)}")
-    print(f"QR error: {np.linalg.norm( M - QR )/np.linalg.norm(QR)} \
-- QR error w/ np: {np.linalg.norm( M - QRnp )/np.linalg.norm(QRnp)}\n")
-
-    # ---------- TEST ON CUP DATASET ----------
 
 
 if __name__ == "__main__":
@@ -227,12 +186,14 @@ if __name__ == "__main__":
 
     if test == CUP_TEST:
         assert len(sys.argv) == 3, "This kind of test requires dataset path to be defined."
-        test_cup(sys.argv[2])
+        M, b = load_ML_CUP_dataset(sys.argv[2])
+        automatized_test(M, b, test)
     elif test == RANDOM_TEST:
         assert len(sys.argv) == 4, "This kind of test requires 'm' and 'n' dimensions to be defined."
         m = int(sys.argv[2])    # number of rows
         n = int(sys.argv[3])    # number of cols
-        test_random_dataset(m, n)
+        M, b = generate(m, n)
+        automatized_test(M, b, test)
     elif test == QR_SCALING:
         assert len(sys.argv) == 7, "This kind of test requires 'starting_m', 'm', 'n', 'step' and 't'."
         starting_m = int(sys.argv[2])
