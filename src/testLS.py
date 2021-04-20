@@ -108,7 +108,7 @@ def QR_scaling (starting_m, m, n, step, t) :
         prev = mean_np
 
     plt.plot (mrange, time_list, "bo-", label="mio")
-    plt.plot(mrange, time_np, "r^-", label="np")
+    # plt.plot(mrange, time_np, "r^-", label="np")
     plt.legend()
 
     plt.xlabel ("m")
@@ -234,7 +234,7 @@ if __name__ == "__main__":
         n = int(sys.argv[3])    # number of cols
         test_random_dataset(m, n)
     elif test == QR_SCALING:
-        assert len(sys.argv) == 7, "This kind of test requires 'm', 'n', 'step' and 't'."
+        assert len(sys.argv) == 7, "This kind of test requires 'starting_m', 'm', 'n', 'step' and 't'."
         starting_m = int(sys.argv[2])
         m = int(sys.argv[3])
         n = int(sys.argv[4])
