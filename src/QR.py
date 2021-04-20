@@ -1,27 +1,117 @@
-    """This file represents the implementation of the direct solver discussed in the report
-    for the CM project. It contains the class used to solve the QR factorization.
-    """
-
 import numpy as np
+import time
+from datetime import datetime as dt
 
-class QR:
 
+class QR():
+    """This class implements the classic 'thin QR' factorization used to solve the least square
+    problem as described in the CM report.
+    """
     def __init__(self):
-        pass
+        self.R = None
+        self.u_list = None
 
 
     def householder_vector(self, x):
         """Computes the householder vector for the given vector :param x:
 
         :param x: Starting vector used to compute the HH vector
-        :returns: Vector representing the computed HH vector
+        :returns: Vector representing the computed HH vector and norm of :param x:
         """
         
-        n = np.linalg.norm(x)
+        s = np.linalg.norm(x)
         if x[0] > 0:
-            n *= -1
+            s = -s
 
-        v = x
+        v = np.copy(x)
         v[0] = v[0] - s
 
-        return (v/np.linalg.norm(v))  # pay attention here, it returns a numpy array
+        return s, np.divide(v,np.linalg.norm(v))
+
+
+    def qr(self, A):
+        """Computes the QR factorization for the given input matrix :param A: with dimensions m x n
+
+        :param A: Input matrix for which to computer the QR factorization
+        :returns: The triangular matrix R and a list of householder vectors used to compute the QR factorization
+        """
+
+        eps = np.linalg.norm(A)/10**16  # where norm is the frobenius norm
+
+        m, n = A.shape
+        Q = np.eye(m, n)
+        R = A.astype(np.float64)
+        u_list = []
+
+        total = 0
+
+        start = dt.now()
+        for j in range(np.min((m,n))):   # note that this is always equal to n
+            s, u = self.householder_vector(R[j:,j])
+            
+            # zero division in machine precision
+            # this change will cause the matrix R to have 0s in the diagonal
+            if np.abs(s) < eps:
+                s = 0
+                u = np.zeros(len(u))
+
+            u_list.append(u)
+
+            R[j, j] = s
+            R[j+1:, j] = 0            
+
+            res = np.zeros(len(R[0])-j-1)
+            for i in range(j+1, len(R[0])):
+                res[i-j-1] = (np.dot(u, R[j:,i]))
+
+            R[j:, j+1:] -= 2.*np.outer(u, res)
+        end = (dt.now() - start)
+        end = end.seconds * 1000 + end.microseconds / 1000
+        print(f"end: {end}")
+        
+        self.u_list = u_list
+        self.R = R
+        
+        return R[:n, :n]
+
+    
+    def implicit_Qb(self, b):
+        if self.u_list == None:
+            print("You must first compute the QR factorization!")
+            return
+
+        m = len(b)
+        b = b.astype(np.float64)
+        for k in range(len(self.u_list)):
+            b[k:m] -= 2.*np.dot(self.u_list[k], np.multiply(self.u_list[k], b[k:m]))
+
+        return b
+
+
+    # Auxiliary function to compute matrix-vector product
+    # It showed increased performance against np.dot(Q[:,j:],u)
+    def dot_matvec(self, Q, u, k):
+        res = np.zeros(len(Q))
+        for i in range(len(Q)):
+            res[i] = (np.dot(Q[i][k:],u)) 
+
+        return res
+
+    def revertQ(self):
+        n = len(self.u_list)
+        m = len(self.u_list[0])
+        total = 0
+
+        Q = np.eye(m,m)
+        for j in range(len(self.u_list)):
+            startQR = int(round(time.time() * 1000))
+            u = self.u_list[j]
+            Q[:,j:] -= np.outer(2*self.dot_matvec(Q, u, j), u)
+            endQR = int(round(time.time() * 1000)) - startQR
+            total += endQR
+
+        # print(f"took: {total} msec w/ an average of {total/len(self.u_list)}")
+
+        return Q
+
+        
