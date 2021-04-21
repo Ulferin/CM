@@ -4,6 +4,7 @@
 
 import numpy as np
 from numpy.random import default_rng
+from sklearn.metrics import r2_score
 import random
 
 from functions import relu, relu_prime
@@ -80,6 +81,24 @@ class Network:
                 pass
 
             if test_data:
-                # Here the code to evaluate the performance at the given epoch
-                # maybe prints also the resulting score
-                pass
+                score = self.evaluate(test_data)
+                print(f"Epoch {e} completed. Score: {score}")
+            else:
+                print(f"Epoch {e} completed.")
+
+    
+    def evaluate(self, test_data):
+        """Evaluates the performances of the Network in the current state,
+        propagating the test examples through the network via a complete feedforward
+        step. It evaluates the performance using the R2 metric in order to be
+        comparable with sklearn out-of-the-box NN results.
+
+        :param test_data: test data to evaluate the NN
+        :return: The R2 score as defined by sklearn library
+        """        
+
+        preds = [ self.feedforward(x) for x,y in test_data]
+        truth = [ y for x,y in test_data ]
+
+        score = r2_score(preds, truth)
+        return score
