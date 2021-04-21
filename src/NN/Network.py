@@ -51,6 +51,10 @@ class Network:
         return np.dot(self.weights[-1], out.T) + self.biases[-1]
 
 
+    def update_mini_batch(self, mini_batch, eta):
+        pass
+
+
     def SGD(self, training_data, epochs, batch_size, eta, test_data=None):
         """Trains the network using mini-batch stochastic gradient descent,
         applied to the training examples in :param training_data: for a given
@@ -77,8 +81,7 @@ class Network:
             ]
 
             for mini_batch in mini_batches:
-                # Here the code to update the weights and biases for each minibatch
-                pass
+                self.update_mini_batch(mini_batch, eta)
 
             if test_data:
                 score = self.evaluate(test_data)
@@ -88,6 +91,8 @@ class Network:
 
     
     def evaluate(self, test_data):
+        # TODO: generalizzare questo metodo, trovare un modo per specificare come valutare
+        #       il risultato. Dividere in base a classification e regression.
         """Evaluates the performances of the Network in the current state,
         propagating the test examples through the network via a complete feedforward
         step. It evaluates the performance using the R2 metric in order to be
