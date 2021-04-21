@@ -69,4 +69,17 @@ class Network:
             n_test = len(test_data)
 
         n = len(training_data)
-        
+        for e in range(epochs):
+            random.shuffle(training_data)
+            mini_batches = [
+                training_data[k:k+batch_size] for k in range(0, n, batch_size)
+            ]
+
+            for mini_batch in mini_batches:
+                # Here the code to update the weights and biases for each minibatch
+                pass
+
+            if test_data:
+                # Here the code to evaluate the performance at the given epoch
+                # maybe prints also the resulting score
+                pass

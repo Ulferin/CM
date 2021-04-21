@@ -9,6 +9,10 @@ X_train, X_test, y_train, y_test = utils.load_CUP("../../data/ML-CUP20-TR.csv")
 input_units = X_train.shape[1]
 output_units = y_train.shape[1]
 
+# Builds the training data for the NN
+training_data = [ (x,y) for x,y in zip(X_train, y_train)]
+test_data = [ (x,y) for x,y in zip(X_test, y_test)]
+
 net = Network([input_units, 2, output_units], 0)
 out = net.feedforward(X_train[0])
 print(out)
