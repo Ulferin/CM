@@ -48,3 +48,25 @@ class Network:
 
         # Last layer is linear for regression tasks
         return np.dot(self.weights[-1], out.T) + self.biases[-1]
+
+
+    def SGD(self, training_data, epochs, batch_size, eta, test_data=None):
+        """Trains the network using mini-batch stochastic gradient descent,
+        applied to the training examples in :param training_data: for a given
+        number of epochs and with the specified learning rate. If :param test_data:
+        is specified, the learning algorithm will print progresses during the
+        training phase.
+
+        :param training_data: training data represented as a numpy ndarray, each row
+        represents an example, the last element of each row is the expected output.
+        :param epochs: number of epochs for training.
+        :param batch_size: number of examples to use at each backward pass.
+        :param eta: learning rate.
+        :param test_data: optional parameter, used to estimate the performance of the network
+        at each phase, defaults to None.
+        """        
+        if test_data:
+            n_test = len(test_data)
+
+        n = len(training_data)
+        
