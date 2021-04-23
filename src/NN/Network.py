@@ -56,10 +56,14 @@ class Network:
 
 
     def update_mini_batch(self, mini_batch, eta):
-        # This method should implement the updating of the weights and biases
-        # given the results coming from the backpropagation step. It forward propagates
-        # the input examples in the minibatch and updates the w/b correspondingly to the
-        # backward step results.
+        """Updates the network weights and biases by applying the backpropagation algorithm
+        to the current set of examples contained in the :param mini_batch:. Computes the deltas
+        used to update weights as an average over the size of the examples set, using the provided
+        :param eta: as learning rate.
+
+        :param mini_batch: Set of examples to use to update the network weights and biases
+        :param eta: Learning rate
+        """
         
         nabla_b = [ np.zeros(b.shape) for b in self.biases ]
         nabla_w = [ np.zeros(w.shape) for w in self.weights ]
@@ -69,7 +73,8 @@ class Network:
             nabla_b = [ nb + db for nb,db in zip(nabla_b, delta_b)]
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
 
-        pass
+        self.weights = [w - (eta/len(mini_batch))*nw for w,nw in zip(self.weights, nabla_w)]
+        self.biases = [b - (eta/len(mini_batch))*nb for b,nb in zip(self.biases, nabla_b)]
 
 
     def SGD(self, training_data, epochs, batch_size, eta, test_data=None):
