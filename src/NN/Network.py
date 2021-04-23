@@ -51,7 +51,24 @@ class Network:
         return np.dot(self.weights[-1], out.T) + self.biases[-1]
 
 
+    def backpropagation(self, x, y):
+        pass
+
+
     def update_mini_batch(self, mini_batch, eta):
+        # This method should implement the updating of the weights and biases
+        # given the results coming from the backpropagation step. It forward propagates
+        # the input examples in the minibatch and updates the w/b correspondingly to the
+        # backward step results.
+        
+        nabla_b = [ np.zeros(b.shape) for b in self.biases ]
+        nabla_w = [ np.zeros(w.shape) for w in self.weights ]
+
+        for x, y in mini_batch:
+            delta_b, delta_w = self.backpropagation(x,y)
+            nabla_b = [ nb + db for nb,db in zip(nabla_b, delta_b)]
+            nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
+
         pass
 
 
