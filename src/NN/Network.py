@@ -9,6 +9,8 @@ import random
 
 from functions import relu, relu_prime
 
+# TODO: check all the list comprehensions, maybe we can substitute them with a numpy method
+
 class Network:
     """This class represents a standard Neural Network, also called Multilayer Perceptron.
     It allows to build a network for both classification and regression tasks.
@@ -52,6 +54,29 @@ class Network:
 
 
     def backpropagation(self, x, y):
+        # It should perform a feedforward step to compute the current estimated error.
+        # After that, it uses the computed error to backpropagate the error participation
+        # of each unit. The error participation will then lead to the definition of the delta
+        # coefficient used to update the weights and biases for each of the units of the network.
+
+        delta_b = [np.zeros(b.shape) for b in self.biases]
+        delta_w = [np.zeros(w.shape) for w in self.weights]
+
+        # Forward computation
+        out = x
+        units_out = [out]
+        nets = []
+        for b,w in zip(self.biases, self.weights):
+            net = np.dot(w, out)
+            net += b
+            out = relu(net)
+            nets.append(net)
+            units_out.append(out)
+
+        # Backward pass - output unit
+
+            
+        
         pass
 
 
@@ -73,6 +98,7 @@ class Network:
             nabla_b = [ nb + db for nb,db in zip(nabla_b, delta_b)]
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
 
+        # TODO: probabilmente si può fare anche usando solo operazioni di numpy?
         self.weights = [w - (eta/len(mini_batch))*nw for w,nw in zip(self.weights, nabla_w)]
         self.biases = [b - (eta/len(mini_batch))*nb for b,nb in zip(self.biases, nabla_b)]
 
