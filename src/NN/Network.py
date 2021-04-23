@@ -7,7 +7,7 @@ from numpy.random import default_rng
 from sklearn.metrics import r2_score, mean_squared_error
 import random
 
-from functions import relu, relu_prime
+from functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
 
 # TODO: check all the list comprehensions, maybe we can substitute them with a numpy method
 
@@ -29,8 +29,10 @@ class Network:
         """
         rng = default_rng(seed)
 
-        self.num_layers = len(sizes)-1
+        self.num_layers = len(sizes)
         self.sizes = sizes
+        self.act = sigmoid
+        self.der_act = sigmoid_prime
 
         # TODO: non possiamo avere un singolo bias per layer invece che un bias per ogni unità?
         #       controllare nel libro dove ha dato questo esempio cosa dice a riguardo
@@ -47,7 +49,7 @@ class Network:
         """
         out = invec
         for b, w in zip(self.biases[:-1], self.weights[:-1]):
-            out = relu(np.dot(w, out.T) + b)
+            out = self.act(np.dot(w, out.T) + b)
 
         # Last layer is linear for regression tasks
         return np.dot(self.weights[-1], out.T) + self.biases[-1]
@@ -70,22 +72,22 @@ class Network:
         for b,w in zip(self.biases, self.weights):
             net = np.dot(w, out.T) + b
             # net += b
-            out = relu(net)
+            out = self.act(net)
             nets.append(net)
             units_out.append(out)
 
         # Backward pass - output unit
-        delta = (units_out[-1] - y) * relu_prime(nets[-1])
+        delta = (units_out[-1] - y) * self.der_act(nets[-1])
         nabla_b[-1] = delta
         nabla_w[-1] = np.dot(delta, units_out[-2])
 
         # Backward pass - hidden
         for k in range(self.num_layers-1, 1, -1):
             print(k, len(nets))
-            net = nets[k]
-            delta = np.dot(self.weights[k+1], delta) * relu_prime(net)
-            nabla_b[k] = delta
-            nabla_w[k] = np.dot(delta, units_out[k-1])
+            net = nets[k-1]
+            delta = np.dot(self.weights[k-1].T, delta) * self.der_act(net)
+            nabla_b[k-1] = delta
+            nabla_w[k-1] = np.dot(delta.T, units_out[k-2])
             
         return nabla_b, nabla_w
 
@@ -109,7 +111,7 @@ class Network:
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
 
         # TODO: probabilmente si può fare anche usando solo operazioni di numpy?
-        print(eta/len(mini_batch)*nabla_w[0])
+        # print(eta/len(mini_batch)*nabla_w[0])
         self.weights = [w - (eta/len(mini_batch))*nw for w,nw in zip(self.weights, nabla_w)]
         self.biases = [b - (eta/len(mini_batch))*nb for b,nb in zip(self.biases, nabla_b)]
 
