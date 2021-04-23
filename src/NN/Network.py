@@ -4,7 +4,7 @@
 
 import numpy as np
 from numpy.random import default_rng
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, mean_squared_error
 import random
 
 from functions import relu, relu_prime
@@ -29,7 +29,7 @@ class Network:
         """
         rng = default_rng(seed)
 
-        self.num_layers = len(sizes)
+        self.num_layers = len(sizes)-1
         self.sizes = sizes
 
         # TODO: non possiamo avere un singolo bias per layer invece che un bias per ogni unità?
@@ -54,30 +54,40 @@ class Network:
 
 
     def backpropagation(self, x, y):
+        # NOTE: this is the backpropagation for a single input example!
         # It should perform a feedforward step to compute the current estimated error.
         # After that, it uses the computed error to backpropagate the error participation
         # of each unit. The error participation will then lead to the definition of the delta
         # coefficient used to update the weights and biases for each of the units of the network.
 
-        delta_b = [np.zeros(b.shape) for b in self.biases]
-        delta_w = [np.zeros(w.shape) for w in self.weights]
+        nabla_b = [np.zeros(b.shape) for b in self.biases]
+        nabla_w = [np.zeros(w.shape) for w in self.weights]
 
         # Forward computation
         out = x
         units_out = [out]
         nets = []
         for b,w in zip(self.biases, self.weights):
-            net = np.dot(w, out)
-            net += b
+            net = np.dot(w, out.T) + b
+            # net += b
             out = relu(net)
             nets.append(net)
             units_out.append(out)
 
         # Backward pass - output unit
+        delta = (units_out[-1] - y) * relu_prime(nets[-1])
+        nabla_b[-1] = delta
+        nabla_w[-1] = np.dot(delta, units_out[-2])
 
+        # Backward pass - hidden
+        for k in range(self.num_layers-1, 1, -1):
+            print(k, len(nets))
+            net = nets[k]
+            delta = np.dot(self.weights[k+1], delta) * relu_prime(net)
+            nabla_b[k] = delta
+            nabla_w[k] = np.dot(delta, units_out[k-1])
             
-        
-        pass
+        return nabla_b, nabla_w
 
 
     def update_mini_batch(self, mini_batch, eta):
@@ -99,6 +109,7 @@ class Network:
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
 
         # TODO: probabilmente si può fare anche usando solo operazioni di numpy?
+        print(eta/len(mini_batch)*nabla_w[0])
         self.weights = [w - (eta/len(mini_batch))*nw for w,nw in zip(self.weights, nabla_w)]
         self.biases = [b - (eta/len(mini_batch))*nb for b,nb in zip(self.biases, nabla_b)]
 
@@ -150,8 +161,9 @@ class Network:
         :return: The R2 score as defined by sklearn library
         """        
 
-        preds = [ self.feedforward(x) for x,y in test_data]
+        preds = [ np.array(self.feedforward(x)).reshape(y.shape) for x,y in test_data]
         truth = [ y for x,y in test_data ]
 
-        score = r2_score(preds, truth)
+        # score = r2_score(preds, truth)
+        score = mean_squared_error(truth, preds)
         return score
