@@ -19,11 +19,14 @@ epochs = [100, 250, 1000]
 batch = [10, 20, 40, 100]
 eta = [0.1, 0.2, 0.5, 1, 2]
 
-for h1 in hidden1:
-    for h2 in hidden2:
-        for ep in epochs:
-            for b in batch:
-                for e in eta:
-                    net = Network([input_units, h1, h2, output_units], 0)
-                    net.SGD(training_data, ep, b, e, test_data)
-                    net.best_score()
+# for h1 in hidden1:
+#     for h2 in hidden2:
+#         for ep in epochs:
+#             for b in batch:
+#                 for e in eta:
+#                     net = Network([input_units, h1, h2, output_units], 0)
+#                     net.SGD(training_data, ep, b, e, test_data)
+#                     net.best_score()
+
+net = Network([input_units, 20, 10, 30, output_units], 0)
+net.SGD(training_data, 100, 50, 2, test_data)

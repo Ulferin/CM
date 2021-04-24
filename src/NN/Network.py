@@ -52,10 +52,10 @@ class Network:
         """
         out = invec.T
         for b, w in zip(self.biases[:-1], self.weights[:-1]):
-            out = self.act(np.dot(w, out) + b.T)
+            out = self.act(np.matmul(w, out) + b.T)
 
         # Last layer is linear for regression tasks
-        return np.dot(self.weights[-1], out) + self.biases[-1].T
+        return np.matmul(self.weights[-1], out) + self.biases[-1].T
 
 
     def backpropagation(self, x, y):
@@ -72,7 +72,7 @@ class Network:
         units_out = [out]
         nets = []
         for b,w in zip(self.biases, self.weights):
-            net = np.dot(w, out) + b.T
+            net = np.matmul(w, out) + b.T
             out = self.act(net)
             nets.append(net)
             units_out.append(out)
@@ -81,15 +81,15 @@ class Network:
         delta = (units_out[-1] - y.reshape(-1,1))
         delta = delta * self.der_act(nets[-1])
         nabla_b[-1] = delta
-        nabla_w[-1] = np.dot(delta, units_out[-2].T)
+        nabla_w[-1] = np.matmul(delta, units_out[-2].T)
 
         # Backward pass - hidden
         for l in range(2, self.num_layers):
             net = nets[-l]
-            delta = np.dot(self.weights[-l+1].T, delta)
+            delta = np.matmul(self.weights[-l+1].T, delta)
             delta = delta * self.der_act(net)
             nabla_b[-l] = delta
-            nabla_w[-l] = np.dot(delta, units_out[-l-1].T)
+            nabla_w[-l] = np.matmul(delta, units_out[-l-1].T)
         
         return nabla_b, nabla_w
 
@@ -152,13 +152,13 @@ class Network:
             if test_data:
                 score = self.evaluate(test_data)
                 self.scores.append(score)
-                # print(f"Epoch {e} completed. Score: {score}")
+                print(f"Epoch {e} completed. Score: {score}")
             else:
                 print(f"Epoch {e} completed.")
 
     
     def best_score(self):
-        print(f"The best score for mb:{self.batch_size}, eta: {self.eta}, epochs: {self.epochs}, sizes: {self.sizes} was: {np.max(self.scores)}")
+        print(f"The best score for mb:{self.batch_size}, eta: {self.eta}, epochs: {self.epochs}, sizes: {self.sizes} was: {np.min(self.scores)}")
 
 
     def evaluate(self, test_data):
@@ -175,6 +175,10 @@ class Network:
 
         preds = [ np.array(self.feedforward(x)).reshape(y.shape) for x,y in test_data]
         truth = [ y for x,y in test_data ]
+
+        for i,(p,t) in enumerate(zip(preds, truth)):
+            if i > 10: break
+            print(f"p: {p}, t: {t}")
 
         # score = r2_score(preds, truth)
         score = mean_squared_error(truth, preds)
