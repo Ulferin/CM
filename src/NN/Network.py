@@ -16,7 +16,7 @@ class Network:
     It allows to build a network for both classification and regression tasks.
     """    
     
-    def __init__(self, sizes, seed):
+    def __init__(self, sizes, seed, debug=True):
         """Initializes the network based on the given :param sizes:.
         Builds the weights and biase vectors for each layer of the network.
         Each layer will be initialized randomly following the normal distribution. 
@@ -29,6 +29,7 @@ class Network:
         """
         rng = default_rng(seed)
 
+        self.debug = debug
         self.num_layers = len(sizes)
         self.sizes = sizes
         self.act = sigmoid
@@ -71,11 +72,14 @@ class Network:
         out = x.T
         units_out = [out]
         nets = []
-        for b,w in zip(self.biases, self.weights):
+        for b,w in zip(self.biases[:-1], self.weights[:-1]):
             net = np.matmul(w, out) + b.T
             out = self.act(net)
             nets.append(net)
             units_out.append(out)
+        out = np.matmul(self.weights[-1], out) + self.biases[-1].T
+        nets.append(out)
+        units_out.append(out)
 
         # Backward pass - output unit
         delta = (units_out[-1] - y.reshape(-1,1))
@@ -111,6 +115,9 @@ class Network:
             
             nabla_b = [ nb + db.T for nb,db in zip(nabla_b, delta_b)]
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
+
+        if self.debug:
+            print(f"w:{self.weights[0][:2]}, nw:{nabla_w[0][:2]}")
 
         self.weights = [w - (eta/len(mini_batch))*nw for w,nw in zip(self.weights, nabla_w)]
         self.biases = [b - (eta/len(mini_batch))*nb for b,nb in zip(self.biases, nabla_b)]
@@ -176,9 +183,10 @@ class Network:
         preds = [ np.array(self.feedforward(x)).reshape(y.shape) for x,y in test_data]
         truth = [ y for x,y in test_data ]
 
-        for i,(p,t) in enumerate(zip(preds, truth)):
-            if i > 10: break
-            print(f"p: {p}, t: {t}")
+        if self.debug:
+            for i,(p,t) in enumerate(zip(preds, truth)):
+                if i > 10: break
+                print(f"p: {p}, t: {t}")
 
         # score = r2_score(preds, truth)
         score = mean_squared_error(truth, preds)

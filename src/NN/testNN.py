@@ -28,5 +28,5 @@ eta = [0.1, 0.2, 0.5, 1, 2]
 #                     net.SGD(training_data, ep, b, e, test_data)
 #                     net.best_score()
 
-net = Network([input_units, 20, 10, 30, output_units], 0)
-net.SGD(training_data, 100, 50, 2, test_data)
+net = Network([input_units, 10, output_units], 0, debug=True)
+net.SGD(training_data, epochs=2, batch_size=20, eta=20, test_data=test_data)
