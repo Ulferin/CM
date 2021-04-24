@@ -9,7 +9,7 @@ import random
 from matplotlib import pyplot as plt
 import time
 
-from functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
+from .functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
 
 # TODO: check all the list comprehensions, maybe we can substitute them with a numpy method
 

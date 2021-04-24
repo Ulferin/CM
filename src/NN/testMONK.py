@@ -1,5 +1,5 @@
 import pandas as pd
-from Network import Network
+from .Network import Network
 from sklearn.preprocessing import OneHotEncoder
 
 def load_monk(name):
