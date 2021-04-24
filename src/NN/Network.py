@@ -48,15 +48,12 @@ class Network:
         :param in: network input vector
         :return: network output vector (or scalar)
         """
-        out = invec
-        print(f"In: {invec}")
+        out = invec.T
         for b, w in zip(self.biases[:-1], self.weights[:-1]):
-            print(f"w: {w.shape}, b: {b.shape}")
             out = self.act(np.dot(w, out) + b.T)
 
         # Last layer is linear for regression tasks
-        print(f"Output FF: {(np.dot(self.weights[-1], out) + self.biases[-1]).shape}")
-        return np.dot(self.weights[-1], out) + self.biases[-1]
+        return np.dot(self.weights[-1], out) + self.biases[-1].T
 
 
     def backpropagation(self, x, y):
@@ -65,7 +62,6 @@ class Network:
         # After that, it uses the computed error to backpropagate the error participation
         # of each unit. The error participation will then lead to the definition of the delta
         # coefficient used to update the weights and biases for each of the units of the network.
-        print(f"Started BP: {y}")
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
 
@@ -74,21 +70,16 @@ class Network:
         units_out = [out]
         nets = []
         for b,w in zip(self.biases, self.weights):
-            print(f"w:{w.shape}, out:{out.shape}, b:{b.shape}")
             net = np.dot(w, out) + b.T
             out = self.act(net)
-            print(f"net: {net.shape}, out: {out.shape}")
             nets.append(net)
             units_out.append(out)
 
         # Backward pass - output unit
         delta = (units_out[-1] - y.reshape(-1,1))
-        print(f"delta: {delta.shape}, y: {y.shape}, units: {units_out[-1].shape}")
         delta = delta * self.der_act(nets[-1])
-        print(f"out: {units_out[-2].shape}, delta: {delta.shape}")
         nabla_b[-1] = delta
         nabla_w[-1] = np.dot(delta, units_out[-2].T)
-        print(f"res: {nabla_w[-1].shape}, we: {self.weights[-2+1].shape}, net: {nets[-2].shape}")
 
         # Backward pass - hidden
         for l in range(2, self.num_layers):
@@ -98,8 +89,6 @@ class Network:
             nabla_b[-l] = delta
             nabla_w[-l] = np.dot(delta, units_out[-l-1].T)
         
-        print(f"Finished BP: {y}")
-
         return nabla_b, nabla_w
 
 
@@ -112,22 +101,17 @@ class Network:
         :param mini_batch: Set of examples to use to update the network weights and biases
         :param eta: Learning rate
         """
-        print(f"Started MB")
         nabla_b = [ np.zeros(b.shape) for b in self.biases ]
         nabla_w = [ np.zeros(w.shape) for w in self.weights ]
 
         for x, y in mini_batch:
             delta_b, delta_w = self.backpropagation(x,y)
-            nabla_b = [ nb + db for nb,db in zip(nabla_b, delta_b)]
+            
+            nabla_b = [ nb + db.T for nb,db in zip(nabla_b, delta_b)]
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
-
-        # TODO: probabilmente si può fare anche usando solo operazioni di numpy?
-        for w,b in zip(self.weights, self.biases):
-            print(f"w: {w.shape}, b: {b.shape}")
 
         self.weights = [w - (eta/len(mini_batch))*nw for w,nw in zip(self.weights, nabla_w)]
         self.biases = [b - (eta/len(mini_batch))*nb for b,nb in zip(self.biases, nabla_b)]
-        print(f"Finished MB")
 
 
     def SGD(self, training_data, epochs, batch_size, eta, test_data=None):
