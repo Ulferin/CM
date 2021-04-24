@@ -1,6 +1,7 @@
 import numpy as np
-from .Network import Network
-from . import utils
+
+from NC import NR
+import utils
 
 # x = np.array([1,2,3,4,5])
 X_train, X_test, y_train, y_test = utils.load_CUP("../../data/ML-CUP20-TR.csv")
@@ -28,6 +29,6 @@ eta = [0.1, 0.2, 0.5, 1, 2]
 #                     net.SGD(training_data, ep, b, e, test_data)
 #                     net.best_score()
 
-net = Network([input_units, 20, 50, output_units], 0, debug=False)
+net = NR([input_units, 20, 50, output_units], 0, debug=False)
 net.SGD(training_data, epochs=100, batch_size=500, eta=0.01, test_data=test_data)
 net.best_score()
