@@ -4,8 +4,10 @@
 
 import numpy as np
 from numpy.random import default_rng
-from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.metrics import r2_score, mean_squared_error, accuracy_score
 import random
+from matplotlib import pyplot as plt
+import time
 
 from functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
 
@@ -56,7 +58,8 @@ class Network:
             out = self.act(np.matmul(w, out) + b.T)
 
         # Last layer is linear for regression tasks
-        return np.matmul(self.weights[-1], out) + self.biases[-1].T
+        # NOTE: also here, parametrize the last activation
+        return self.act(np.matmul(self.weights[-1], out) + self.biases[-1].T)
 
 
     def backpropagation(self, x, y):
@@ -77,12 +80,15 @@ class Network:
             out = self.act(net)
             nets.append(net)
             units_out.append(out)
-        out = np.matmul(self.weights[-1], out) + self.biases[-1].T
+        # NOTE: this has to be the output of the last layer
+        out = self.act(np.matmul(self.weights[-1], out) + self.biases[-1].T)
         nets.append(out)
         units_out.append(out)
 
         # Backward pass - output unit
         delta = (units_out[-1] - y.reshape(-1,1))
+        # NOTE: this has to be the derivative related to the last layer, it depends on the
+        #       used activation function!
         delta = delta * self.der_act(nets[-1])
         nabla_b[-1] = delta
         nabla_w[-1] = np.matmul(delta, units_out[-2].T)
@@ -113,11 +119,14 @@ class Network:
         for x, y in mini_batch:
             delta_b, delta_w = self.backpropagation(x,y)
             
+            if self.debug:
+                print(f"db: {delta_b[:2]}, dw: {delta_w[:2]}")
+            
             nabla_b = [ nb + db.T for nb,db in zip(nabla_b, delta_b)]
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
 
         if self.debug:
-            print(f"w:{self.weights[0][:2]}, nw:{nabla_w[0][:2]}")
+            print(f"w:{self.weights[0][:2]}\nnw:{nabla_w[0][:2]}")
 
         self.weights = [w - (eta/len(mini_batch))*nw for w,nw in zip(self.weights, nabla_w)]
         self.biases = [b - (eta/len(mini_batch))*nb for b,nb in zip(self.biases, nabla_b)]
@@ -165,6 +174,15 @@ class Network:
 
     
     def best_score(self):
+        plt.plot(self.scores, 'r-', label='Loss')
+        plt.legend(loc='upper right')
+        plt.xlabel ('Epochs')
+        plt.ylabel ('Loss')
+        plt.title ('Loss NN CUP dataset')
+        plt.draw()
+
+        plt.savefig(f"./res/eta{self.eta}b{self.batch_size}s{self.sizes}_d{time.time()}.png")
+        plt.clf()
         print(f"The best score for mb:{self.batch_size}, eta: {self.eta}, epochs: {self.epochs}, sizes: {self.sizes} was: {np.min(self.scores)}")
 
 
@@ -180,7 +198,7 @@ class Network:
         :return: The R2 score as defined by sklearn library
         """        
 
-        preds = [ np.array(self.feedforward(x)).reshape(y.shape) for x,y in test_data]
+        preds = [ np.array(self.feedforward(x) > 0.5).reshape(y.shape) for x,y in test_data]
         truth = [ y for x,y in test_data ]
 
         if self.debug:
@@ -188,6 +206,7 @@ class Network:
                 if i > 10: break
                 print(f"p: {p}, t: {t}")
 
+        score = accuracy_score(truth, preds)
         # score = r2_score(preds, truth)
-        score = mean_squared_error(truth, preds)
+        # score = mean_squared_error(truth, preds)
         return score
