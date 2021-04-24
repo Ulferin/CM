@@ -40,6 +40,8 @@ class Network:
         self.weights = [rng.standard_normal((y,x)) for x, y in zip(sizes[:-1], sizes[1:])]
         # NOTE: these are matrices, so also the biases are shaped (1,x)
 
+        self.scores = []
+
 
     def feedforward(self, invec):
         """Applies a feedforward pass to the given input :param in:.
@@ -128,7 +130,12 @@ class Network:
         :param eta: learning rate.
         :param test_data: optional parameter, used to estimate the performance of the network
         at each phase, defaults to None.
-        """        
+        """   
+
+        self.batch_size = batch_size
+        self.eta = eta
+        self.epochs = epochs
+
         if test_data:
             n_test = len(test_data)
 
@@ -144,11 +151,16 @@ class Network:
 
             if test_data:
                 score = self.evaluate(test_data)
-                print(f"Epoch {e} completed. Score: {score}")
+                self.scores.append(score)
+                # print(f"Epoch {e} completed. Score: {score}")
             else:
                 print(f"Epoch {e} completed.")
 
     
+    def best_score(self):
+        print(f"The best score for mb:{self.batch_size}, eta: {self.eta}, epochs: {self.epochs}, sizes: {self.sizes} was: {np.max(self.scores)}")
+
+
     def evaluate(self, test_data):
         # TODO: generalizzare questo metodo, trovare un modo per specificare come valutare
         #       il risultato. Dividere in base a classification e regression.

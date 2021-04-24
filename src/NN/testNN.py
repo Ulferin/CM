@@ -13,6 +13,17 @@ output_units = y_train.shape[1]
 training_data = [ (x.reshape(1,-1),y) for x,y in zip(X_train, y_train)]
 test_data = [ (x.reshape(1,-1),y) for x,y in zip(X_test, y_test)]
 
-net = Network([input_units, 100, 40, output_units], 0)
-net.SGD(training_data, 100, 10, 0.5, test_data)
+hidden1 = [10, 20, 50, 100, 200]
+hidden2 = [10, 50, 100]
+epochs = [100, 250, 1000]
+batch = [10, 20, 40, 100]
+eta = [0.1, 0.2, 0.5, 1, 2]
 
+for h1 in hidden1:
+    for h2 in hidden2:
+        for ep in epochs:
+            for b in batch:
+                for e in eta:
+                    net = Network([input_units, h1, h2, output_units], 0)
+                    net.SGD(training_data, ep, b, e, test_data)
+                    net.best_score()
