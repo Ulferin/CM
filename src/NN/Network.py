@@ -159,7 +159,7 @@ class Network(ABC):
             if test_data:
                 score = self.evaluate(test_data)
                 self.scores.append(score)
-                print(f"Epoch {e} completed. Score: {score}")
+                if self.debug: print(f"Epoch {e} completed. Score: {score}")
             else:
                 print(f"Epoch {e} completed.")
 
