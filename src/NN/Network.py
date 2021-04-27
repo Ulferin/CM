@@ -2,7 +2,7 @@
 # implemented from scratch following the advices taken during the course
 # of ML
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 import numpy as np
 from numpy.random import default_rng
 from sklearn.metrics import r2_score, mean_squared_error, accuracy_score
@@ -14,11 +14,14 @@ import random
 from functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
 
 
-class Network(ABC):
+# TODO: la mean squared error va implementata da me!!! Non posso usare quella di sklearn
+
+class Network(metaclass=ABCMeta):
     """This class represents a standard Neural Network, also called Multilayer Perceptron.
     It allows to build a network for both classification and regression tasks.
     """    
     
+    @abstractmethod
     def __init__(self, sizes, seed, debug=True):
         """Initializes the network based on the given :param sizes:.
         Builds the weights and biase vectors for each layer of the network.
@@ -36,6 +39,8 @@ class Network(ABC):
         self.sizes = sizes
         self.act = sigmoid
         self.der_act = sigmoid_prime
+        self.last_act = None            # Must be defined by subclassing the Network
+        self.last_der = None            # Must be defined by subclassing the Network
 
         # TODO: non possiamo avere un singolo bias per layer invece che un bias per ogni unità?
         #       controllare nel libro dove ha dato questo esempio cosa dice a riguardo
@@ -172,7 +177,7 @@ class Network(ABC):
         plt.title ('Loss NN CUP dataset')
         plt.draw()
 
-        plt.savefig(f"./res/{name}eta{self.eta}b{self.batch_size}s{self.sizes}.png")
+        plt.savefig(f"./res/{name}ep{self.epochs}e{self.eta}b{self.batch_size}s{self.sizes}.png")
         plt.clf()
 
 

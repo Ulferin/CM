@@ -4,11 +4,13 @@ from sklearn.metrics import accuracy_score, mean_squared_error
 from Network import Network
 from functions import sigmoid, sigmoid_prime
 
+
 class NC(Network):
 
     def __init__(self, sizes, seed, debug=True):
         super().__init__(sizes, seed, debug)
 
+        # Defines the behavior of the last layer of the network
         self.last_act = sigmoid
         self.last_der = sigmoid_prime
 
@@ -39,6 +41,7 @@ class NR(Network):
     def __init__(self, sizes, seed, debug=True):
         super().__init__(sizes, seed, debug)
 
+        # Defines the behavior of the last layer of the network
         self.last_act = lambda x: x
         self.last_der = lambda x: 1
 

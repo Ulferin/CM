@@ -33,6 +33,7 @@ def prepare_data(X_train, X_test):
 
     return X_train, X_test
 
+
 d_name = 'monks-3'
 X_train, X_test, y_train, y_test = load_monk(f"../../data/{d_name}")
 X_train, X_test = prepare_data(X_train, X_test)
@@ -45,10 +46,10 @@ output_units = y_train.reshape(-1,1).shape[1]
 training_data = [ (x.reshape(1,-1),y) for x,y in zip(X_train, y_train)]
 test_data = [ (x.reshape(1,-1),y) for x,y in zip(X_test, y_test)]
 
-hidden1 = [2, 5, 10, 20]
-epochs = [100, 250, 500, 1000, 3000, 5000]
-batch = [10, 20, 40, 50, 100]
-eta = [0.001, 0.005, 0.1, 0.2, 0.5, 1, 2, 3, 5]
+hidden1 = [2, 5]
+epochs = [250, 500, 1000, 3000]
+batch = [10, 20, 50]
+eta = [0.001, 0.2, 1, 3, 7]
 
 for ep in epochs:
     for h1 in hidden1:
@@ -57,7 +58,7 @@ for ep in epochs:
                 net = NC([input_units, h1, output_units], 0, debug=False)
                 net.SGD(training_data, epochs=ep, batch_size=b, eta=e, test_data=test_data)
                 best = net.best_score()
-                net.plot_score(d_name)
+                net.plot_score(f"MONK/{d_name}")
                 print(f"Best for (ep: {ep}, h1: {h1}, b: {b}, e: {e}) is:  {best}")
 
 
