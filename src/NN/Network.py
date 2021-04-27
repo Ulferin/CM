@@ -2,46 +2,61 @@
 # implemented from scratch following the advices taken during the course
 # of ML
 
+from abc import ABCMeta, abstractmethod
 import numpy as np
 from numpy.random import default_rng
 from sklearn.metrics import r2_score, mean_squared_error, accuracy_score
-import random
 from matplotlib import pyplot as plt
+
 import time
+import random
 
-from .functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
+from functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
 
-# TODO: check all the list comprehensions, maybe we can substitute them with a numpy method
 
-class Network:
+# TODO: la mean squared error va implementata da me!!! Non posso usare quella di sklearn
+
+class Network(metaclass=ABCMeta):
     """This class represents a standard Neural Network, also called Multilayer Perceptron.
     It allows to build a network for both classification and regression tasks.
     """    
     
-    def __init__(self, sizes, seed, debug=True):
+    @abstractmethod
+    def __init__(self, sizes, seed, activation='sigmoid', debug=True):
         """Initializes the network based on the given :param sizes:.
         Builds the weights and biase vectors for each layer of the network.
         Each layer will be initialized randomly following the normal distribution. 
 
         :param sizes: Tuple (i, l1, l2, ..., ln, o) containig the number of units
-        for each layer, where the first and last elements represents, respectively,
-        the input layer and the output layer.
+            for each layer, where the first and last elements represents, respectively,
+            the input layer and the output layer.
         :param seed: seed for random number generator used for initializing this network
-        weights and biases. Needed for reproducibility.        
+            weights and biases. Needed for reproducibility.
+        :param activation: specifies which activation function to use for the hidden layers
+            of the network. 
         """
-        rng = default_rng(seed)
 
+        # TODO: farlo meglio
+        acts = {
+            'relu': [relu, relu_prime],
+            'sigmoid': [sigmoid, sigmoid_prime],
+            'relu2': [ReLU, dReLU]
+        }
+        
+        rng = default_rng(seed)
         self.debug = debug
         self.num_layers = len(sizes)
         self.sizes = sizes
-        self.act = sigmoid
-        self.der_act = sigmoid_prime
+        self.act = acts[activation][0]
+        self.der_act = acts[activation][1]
+        self.last_act = None            # Must be defined by subclassing the Network
+        self.last_der = None            # Must be defined by subclassing the Network
 
         # TODO: non possiamo avere un singolo bias per layer invece che un bias per ogni unità?
         #       controllare nel libro dove ha dato questo esempio cosa dice a riguardo
         self.biases = [rng.standard_normal((1,y)) for y in sizes[1:]]
         self.weights = [rng.standard_normal((y,x)) for x, y in zip(sizes[:-1], sizes[1:])]
-        # NOTE: these are matrices, so also the biases are shaped (1,x)
+        # TODO: these are matrices, so also the biases are shaped (1,x)
 
         self.scores = []
 
@@ -54,16 +69,24 @@ class Network:
         :return: network output vector (or scalar)
         """
         out = invec.T
+        units_out = [out]
+        nets = []
         for b, w in zip(self.biases[:-1], self.weights[:-1]):
-            out = self.act(np.matmul(w, out) + b.T)
-
-        # Last layer is linear for regression tasks
-        # NOTE: also here, parametrize the last activation
-        return self.act(np.matmul(self.weights[-1], out) + self.biases[-1].T)
+            net = np.matmul(w, out) + b.T
+            out = self.act(net)
+            nets.append(net)
+            units_out.append(out)
+    
+        # Last layer is linear for regression tasks and sigmoid for classification
+        out = self.last_act(np.matmul(self.weights[-1], out) + self.biases[-1].T)
+        nets.append(out)
+        units_out.append(out)
+        
+        return units_out, nets, out
 
 
     def backpropagation(self, x, y):
-        # NOTE: this is the backpropagation for a single input example!
+        # TODO: this is the backpropagation for a single input example!
         # It should perform a feedforward step to compute the current estimated error.
         # After that, it uses the computed error to backpropagate the error participation
         # of each unit. The error participation will then lead to the definition of the delta
@@ -72,24 +95,13 @@ class Network:
         nabla_w = [np.zeros(w.shape) for w in self.weights]
 
         # Forward computation
-        out = x.T
-        units_out = [out]
-        nets = []
-        for b,w in zip(self.biases[:-1], self.weights[:-1]):
-            net = np.matmul(w, out) + b.T
-            out = self.act(net)
-            nets.append(net)
-            units_out.append(out)
-        # NOTE: this has to be the output of the last layer
-        out = self.act(np.matmul(self.weights[-1], out) + self.biases[-1].T)
-        nets.append(out)
-        units_out.append(out)
+        # TODO: by modifying the feedforward method to return also the nets and outs
+        #       list we can substitue all the forward step with a function call.
+        units_out, nets, out = self.feedforward(x)
 
         # Backward pass - output unit
-        delta = (units_out[-1] - y.reshape(-1,1))
-        # NOTE: this has to be the derivative related to the last layer, it depends on the
-        #       used activation function!
-        delta = delta * self.der_act(nets[-1])
+        delta = (out - y.reshape(-1,1))
+        delta = delta * self.last_der(nets[-1])
         nabla_b[-1] = delta
         nabla_w[-1] = np.matmul(delta, units_out[-2].T)
 
@@ -118,15 +130,8 @@ class Network:
 
         for x, y in mini_batch:
             delta_b, delta_w = self.backpropagation(x,y)
-            
-            if self.debug:
-                print(f"db: {delta_b[:2]}, dw: {delta_w[:2]}")
-            
             nabla_b = [ nb + db.T for nb,db in zip(nabla_b, delta_b)]
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
-
-        if self.debug:
-            print(f"w:{self.weights[0][:2]}\nnw:{nabla_w[0][:2]}")
 
         self.weights = [w - (eta/len(mini_batch))*nw for w,nw in zip(self.weights, nabla_w)]
         self.biases = [b - (eta/len(mini_batch))*nb for b,nb in zip(self.biases, nabla_b)]
@@ -168,12 +173,12 @@ class Network:
             if test_data:
                 score = self.evaluate(test_data)
                 self.scores.append(score)
-                print(f"Epoch {e} completed. Score: {score}")
+                if self.debug: print(f"Epoch {e} completed. Score: {score}")
             else:
                 print(f"Epoch {e} completed.")
 
     
-    def best_score(self):
+    def plot_score(self,name):
         plt.plot(self.scores, 'r-', label='Loss')
         plt.legend(loc='upper right')
         plt.xlabel ('Epochs')
@@ -181,14 +186,17 @@ class Network:
         plt.title ('Loss NN CUP dataset')
         plt.draw()
 
-        plt.savefig(f"./res/eta{self.eta}b{self.batch_size}s{self.sizes}_d{time.time()}.png")
+        plt.savefig(f"./res/{name}ep{self.epochs}e{self.eta}b{self.batch_size}s{self.sizes}.png")
         plt.clf()
-        print(f"The best score for mb:{self.batch_size}, eta: {self.eta}, epochs: {self.epochs}, sizes: {self.sizes} was: {np.min(self.scores)}")
 
 
+    @abstractmethod
+    def best_score(self):
+        pass
+
+
+    @abstractmethod
     def evaluate(self, test_data):
-        # TODO: generalizzare questo metodo, trovare un modo per specificare come valutare
-        #       il risultato. Dividere in base a classification e regression.
         """Evaluates the performances of the Network in the current state,
         propagating the test examples through the network via a complete feedforward
         step. It evaluates the performance using the R2 metric in order to be
@@ -198,15 +206,4 @@ class Network:
         :return: The R2 score as defined by sklearn library
         """        
 
-        preds = [ np.array(self.feedforward(x) > 0.5).reshape(y.shape) for x,y in test_data]
-        truth = [ y for x,y in test_data ]
-
-        if self.debug:
-            for i,(p,t) in enumerate(zip(preds, truth)):
-                if i > 10: break
-                print(f"p: {p}, t: {t}")
-
-        score = accuracy_score(truth, preds)
-        # score = r2_score(preds, truth)
-        # score = mean_squared_error(truth, preds)
-        return score
+        pass

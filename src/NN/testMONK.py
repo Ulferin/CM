@@ -1,5 +1,5 @@
 import pandas as pd
-from .Network import Network
+from NC import NC
 from sklearn.preprocessing import OneHotEncoder
 
 def load_monk(name):
@@ -34,7 +34,8 @@ def prepare_data(X_train, X_test):
     return X_train, X_test
 
 
-X_train, X_test, y_train, y_test = load_monk('../../data/monks-1')
+d_name = 'monks-3'
+X_train, X_test, y_train, y_test = load_monk(f"../../data/{d_name}")
 X_train, X_test = prepare_data(X_train, X_test)
 
 # Loads the input and output layers shape
@@ -44,6 +45,24 @@ output_units = y_train.reshape(-1,1).shape[1]
 # Builds the training data for the NN
 training_data = [ (x.reshape(1,-1),y) for x,y in zip(X_train, y_train)]
 test_data = [ (x.reshape(1,-1),y) for x,y in zip(X_test, y_test)]
-net = Network([input_units, 5, output_units], 0, debug=False)
-net.SGD(training_data, epochs=300, batch_size=10, eta=5, test_data=test_data)
-net.best_score()
+
+hidden1 = [2, 5]
+epochs = [250, 500, 1000, 3000]
+batch = [10, 20, 50]
+eta = [0.001, 0.2, 1, 3, 7]
+
+for ep in epochs:
+    for h1 in hidden1:
+        for b in batch:
+            for e in eta:
+                net = NC([input_units, h1, output_units], 0, debug=False)
+                net.SGD(training_data, epochs=ep, batch_size=b, eta=e, test_data=test_data)
+                best = net.best_score()
+                net.plot_score(f"MONK/{d_name}")
+                print(f"Best for (ep: {ep}, h1: {h1}, b: {b}, e: {e}) is:  {best}")
+
+
+#net = NC([input_units, 5, output_units], 0, debug=False)
+#net.SGD(training_data, epochs=3000, batch_size=10, eta=1, test_data=test_data)
+#net.plot_score(d_name)
+#best = net.best_score()
