@@ -22,23 +22,33 @@ class Network(metaclass=ABCMeta):
     """    
     
     @abstractmethod
-    def __init__(self, sizes, seed, debug=True):
+    def __init__(self, sizes, seed, activation='sigmoid', debug=True):
         """Initializes the network based on the given :param sizes:.
         Builds the weights and biase vectors for each layer of the network.
         Each layer will be initialized randomly following the normal distribution. 
 
         :param sizes: Tuple (i, l1, l2, ..., ln, o) containig the number of units
-        for each layer, where the first and last elements represents, respectively,
-        the input layer and the output layer.
+            for each layer, where the first and last elements represents, respectively,
+            the input layer and the output layer.
         :param seed: seed for random number generator used for initializing this network
-        weights and biases. Needed for reproducibility.        
+            weights and biases. Needed for reproducibility.
+        :param activation: specifies which activation function to use for the hidden layers
+            of the network. 
         """
+
+        # TODO: farlo meglio
+        acts = {
+            'relu': [relu, relu_prime],
+            'sigmoid': [sigmoid, sigmoid_prime],
+            'relu2': [ReLU, dReLU]
+        }
+        
         rng = default_rng(seed)
         self.debug = debug
         self.num_layers = len(sizes)
         self.sizes = sizes
-        self.act = sigmoid
-        self.der_act = sigmoid_prime
+        self.act = acts[activation][0]
+        self.der_act = acts[activation][1]
         self.last_act = None            # Must be defined by subclassing the Network
         self.last_der = None            # Must be defined by subclassing the Network
 
@@ -59,11 +69,20 @@ class Network(metaclass=ABCMeta):
         :return: network output vector (or scalar)
         """
         out = invec.T
+        units_out = [out]
+        nets = []
         for b, w in zip(self.biases[:-1], self.weights[:-1]):
-            out = self.act(np.matmul(w, out) + b.T)
-
+            net = np.matmul(w, out) + b.T
+            out = self.act(net)
+            nets.append(net)
+            units_out.append(out)
+    
         # Last layer is linear for regression tasks and sigmoid for classification
-        return self.last_act(np.matmul(self.weights[-1], out) + self.biases[-1].T)
+        out = self.last_act(np.matmul(self.weights[-1], out) + self.biases[-1].T)
+        nets.append(out)
+        units_out.append(out)
+        
+        return units_out, nets, out
 
 
     def backpropagation(self, x, y):
@@ -78,20 +97,10 @@ class Network(metaclass=ABCMeta):
         # Forward computation
         # TODO: by modifying the feedforward method to return also the nets and outs
         #       list we can substitue all the forward step with a function call.
-        out = x.T
-        units_out = [out]
-        nets = []
-        for b,w in zip(self.biases[:-1], self.weights[:-1]):
-            net = np.matmul(w, out) + b.T
-            out = self.act(net)
-            nets.append(net)
-            units_out.append(out)
-        out = self.last_act(np.matmul(self.weights[-1], out) + self.biases[-1].T)
-        nets.append(out)
-        units_out.append(out)
+        units_out, nets, out = self.feedforward(x)
 
         # Backward pass - output unit
-        delta = (units_out[-1] - y.reshape(-1,1))
+        delta = (out - y.reshape(-1,1))
         delta = delta * self.last_der(nets[-1])
         nabla_b[-1] = delta
         nabla_w[-1] = np.matmul(delta, units_out[-2].T)
