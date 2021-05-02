@@ -63,6 +63,6 @@ class NR(Network):
         preds = [ np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in test_data]
         truth = [ y for x,y in test_data ]
 
-        print(f"exp: {truth[1]}, pred: {preds[1]}")
+        # print(f"exp: {truth[1]}, pred: {preds[1]}")
         score = mean_squared_error(truth, preds)
         return score

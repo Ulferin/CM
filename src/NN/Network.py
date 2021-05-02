@@ -15,7 +15,7 @@ import random
 from functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
 
 
-# TODO: la mean squared error va implementata da me!!! Non posso usare quella di sklearn
+# TODO: la mean squared error nella evaluate va implementata da me!!! Non posso usare quella di sklearn
 
 ACTIVATIONS = {
     'relu': [relu, relu_prime],
@@ -58,7 +58,8 @@ class Network(metaclass=ABCMeta):
         #       controllare nel libro dove ha dato questo esempio cosa dice a riguardo
         self.biases = [rng.standard_normal((1,y)) for y in sizes[1:]]
         self.weights = [rng.standard_normal((y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
-        self.velocities = [np.zeros_like(weight) for weight in self.weights]
+        self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
+        self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
         self.scores = []
 
         self.debug = debug
@@ -117,8 +118,13 @@ class Network(metaclass=ABCMeta):
             net = nets[-l]
             delta = np.matmul(self.weights[-l+1].T, delta)
             delta = delta * self.der_act(net)
-            nabla_b[-l] = delta
-            nabla_w[-l] = np.matmul(delta, units_out[-l-1].T)
+            
+            if self.lmbda > 0:
+                nabla_b[-l] = delta
+                nabla_w[-l] = np.matmul(delta, units_out[-l-1].T)
+            else:
+                nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
+                nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l].T) # regularization term derivative
         
         return nabla_b, nabla_w
 
@@ -140,12 +146,14 @@ class Network(metaclass=ABCMeta):
             nabla_b = [ nb + db.T for nb,db in zip(nabla_b, delta_b)]
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
 
-        # self.velocities = [self.momentum * velocity - (1-self.momentum)*(eta/len(mini_batch))*nw for velocity,nw in zip(self.velocities, nabla_w)]
-        # self.weights = [w + velocity for w,velocity in zip(self.weights, self.velocities)]
+        # Momentum updates
+        self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
+        self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
+
+        self.weights = [w + velocity for w,velocity in zip(self.weights, self.wvelocities)]
+        self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
+        # self.weights = [w - (eta/len(mini_batch))*nw for w,nw in zip(self.weights, nabla_w)]
         # self.biases = [b - (eta/len(mini_batch))*nb for b,nb in zip(self.biases, nabla_b)]
-        # self.weights = [(1 - (self.lmbda/self.training_size))*w - (eta/len(mini_batch))*nw for w,nw in zip(self.weights, nabla_w)]
-        self.weights = [w - (eta/len(mini_batch))*nw  - (self.lmbda/self.training_size)*norm(w) for w,nw in zip(self.weights, nabla_w)]
-        self.biases = [b - (eta/len(mini_batch))*nb for b,nb in zip(self.biases, nabla_b)]
 
 
     def SGD(self, training_data, epochs, batch_size, eta, test_data=None):
@@ -198,7 +206,8 @@ class Network(metaclass=ABCMeta):
         plt.title ('Loss NN CUP dataset')
         plt.draw()
 
-        plt.savefig(f"./res/{name}ep{self.epochs}e{self.eta}b{self.batch_size}s{self.sizes}.png")
+        # plt.savefig(f"./res/{name}ep{self.epochs}e{self.eta}b{self.batch_size}s{self.sizes}.png")
+        plt.show()
         plt.clf()
 
 
