@@ -90,17 +90,20 @@ class Network(metaclass=ABCMeta):
 
 
     def backpropagation(self, x, y):
-        # TODO: this is the backpropagation for a single input example!
-        # It should perform a feedforward step to compute the current estimated error.
-        # After that, it uses the computed error to backpropagate the error participation
-        # of each unit. The error participation will then lead to the definition of the delta
-        # coefficient used to update the weights and biases for each of the units of the network.
+        """Performs a backpropagation step for the given input sample. It runs a forward
+        step to compute the current output and error. It then uses the error to compute
+        the contribution of each network unit to the final error. It finally updates weights
+        and biases related to the computed contribution.
+
+        :param x: the current test sample for which to compute the error
+        :param y: the expected output for the given sample
+        :return: the set of updates to be performed for each unit
+        """        
+
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
 
         # Forward computation
-        # TODO: by modifying the feedforward method to return also the nets and outs
-        #       list we can substitue all the forward step with a function call.
         units_out, nets, out = self.feedforward(x)
 
         # Backward pass - output unit
