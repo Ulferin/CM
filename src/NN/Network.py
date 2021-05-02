@@ -56,8 +56,8 @@ class Network(metaclass=ABCMeta):
 
         # TODO: non possiamo avere un singolo bias per layer invece che un bias per ogni unità?
         #       controllare nel libro dove ha dato questo esempio cosa dice a riguardo
-        self.biases = [rng.standard_normal((1,y)) for y in sizes[1:]]
-        self.weights = [rng.standard_normal((y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
+        self.biases = [0.001 * rng.standard_normal((1,y)) for y in sizes[1:]]
+        self.weights = [0.001 * rng.standard_normal((y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
         self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
         self.scores = []
