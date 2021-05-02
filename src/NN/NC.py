@@ -7,8 +7,8 @@ from functions import sigmoid, sigmoid_prime
 
 class NC(Network):
 
-    def __init__(self, sizes, seed, activation='sigmoid', debug=True):
-        super().__init__(sizes, seed, activation, debug)
+    def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.5, debug=True):
+        super().__init__(sizes, seed, activation, lmbda, momentum, debug)
 
         # Defines the behavior of the last layer of the network
         self.last_act = sigmoid
@@ -38,8 +38,8 @@ class NC(Network):
 
 class NR(Network):
 
-    def __init__(self, sizes, seed, activation='sigmoid', debug=True):
-        super().__init__(sizes, seed, activation, debug)
+    def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.5, debug=True):
+        super().__init__(sizes, seed, activation, lmbda, momentum, debug)
 
         # Defines the behavior of the last layer of the network
         self.last_act = lambda x: x

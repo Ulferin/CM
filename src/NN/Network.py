@@ -4,6 +4,7 @@
 
 from abc import ABCMeta, abstractmethod
 import numpy as np
+from numpy.linalg import norm
 from numpy.random import default_rng
 from sklearn.metrics import r2_score, mean_squared_error, accuracy_score
 from matplotlib import pyplot as plt
@@ -22,7 +23,7 @@ class Network(metaclass=ABCMeta):
     """    
     
     @abstractmethod
-    def __init__(self, sizes, seed, activation='sigmoid', debug=True):
+    def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.5, debug=True):
         """Initializes the network based on the given :param sizes:.
         Builds the weights and biase vectors for each layer of the network.
         Each layer will be initialized randomly following the normal distribution. 
@@ -44,18 +45,23 @@ class Network(metaclass=ABCMeta):
         }
         
         rng = default_rng(seed)
+        self.training_size = None
         self.debug = debug
         self.num_layers = len(sizes)
         self.sizes = sizes
         self.act = acts[activation][0]
         self.der_act = acts[activation][1]
+        self.momentum = momentum
+        self.lmbda = lmbda
         self.last_act = None            # Must be defined by subclassing the Network
         self.last_der = None            # Must be defined by subclassing the Network
 
         # TODO: non possiamo avere un singolo bias per layer invece che un bias per ogni unità?
         #       controllare nel libro dove ha dato questo esempio cosa dice a riguardo
         self.biases = [rng.standard_normal((1,y)) for y in sizes[1:]]
-        self.weights = [rng.standard_normal((y,x)) for x, y in zip(sizes[:-1], sizes[1:])]
+        self.weights = [rng.standard_normal((y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
+
+        self.velocities = [np.zeros_like(weight) for weight in self.weights]
         # TODO: these are matrices, so also the biases are shaped (1,x)
 
         self.scores = []
@@ -133,7 +139,11 @@ class Network(metaclass=ABCMeta):
             nabla_b = [ nb + db.T for nb,db in zip(nabla_b, delta_b)]
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
 
-        self.weights = [w - (eta/len(mini_batch))*nw for w,nw in zip(self.weights, nabla_w)]
+        # self.velocities = [self.momentum * velocity - (1-self.momentum)*(eta/len(mini_batch))*nw for velocity,nw in zip(self.velocities, nabla_w)]
+        # self.weights = [w + velocity for w,velocity in zip(self.weights, self.velocities)]
+        # self.biases = [b - (eta/len(mini_batch))*nb for b,nb in zip(self.biases, nabla_b)]
+        # self.weights = [(1 - (self.lmbda/self.training_size))*w - (eta/len(mini_batch))*nw for w,nw in zip(self.weights, nabla_w)]
+        self.weights = [w - (eta/len(mini_batch))*nw  - (self.lmbda/self.training_size)*norm(w) for w,nw in zip(self.weights, nabla_w)]
         self.biases = [b - (eta/len(mini_batch))*nb for b,nb in zip(self.biases, nabla_b)]
 
 
@@ -156,6 +166,7 @@ class Network(metaclass=ABCMeta):
         self.batch_size = batch_size
         self.eta = eta
         self.epochs = epochs
+        self.training_size = len(training_data)
 
         if test_data:
             n_test = len(test_data)

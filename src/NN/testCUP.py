@@ -29,7 +29,7 @@ eta = [0.1, 0.2, 0.5, 1, 2]
 #                     net.SGD(training_data, ep, b, e, test_data)
 #                     net.best_score()
 
-net = NR([input_units, 10, output_units], 0, 'relu', debug=True)
-net.SGD(training_data, epochs=1000, batch_size=20, eta=0.0001, test_data=test_data)
+net = NR([input_units, 10, 10, output_units], 0, 'relu2', lmbda=0.01, momentum=0.5, debug=True)
+net.SGD(training_data, epochs=1000, batch_size=10, eta=0.00001, test_data=test_data)
 net.best_score()
 net.plot_score(f"CUP/cup")
