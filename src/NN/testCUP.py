@@ -5,7 +5,7 @@ import sys
 from NC import NR
 import utils
 
-# x = np.array([1,2,3,4,5])
+
 X_train, X_test, y_train, y_test = utils.load_CUP("../../data/ML-CUP20-TR.csv")
 
 # Loads the input and output layers shape
@@ -31,7 +31,7 @@ eta = [0.1, 0.2, 0.5, 1, 2]
 #                     net.SGD(training_data, ep, b, e, test_data)
 #                     net.best_score()
 
-net = NR([input_units, 2, output_units], 0, 'relu', lmbda=0.001, momentum=0.9, debug=True)
-net.SGD(training_data, epochs=1000, batch_size=10, eta=0.01, test_data=test_data)
+net = NR([input_units, 2, output_units], 0, 'relu', lmbda=0.001, momentum=0.9, debug=False)
+net.SGD(training_data, y_train, epochs=300, batch_size=10, eta=0.001, test_data=(test_data, y_test))
 print(net.best_score())
 # net.plot_score(f"CUP/cup")
