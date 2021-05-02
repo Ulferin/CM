@@ -17,13 +17,19 @@ from functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
 
 # TODO: la mean squared error va implementata da me!!! Non posso usare quella di sklearn
 
+ACTIVATIONS = {
+    'relu': [relu, relu_prime],
+    'sigmoid': [sigmoid, sigmoid_prime],
+    'relu2': [ReLU, dReLU]
+}
+
 class Network(metaclass=ABCMeta):
     """This class represents a standard Neural Network, also called Multilayer Perceptron.
     It allows to build a network for both classification and regression tasks.
     """    
     
     @abstractmethod
-    def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.5, debug=True):
+    def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.0, debug=True):
         """Initializes the network based on the given :param sizes:.
         Builds the weights and biase vectors for each layer of the network.
         Each layer will be initialized randomly following the normal distribution. 
@@ -36,21 +42,13 @@ class Network(metaclass=ABCMeta):
         :param activation: specifies which activation function to use for the hidden layers
             of the network. 
         """
-
-        # TODO: farlo meglio
-        acts = {
-            'relu': [relu, relu_prime],
-            'sigmoid': [sigmoid, sigmoid_prime],
-            'relu2': [ReLU, dReLU]
-        }
         
         rng = default_rng(seed)
         self.training_size = None
-        self.debug = debug
         self.num_layers = len(sizes)
         self.sizes = sizes
-        self.act = acts[activation][0]
-        self.der_act = acts[activation][1]
+        self.act = ACTIVATIONS[activation][0]
+        self.der_act = ACTIVATIONS[activation][1]
         self.momentum = momentum
         self.lmbda = lmbda
         self.last_act = None            # Must be defined by subclassing the Network
@@ -60,11 +58,11 @@ class Network(metaclass=ABCMeta):
         #       controllare nel libro dove ha dato questo esempio cosa dice a riguardo
         self.biases = [rng.standard_normal((1,y)) for y in sizes[1:]]
         self.weights = [rng.standard_normal((y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
-
         self.velocities = [np.zeros_like(weight) for weight in self.weights]
-        # TODO: these are matrices, so also the biases are shaped (1,x)
-
         self.scores = []
+
+        self.debug = debug
+
 
 
     def feedforward(self, invec):
