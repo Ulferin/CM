@@ -202,12 +202,11 @@ class Network(metaclass=ABCMeta):
         self.epochs = epochs
         self.training_size = len(training_data)
 
-        if test_data:
-            n_test = len(test_data)
-
+        # training_data = np.array(training_data, dtype=object)
+        # rng = default_rng()
+        # rng.shuffle(training_data)
         n = len(training_data)
         for e in range(epochs):
-            random.shuffle(training_data)
             mini_batches = [
                 training_data[k:k+batch_size] for k in range(0, n, batch_size)
             ]
@@ -245,12 +244,12 @@ class Network(metaclass=ABCMeta):
         self.epochs = epochs
         self.training_size = len(training_data[0])
 
-        if test_data is not None:
-            n_test = len(test_data[0])
-
         n = len(training_data[0])
+        # rng = default_rng(0)
+        # rng.shuffle(training_data[0])
+        # rng = default_rng(0)
+        # rng.shuffle(training_data[1])
         for e in range(epochs):
-            random.shuffle(training_data[0])
             mini_batches = [
                 (training_data[0][k:k+batch_size], training_data[1][k:k+batch_size]) for k in range(0, n, batch_size)
             ]
