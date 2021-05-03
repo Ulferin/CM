@@ -16,8 +16,6 @@ from functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
 
 
 # TODO: la mean squared error nella evaluate va implementata da me!!! Non posso usare quella di sklearn
-# TODO: in evaluate plottare le due curve, quella di score per il training set e quella per il validation
-# TODO: trasformare tutto in numpy array
 
 ACTIVATIONS = {
     'relu': [relu, relu_prime],
@@ -158,6 +156,30 @@ class Network(metaclass=ABCMeta):
         self.weights = [w + velocity for w,velocity in zip(self.weights, self.wvelocities)]
         self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
 
+    def update_mini_batch_tup(self, mini_batch: tuple, eta):
+        """Updates the network weights and biases by applying the backpropagation algorithm
+        to the current set of examples contained in the :param mini_batch:. Computes the deltas
+        used to update weights as an average over the size of the examples set, using the provided
+        :param eta: as learning rate.
+
+        :param mini_batch: Set of examples to use to update the network weights and biases
+        :param eta: Learning rate
+        """
+        nabla_b = [ np.zeros(b.shape) for b in self.biases ]
+        nabla_w = [ np.zeros(w.shape) for w in self.weights ]
+
+        for x, y in zip(mini_batch[0], mini_batch[1]):
+            delta_b, delta_w = self.backpropagation(x,y)
+            nabla_b = [ nb + db.T for nb,db in zip(nabla_b, delta_b)]
+            nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
+
+        # Momentum updates
+        self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
+        self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
+
+        self.weights = [w + velocity for w,velocity in zip(self.weights, self.wvelocities)]
+        self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
+
 
     def SGD(self, training_data, epochs, batch_size, eta, test_data=None):
         """Trains the network using mini-batch stochastic gradient descent,
@@ -201,8 +223,56 @@ class Network(metaclass=ABCMeta):
             else:
                 print(f"Epoch {e} completed.")
 
+
+    def SGD_tup(self, training_data:tuple, epochs, batch_size, eta, test_data:tuple=None):
+        """Trains the network using mini-batch stochastic gradient descent,
+        applied to the training examples in :param training_data: for a given
+        number of epochs and with the specified learning rate. If :param test_data:
+        is specified, the learning algorithm will print progresses during the
+        training phase.
+
+        :param training_data: training data represented as a numpy ndarray, each row
+        represents an example, the last element of each row is the expected output.
+        :param epochs: number of epochs for training.
+        :param batch_size: number of examples to use at each backward pass.
+        :param eta: learning rate.
+        :param test_data: optional parameter, used to estimate the performance of the network
+        at each phase, defaults to None.
+        """   
+
+        self.batch_size = batch_size
+        self.eta = eta
+        self.epochs = epochs
+        self.training_size = len(training_data[0])
+
+        if test_data is not None:
+            n_test = len(test_data[0])
+
+        n = len(training_data[0])
+        for e in range(epochs):
+            random.shuffle(training_data[0])
+            mini_batches = [
+                (training_data[0][k:k+batch_size], training_data[1][k:k+batch_size]) for k in range(0, n, batch_size)
+            ]
+
+            for mini_batch in mini_batches:
+                self.update_mini_batch_tup(mini_batch, eta)
+
+            if test_data:
+                score = self.evaluate_tup(test_data, training_data)
+                self.val_scores.append(score[0])
+                self.train_scores.append(score[1])
+                if self.debug: print(f"Epoch {e} completed. Score: {score}")
+            else:
+                print(f"Epoch {e} completed.")
+
     
     def plot_score(self,name):
+        """Utility function, allows to build a plot of the scores achieved during training
+        for the validation set and the training set.
+
+        :param name: Prefix name for the file related to the plot.
+        """        
         plt.plot(self.val_scores, '--', label='Validation loss')
         plt.plot(self.train_scores, '--', label='Training loss')
         plt.legend(loc='upper right')
@@ -217,11 +287,26 @@ class Network(metaclass=ABCMeta):
 
     @abstractmethod
     def best_score(self):
+        """Returns the best score achieved during the fitting of the current network.
+        """        
         pass
 
 
     @abstractmethod
     def evaluate(self, test_data, train_data):
+        """Evaluates the performances of the Network in the current state,
+        propagating the test examples through the network via a complete feedforward
+        step. It evaluates the performance using the R2 metric in order to be
+        comparable with sklearn out-of-the-box NN results.
+
+        :param test_data: test data to evaluate the NN
+        :return: The R2 score as defined by sklearn library
+        """        
+
+        pass
+
+    @abstractmethod
+    def evaluate_tup(self, test_data, train_data):
         """Evaluates the performances of the Network in the current state,
         propagating the test examples through the network via a complete feedforward
         step. It evaluates the performance using the R2 metric in order to be
