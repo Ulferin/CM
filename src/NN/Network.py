@@ -16,6 +16,8 @@ from functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
 
 
 # TODO: la mean squared error nella evaluate va implementata da me!!! Non posso usare quella di sklearn
+# TODO: in evaluate plottare le due curve, quella di score per il training set e quella per il validation
+# TODO: trasformare tutto in numpy array
 
 ACTIVATIONS = {
     'relu': [relu, relu_prime],
@@ -57,11 +59,13 @@ class Network(metaclass=ABCMeta):
 
         # TODO: non possiamo avere un singolo bias per layer invece che un bias per ogni unità?
         #       controllare nel libro dove ha dato questo esempio cosa dice a riguardo
-        self.biases = [rng.normal(0, 0.01, (1,y)) for y in sizes[1:]]
+        # self.biases = [rng.normal(0, 0.01, (1,y)) for y in sizes[1:]]
+        self.biases = [np.zeros_like(y) for y in sizes[1:]]
         self.weights = [rng.normal(0, 0.01, (y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
         self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
-        self.scores = []
+        self.val_scores = []
+        self.train_scores = []
 
         self.debug = debug
 
@@ -125,7 +129,7 @@ class Network(metaclass=ABCMeta):
                 nabla_w[-l] = np.matmul(delta, units_out[-l-1].T)
             else:
                 nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
-                nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l].T) # regularization term derivative
+                nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l]) # regularization term derivative
         
         return nabla_b, nabla_w
 
@@ -153,8 +157,6 @@ class Network(metaclass=ABCMeta):
 
         self.weights = [w + velocity for w,velocity in zip(self.weights, self.wvelocities)]
         self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
-        # self.weights = [w - (eta/len(mini_batch))*nw for w,nw in zip(self.weights, nabla_w)]
-        # self.biases = [b - (eta/len(mini_batch))*nb for b,nb in zip(self.biases, nabla_b)]
 
 
     def SGD(self, training_data, epochs, batch_size, eta, test_data=None):
@@ -192,23 +194,24 @@ class Network(metaclass=ABCMeta):
                 self.update_mini_batch(mini_batch, eta)
 
             if test_data:
-                score = self.evaluate(test_data)
-                self.scores.append(score)
+                score = self.evaluate(test_data, training_data)
+                self.val_scores.append(score[0])
+                self.train_scores.append(score[1])
                 if self.debug: print(f"Epoch {e} completed. Score: {score}")
             else:
                 print(f"Epoch {e} completed.")
 
     
     def plot_score(self,name):
-        plt.plot(self.scores, 'r-', label='Loss')
+        plt.plot(self.val_scores, '--', label='Validation loss')
+        plt.plot(self.train_scores, '--', label='Training loss')
         plt.legend(loc='upper right')
         plt.xlabel ('Epochs')
         plt.ylabel ('Loss')
         plt.title ('Loss NN CUP dataset')
         plt.draw()
 
-        # plt.savefig(f"./res/{name}ep{self.epochs}e{self.eta}b{self.batch_size}s{self.sizes}.png")
-        plt.show()
+        plt.savefig(f"./res/{name}ep{self.epochs}e{self.eta}b{self.batch_size}m{self.momentum}lmbda{self.lmbda}s{self.sizes}.png")
         plt.clf()
 
 
@@ -218,7 +221,7 @@ class Network(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def evaluate(self, test_data):
+    def evaluate(self, test_data, train_data):
         """Evaluates the performances of the Network in the current state,
         propagating the test examples through the network via a complete feedforward
         step. It evaluates the performance using the R2 metric in order to be

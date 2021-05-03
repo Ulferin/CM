@@ -17,6 +17,7 @@ def relu_prime(x):
     :param x: input vector/scalar
     :return: 1 if :param x: is greater than 0, 0 otherwise
     """    
+    # TODO: problema quando x è zero!!!
     return np.maximum(x, 0)/x
 
 def ReLU(x):
