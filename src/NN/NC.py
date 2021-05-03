@@ -56,33 +56,7 @@ class NR(Network):
     def best_score(self):
         return (np.min(self.val_scores), np.min(self.train_scores))
 
-
-    def evaluate(self, test_data, train_data):
-        # TODO: cambiare descrizione di evaluate nelle due sottoclassi
-        """Evaluates the performances of the Network in the current state,
-        propagating the test examples through the network via a complete feedforward
-        step. It evaluates the performance using the R2 metric in order to be
-        comparable with sklearn out-of-the-box NN results.
-
-        :param test_data: test data to evaluate the NN
-        :return: The mean squared error for the current prediction
-        """        
-        score_test = []
-        score_train = []
-
-        preds_test = [np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in test_data]
-        truth_test = [y for x,y in test_data ]
-
-        preds_train = [np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in train_data]
-        truth_train = [y for x,y in train_data]
-
-        # print(f"exp: {truth[1]}, pred: {preds[1]}")
-        score_test.append(mean_squared_error(truth_test, preds_test))
-        score_train.append(mean_squared_error(truth_train, preds_train))
-        return (score_test, score_train)
-
-
-    def evaluate_tup(self, test_data:tuple, train_data:tuple):
+    def evaluate(self, test_data:tuple, train_data:tuple):
             # TODO: cambiare descrizione di evaluate nelle due sottoclassi
         """Evaluates the performances of the Network in the current state,
         propagating the test examples through the network via a complete feedforward
@@ -100,8 +74,7 @@ class NR(Network):
 
         preds_train = [np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in zip(train_data[0], train_data[1])]
         truth_train = [y for y in train_data[1]]
-
-        # print(f"exp: {truth[1]}, pred: {preds[1]}")
+        
         score_test.append(mean_squared_error(truth_test, preds_test))
         score_train.append(mean_squared_error(truth_train, preds_train))
         return (score_test, score_train)

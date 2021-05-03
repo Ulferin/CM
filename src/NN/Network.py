@@ -132,31 +132,7 @@ class Network(metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
-    def update_mini_batch(self, mini_batch, eta):
-        """Updates the network weights and biases by applying the backpropagation algorithm
-        to the current set of examples contained in the :param mini_batch:. Computes the deltas
-        used to update weights as an average over the size of the examples set, using the provided
-        :param eta: as learning rate.
-
-        :param mini_batch: Set of examples to use to update the network weights and biases
-        :param eta: Learning rate
-        """
-        nabla_b = [ np.zeros(b.shape) for b in self.biases ]
-        nabla_w = [ np.zeros(w.shape) for w in self.weights ]
-
-        for x, y in mini_batch:
-            delta_b, delta_w = self.backpropagation(x,y)
-            nabla_b = [ nb + db.T for nb,db in zip(nabla_b, delta_b)]
-            nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
-
-        # Momentum updates
-        self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
-        self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
-
-        self.weights = [w + velocity for w,velocity in zip(self.weights, self.wvelocities)]
-        self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
-
-    def update_mini_batch_tup(self, mini_batch: tuple, eta):
+    def update_mini_batch(self, mini_batch: tuple, eta):
         """Updates the network weights and biases by applying the backpropagation algorithm
         to the current set of examples contained in the :param mini_batch:. Computes the deltas
         used to update weights as an average over the size of the examples set, using the provided
@@ -174,56 +150,14 @@ class Network(metaclass=ABCMeta):
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
 
         # Momentum updates
-        self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
-        self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
+        self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
+        self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
 
         self.weights = [w + velocity for w,velocity in zip(self.weights, self.wvelocities)]
         self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
 
 
-    def SGD(self, training_data, epochs, batch_size, eta, test_data=None):
-        """Trains the network using mini-batch stochastic gradient descent,
-        applied to the training examples in :param training_data: for a given
-        number of epochs and with the specified learning rate. If :param test_data:
-        is specified, the learning algorithm will print progresses during the
-        training phase.
-
-        :param training_data: training data represented as a numpy ndarray, each row
-        represents an example, the last element of each row is the expected output.
-        :param epochs: number of epochs for training.
-        :param batch_size: number of examples to use at each backward pass.
-        :param eta: learning rate.
-        :param test_data: optional parameter, used to estimate the performance of the network
-        at each phase, defaults to None.
-        """   
-
-        self.batch_size = batch_size
-        self.eta = eta
-        self.epochs = epochs
-        self.training_size = len(training_data)
-
-        # training_data = np.array(training_data, dtype=object)
-        # rng = default_rng()
-        # rng.shuffle(training_data)
-        n = len(training_data)
-        for e in range(epochs):
-            mini_batches = [
-                training_data[k:k+batch_size] for k in range(0, n, batch_size)
-            ]
-
-            for mini_batch in mini_batches:
-                self.update_mini_batch(mini_batch, eta)
-
-            if test_data:
-                score = self.evaluate(test_data, training_data)
-                self.val_scores.append(score[0])
-                self.train_scores.append(score[1])
-                if self.debug: print(f"Epoch {e} completed. Score: {score}")
-            else:
-                print(f"Epoch {e} completed.")
-
-
-    def SGD_tup(self, training_data:tuple, epochs, batch_size, eta, test_data:tuple=None):
+    def SGD(self, training_data:tuple, epochs, batch_size, eta, test_data:tuple=None):
         """Trains the network using mini-batch stochastic gradient descent,
         applied to the training examples in :param training_data: for a given
         number of epochs and with the specified learning rate. If :param test_data:
@@ -245,10 +179,10 @@ class Network(metaclass=ABCMeta):
         self.training_size = len(training_data[0])
 
         n = len(training_data[0])
-        # rng = default_rng(0)
-        # rng.shuffle(training_data[0])
-        # rng = default_rng(0)
-        # rng.shuffle(training_data[1])
+        rng = default_rng(0)
+        rng.shuffle(training_data[0])
+        rng = default_rng(0)
+        rng.shuffle(training_data[1])
         for e in range(epochs):
             mini_batches = [
                 (training_data[0][k:k+batch_size], training_data[1][k:k+batch_size]) for k in range(0, n, batch_size)
@@ -258,7 +192,7 @@ class Network(metaclass=ABCMeta):
                 self.update_mini_batch_tup(mini_batch, eta)
 
             if test_data:
-                score = self.evaluate_tup(test_data, training_data)
+                score = self.evaluate(test_data, training_data)
                 self.val_scores.append(score[0])
                 self.train_scores.append(score[1])
                 if self.debug: print(f"Epoch {e} completed. Score: {score}")
