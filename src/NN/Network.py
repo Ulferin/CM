@@ -189,7 +189,7 @@ class Network(metaclass=ABCMeta):
             ]
 
             for mini_batch in mini_batches:
-                self.update_mini_batch_tup(mini_batch, eta)
+                self.update_mini_batch(mini_batch, eta)
 
             if test_data:
                 score = self.evaluate(test_data, training_data)
@@ -214,7 +214,7 @@ class Network(metaclass=ABCMeta):
         plt.title ('Loss NN CUP dataset')
         plt.draw()
 
-        plt.savefig(f"./res/{name}ep{self.epochs}e{self.eta}b{self.batch_size}m{self.momentum}lmbda{self.lmbda}s{self.sizes}.png")
+        plt.savefig(f"./res/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
         plt.clf()
 
 
@@ -227,19 +227,6 @@ class Network(metaclass=ABCMeta):
 
     @abstractmethod
     def evaluate(self, test_data, train_data):
-        """Evaluates the performances of the Network in the current state,
-        propagating the test examples through the network via a complete feedforward
-        step. It evaluates the performance using the R2 metric in order to be
-        comparable with sklearn out-of-the-box NN results.
-
-        :param test_data: test data to evaluate the NN
-        :return: The R2 score as defined by sklearn library
-        """        
-
-        pass
-
-    @abstractmethod
-    def evaluate_tup(self, test_data, train_data):
         """Evaluates the performances of the Network in the current state,
         propagating the test examples through the network via a complete feedforward
         step. It evaluates the performance using the R2 metric in order to be
