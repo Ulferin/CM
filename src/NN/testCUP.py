@@ -8,30 +8,53 @@ import utils
 
 X_train, X_test, y_train, y_test = utils.load_CUP("../../data/ML-CUP20-TR.csv")
 
+
 # Loads the input and output layers shape
 input_units = X_train.shape[1]
 output_units = y_train.shape[1]
 
 # Builds the training data for the NN
-training_data = [ (x.reshape(1,-1),y) for x,y in zip(X_train, y_train)]
-test_data = [ (x.reshape(1,-1),y) for x,y in zip(X_test, y_test)]
+training_data = X_train.reshape(X_train.shape[0], 1, -1)
+test_data = X_test.reshape(X_test.shape[0], 1, -1)
 
-hidden1 = [10, 20, 50, 100, 200]
-hidden2 = [10, 50, 100]
-epochs = [100, 250, 1000]
-batch = [10, 20, 40, 100]
-eta = [0.1, 0.2, 0.5, 1, 2]
+epochs = [200, 400, 600]
+hidden1 = [2, 5, 10, 20]
+hidden2 = [2, 5, 10, 20]
+batch = [10, 30]
+eta = [0.00001, 0.0001, 0.001, 0.01, 0.1]
+lmbda = [0.00001, 0.001]
+momentum = [0.5, 0.9]
 
-# for h1 in hidden1:
-#     for h2 in hidden2:
-#         for ep in epochs:
-#             for b in batch:
-#                 for e in eta:
-#                     net = Network([input_units, h1, h2, output_units], 0)
-#                     net.SGD(training_data, ep, b, e, test_data)
-#                     net.best_score()
 
-net = NR([input_units, 5, 3, output_units], 0, 'relu2', lmbda=0.00001, momentum=0.8, debug=True)
-net.SGD(training_data, epochs=1000, batch_size=40, eta=0.00001, test_data=test_data)
-print(net.best_score())
-net.plot_score(f"CUP/cup")
+if __name__ == '__main__':
+    test = sys.argv[1]
+
+    h1 = 20
+    h2 = 16
+    activation = 'relu2'
+    lmbda = 0.1
+    momentum = 0.9
+    epochs = 300
+    batch_size = 20
+    eta = 0.001
+
+    if test == 'grid':
+        for ep in epochs:
+            for h1 in hidden1:
+                for h2 in hidden2:
+                    for b in batch:
+                        for e in eta:
+                            for l in lmbda:
+                                for m in momentum:
+                                    net = NR([input_units, h1, h2, output_units], 0, 'relu2', lmbda=l, momentum=m, debug=False)
+                                    net.SGD((training_data, y_train), epochs=ep, batch_size=b, eta=e, test_data=(test_data, y_test))
+                                    print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score()}")
+                                    net.plot_score(f"test_np/cup")
+
+    elif test == 'std':
+        net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
+        net.SGD((training_data, y_train), epochs=epochs, batch_size=batch_size, eta=eta, test_data=(test_data, y_test))
+        print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score()}")
+        net.plot_score(f"test_np/cup")
+
+    

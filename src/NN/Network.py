@@ -16,8 +16,7 @@ from functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
 
 
 # TODO: la mean squared error nella evaluate va implementata da me!!! Non posso usare quella di sklearn
-# TODO: in evaluate plottare le due curve, quella di score per il training set e quella per il validation
-# TODO: trasformare tutto in numpy array
+# TODO: aggiungere size gradient per ogni step
 
 ACTIVATIONS = {
     'relu': [relu, relu_prime],
@@ -134,7 +133,7 @@ class Network(metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
-    def update_mini_batch(self, mini_batch, eta):
+    def update_mini_batch(self, mini_batch: tuple, eta):
         """Updates the network weights and biases by applying the backpropagation algorithm
         to the current set of examples contained in the :param mini_batch:. Computes the deltas
         used to update weights as an average over the size of the examples set, using the provided
@@ -146,20 +145,20 @@ class Network(metaclass=ABCMeta):
         nabla_b = [ np.zeros(b.shape) for b in self.biases ]
         nabla_w = [ np.zeros(w.shape) for w in self.weights ]
 
-        for x, y in mini_batch:
+        for x, y in zip(mini_batch[0], mini_batch[1]):
             delta_b, delta_w = self.backpropagation(x,y)
             nabla_b = [ nb + db.T for nb,db in zip(nabla_b, delta_b)]
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
 
         # Momentum updates
-        self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
-        self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
+        self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
+        self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
 
         self.weights = [w + velocity for w,velocity in zip(self.weights, self.wvelocities)]
         self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
 
 
-    def SGD(self, training_data, epochs, batch_size, eta, test_data=None):
+    def SGD(self, training_data:tuple, epochs, batch_size, eta, test_data:tuple=None):
         """Trains the network using mini-batch stochastic gradient descent,
         applied to the training examples in :param training_data: for a given
         number of epochs and with the specified learning rate. If :param test_data:
@@ -178,16 +177,16 @@ class Network(metaclass=ABCMeta):
         self.batch_size = batch_size
         self.eta = eta
         self.epochs = epochs
-        self.training_size = len(training_data)
+        self.training_size = len(training_data[0])
 
-        if test_data:
-            n_test = len(test_data)
-
-        n = len(training_data)
+        n = len(training_data[0])
+        rng = default_rng(0)
+        rng.shuffle(training_data[0])
+        rng = default_rng(0)
+        rng.shuffle(training_data[1])
         for e in range(epochs):
-            random.shuffle(training_data)
             mini_batches = [
-                training_data[k:k+batch_size] for k in range(0, n, batch_size)
+                (training_data[0][k:k+batch_size], training_data[1][k:k+batch_size]) for k in range(0, n, batch_size)
             ]
 
             for mini_batch in mini_batches:
@@ -203,6 +202,11 @@ class Network(metaclass=ABCMeta):
 
     
     def plot_score(self,name):
+        """Utility function, allows to build a plot of the scores achieved during training
+        for the validation set and the training set.
+
+        :param name: Prefix name for the file related to the plot.
+        """        
         plt.plot(self.val_scores, '--', label='Validation loss')
         plt.plot(self.train_scores, '--', label='Training loss')
         plt.legend(loc='upper right')
@@ -211,12 +215,14 @@ class Network(metaclass=ABCMeta):
         plt.title ('Loss NN CUP dataset')
         plt.draw()
 
-        plt.savefig(f"./res/{name}ep{self.epochs}e{self.eta}b{self.batch_size}m{self.momentum}lmbda{self.lmbda}s{self.sizes}.png")
+        plt.savefig(f"./res/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
         plt.clf()
 
 
     @abstractmethod
     def best_score(self):
+        """Returns the best score achieved during the fitting of the current network.
+        """        
         pass
 
 
