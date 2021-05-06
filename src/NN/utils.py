@@ -7,6 +7,6 @@ def load_CUP(name):
     b = df.iloc[:,-2:]
 
     X_train, X_test, y_train, y_test = train_test_split(
-            M.values, b.values, test_size=0.2, random_state=0)
+            M.values, b.values, test_size=0.3, random_state=0)
 
     return X_train, X_test, y_train, y_test
