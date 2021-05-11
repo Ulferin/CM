@@ -16,7 +16,6 @@ from functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
 
 
 # TODO: la mean squared error nella evaluate va implementata da me!!! Non posso usare quella di sklearn
-# TODO: aggiungere size gradient per ogni step
 
 ACTIVATIONS = {
     'relu': [relu, relu_prime],
@@ -65,6 +64,7 @@ class Network(metaclass=ABCMeta):
         self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
         self.val_scores = []
         self.train_scores = []
+        self.gradient_norms = []
 
         self.debug = debug
 
@@ -104,7 +104,7 @@ class Network(metaclass=ABCMeta):
         :param y: the expected output for the given sample
         :return: the set of updates to be performed for each unit
         """        
-
+        
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
 
@@ -119,17 +119,14 @@ class Network(metaclass=ABCMeta):
 
         # Backward pass - hidden
         for l in range(2, self.num_layers):
-            net = nets[-l]
             delta = np.matmul(self.weights[-l+1].T, delta)
-            delta = delta * self.der_act(net)
+            delta = delta * self.der_act(nets[-l])
             
-            if self.lmbda > 0:
-                nabla_b[-l] = delta
-                nabla_w[-l] = np.matmul(delta, units_out[-l-1].T)
-            else:
-                nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
-                nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l]) # regularization term derivative
+            nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
+            nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l]) # regularization term derivative
         
+        # self.gradient_norms.append(norm(delta))
+       
         return nabla_b, nabla_w
 
 
@@ -196,7 +193,7 @@ class Network(metaclass=ABCMeta):
                 score = self.evaluate(test_data, training_data)
                 self.val_scores.append(score[0])
                 self.train_scores.append(score[1])
-                if self.debug: print(f"Epoch {e} completed. Score: {score}")
+                if self.debug: print(f"Epoch {e} completed. Score: {score} - Gradient: {self.gradient_norms[-1]}")
             else:
                 print(f"Epoch {e} completed.")
 
