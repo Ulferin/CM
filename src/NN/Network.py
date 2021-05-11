@@ -17,6 +17,7 @@ from functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
 
 # TODO: la mean squared error nella evaluate va implementata da me!!! Non posso usare quella di sklearn
 # TODO: aggiungere size gradient per ogni step
+# TODO: implmentare subgrad
 
 ACTIVATIONS = {
     'relu': [relu, relu_prime],
