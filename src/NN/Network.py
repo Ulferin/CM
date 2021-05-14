@@ -201,6 +201,34 @@ class Network(metaclass=ABCMeta):
             else:
                 print(f"Epoch {e} completed.")
 
+
+    def subgrad(self, training_data, start, epochs, test_data=None):
+        """Subgradient metdo implementation using a diminishing step size.
+
+        Parameters
+        ----------
+        training_data : np.ndarray
+            Training samples to use for the training of the current network.
+        start : scalar
+            starting step to use during the diminishing step size.
+        epochs : scalar
+            Maximum number of epochs to run this method for.
+        test_data : np.ndarray, optional
+            Used to evaluate the performances of the network among epochs. By default None.
+        """                
+        
+        x_ref = []
+        f_ref = np.inf
+        curr_iter = 0
+
+        while True:
+            
+            
+
+            curr_iter += 1
+            if curr_iter >= epochs: break
+            
+
     
     def plot_score(self,name):
         """Utility function, allows to build a plot of the scores achieved during training
