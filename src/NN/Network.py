@@ -4,6 +4,7 @@
 
 from abc import ABCMeta, abstractmethod
 import numpy as np
+from numpy import linalg
 from numpy.linalg import norm
 from numpy.random import default_rng
 from sklearn.metrics import r2_score, mean_squared_error, accuracy_score
@@ -217,16 +218,35 @@ class Network(metaclass=ABCMeta):
             Used to evaluate the performances of the network among epochs. By default None.
         """                
         
-        x_ref = []
+        x_ref = ()
         f_ref = np.inf
-        curr_iter = 0
+        curr_iter = 1
 
         while True:
+            step = start * (1 / curr_iter)
             
-            
+            preds_train = [np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in zip(training_data[0], training_data[1])]
+            truth_train = [y for y in training_data[1]]
+
+            last_f = mean_squared_error(truth_train, preds_train)
+            last_g = self.update_mini_batch(training_data, 1)
+            norm_g = np.linalg.norm(last_g)
+
+            # found a better value
+            if last_f < f_ref:
+                f_ref = last_f
+                x_ref = (self.weights, self.biases)
 
             curr_iter += 1
             if curr_iter >= epochs: break
+
+            # Compute search direction
+            d = last_g * step/norm_g
+            self.weights = self.weights - d
+
+            print(norm_g, last_f)
+
+
             
 
     

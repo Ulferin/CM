@@ -57,4 +57,8 @@ if __name__ == '__main__':
         print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score()}")
         net.plot_score(f"test_np/cup")
 
+    elif test == 'sub':
+        net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
+        net.subgrad((training_data, y_train), epochs=100, start=10)
+
     
