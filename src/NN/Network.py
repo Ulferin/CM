@@ -3,6 +3,9 @@
 # of ML
 
 from abc import ABCMeta, abstractmethod
+import time
+import random
+
 import numpy as np
 from numpy import linalg
 from numpy.linalg import norm
@@ -10,20 +13,15 @@ from numpy.random import default_rng
 from sklearn.metrics import r2_score, mean_squared_error, accuracy_score
 from matplotlib import pyplot as plt
 
-import time
-import random
-
-from functions import relu, relu_prime, ReLU, dReLU, sigmoid, sigmoid_prime
+from ActivationFunctions import ReLU, Sigmoid
 
 
-# TODO: la mean squared error nella evaluate va implementata da me!!! Non posso usare quella di sklearn
 # TODO: aggiungere size gradient per ogni step
 # TODO: implmentare subgrad
 
 ACTIVATIONS = {
-    'relu': [relu, relu_prime],
-    'sigmoid': [sigmoid, sigmoid_prime],
-    'relu2': [ReLU, dReLU]
+    'relu': ReLU,
+    'sigmoid': Sigmoid
 }
 
 
@@ -51,16 +49,13 @@ class Network(metaclass=ABCMeta):
         self.training_size = None
         self.num_layers = len(sizes)
         self.sizes = sizes
-        self.act = ACTIVATIONS[activation][0]
-        self.der_act = ACTIVATIONS[activation][1]
+        self.act = ACTIVATIONS[activation]
         self.momentum = momentum
         self.lmbda = lmbda
         self.last_act = None            # Must be defined by subclassing the Network
-        self.last_der = None            # Must be defined by subclassing the Network
 
         # TODO: non possiamo avere un singolo bias per layer invece che un bias per ogni unità?
         #       controllare nel libro dove ha dato questo esempio cosa dice a riguardo
-        # self.biases = [rng.normal(0, 0.01, (1,y)) for y in sizes[1:]]
         self.biases = [np.zeros_like(y) for y in sizes[1:]]
         self.weights = [rng.normal(0, 0.01, (y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
@@ -84,12 +79,12 @@ class Network(metaclass=ABCMeta):
         nets = []
         for b, w in zip(self.biases[:-1], self.weights[:-1]):
             net = np.matmul(w, out) + b.T
-            out = self.act(net)
+            out = self.act.function(net)
             nets.append(net)
             units_out.append(out)
     
         # Last layer is linear for regression tasks and sigmoid for classification
-        out = self.last_act(np.matmul(self.weights[-1], out) + self.biases[-1].T)
+        out = self.last_act.function(np.matmul(self.weights[-1], out) + self.biases[-1].T)
         nets.append(out)
         units_out.append(out)
         
@@ -113,24 +108,19 @@ class Network(metaclass=ABCMeta):
         # Forward computation
         units_out, nets, out = self.feedforward(x)
 
-        # Backward pass - output unit
-        delta = (out - y.reshape(-1,1))
-        delta = delta * self.last_der(nets[-1])
-        nabla_b[-1] = delta
-        nabla_w[-1] = np.matmul(delta, units_out[-2].T)
-
-        # Backward pass - hidden
-        for l in range(2, self.num_layers):
-            net = nets[-l]
-            delta = np.matmul(self.weights[-l+1].T, delta)
-            delta = delta * self.der_act(net)
-            
-            if self.lmbda > 0:
-                nabla_b[-l] = delta
-                nabla_w[-l] = np.matmul(delta, units_out[-l-1].T)
+        # Backward pass
+        for l in range(1, self.num_layers):
+            if l == 1:
+                # Backward pass - output unit
+                delta = (out - y.reshape(-1,1))
+                delta = delta * self.last_act.derivative(nets[-1])
             else:
-                nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
-                nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l]) # regularization term derivative
+                # Backward pass - hidden unit
+                delta = np.matmul(self.weights[-l+1].T, delta)
+                delta = delta * self.act.derivative(nets[-l])
+            
+            nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
+            nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l]) # regularization term derivative
         
         return nabla_b, nabla_w
 
@@ -195,10 +185,10 @@ class Network(metaclass=ABCMeta):
                 self.update_mini_batch(mini_batch, eta)
 
             if test_data:
-                score = self.evaluate(test_data, training_data)
+                score, preds = self.evaluate(test_data, training_data)
                 self.val_scores.append(score[0])
                 self.train_scores.append(score[1])
-                if self.debug: print(f"Epoch {e} completed. Score: {score}")
+                if self.debug: print(f"pred: {preds[1]} --> target: {training_data[1][1]} -- Epoch {e} completed. Score: {score}")
             else:
                 print(f"Epoch {e} completed.")
 
