@@ -125,7 +125,7 @@ class Network(metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
-    def update_mini_batch(self, mini_batch: tuple, eta):
+    def update_mini_batch(self, mini_batch: tuple, eta, sub=True):
         """Updates the network weights and biases by applying the backpropagation algorithm
         to the current set of examples contained in the :param mini_batch:. Computes the deltas
         used to update weights as an average over the size of the examples set, using the provided
@@ -142,12 +142,17 @@ class Network(metaclass=ABCMeta):
             nabla_b = [ nb + db.T for nb,db in zip(nabla_b, delta_b)]
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
 
-        # Momentum updates
-        self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
-        self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
+        if not sub:
+            # Momentum updates
+            self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
+            self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
 
-        self.weights = [w + velocity for w,velocity in zip(self.weights, self.wvelocities)]
-        self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
+            self.weights = [w + velocity for w,velocity in zip(self.weights, self.wvelocities)]
+            self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
+        else:
+            # Compute search direction            
+            d = step/norm_g
+            self.weights = self.weights - d
 
 
     def SGD(self, training_data:tuple, epochs, batch_size, eta, test_data:tuple=None):
@@ -219,8 +224,8 @@ class Network(metaclass=ABCMeta):
             truth_train = [y for y in training_data[1]]
 
             last_f = mean_squared_error(truth_train, preds_train)
-            last_g = self.update_mini_batch(training_data, 1)
-            norm_g = np.linalg.norm(last_g)
+            self.update_mini_batch(training_data, 1, True)
+            norm_g = np.linalg.norm(self.weights)
 
             # found a better value
             if last_f < f_ref:
@@ -230,9 +235,7 @@ class Network(metaclass=ABCMeta):
             curr_iter += 1
             if curr_iter >= epochs: break
 
-            # Compute search direction
-            d = last_g * step/norm_g
-            self.weights = self.weights - d
+            
 
             print(norm_g, last_f)
 
