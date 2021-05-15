@@ -32,7 +32,7 @@ if __name__ == '__main__':
     h1 = 20
     h2 = 16
     activation = 'relu'
-    lmbda = 0.1
+    lmbda = 0.
     momentum = 0.9
     epochs = 300
     batch_size = 20

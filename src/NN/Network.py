@@ -54,7 +54,6 @@ class Network(metaclass=ABCMeta):
 
         # TODO: non possiamo avere un singolo bias per layer invece che un bias per ogni unità?
         #       controllare nel libro dove ha dato questo esempio cosa dice a riguardo
-        # self.biases = [rng.normal(0, 0.01, (1,y)) for y in sizes[1:]]
         self.biases = [np.zeros_like(y) for y in sizes[1:]]
         self.weights = [rng.normal(0, 0.01, (y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
@@ -115,16 +114,11 @@ class Network(metaclass=ABCMeta):
 
         # Backward pass - hidden
         for l in range(2, self.num_layers):
-            net = nets[-l]
             delta = np.matmul(self.weights[-l+1].T, delta)
-            delta = delta * self.act.derivative(net)
+            delta = delta * self.act.derivative(nets[-l])
             
-            if self.lmbda > 0:
-                nabla_b[-l] = delta
-                nabla_w[-l] = np.matmul(delta, units_out[-l-1].T)
-            else:
-                nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
-                nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l]) # regularization term derivative
+            nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
+            nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l]) # regularization term derivative
         
         return nabla_b, nabla_w
 
