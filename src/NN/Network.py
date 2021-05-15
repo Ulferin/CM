@@ -106,16 +106,16 @@ class Network(metaclass=ABCMeta):
         # Forward computation
         units_out, nets, out = self.feedforward(x)
 
-        # Backward pass - output unit
-        delta = (out - y.reshape(-1,1))
-        delta = delta * self.last_act.derivative(nets[-1])
-        nabla_b[-1] = delta
-        nabla_w[-1] = np.matmul(delta, units_out[-2].T)
-
-        # Backward pass - hidden
-        for l in range(2, self.num_layers):
-            delta = np.matmul(self.weights[-l+1].T, delta)
-            delta = delta * self.act.derivative(nets[-l])
+        # Backward pass
+        for l in range(1, self.num_layers):
+            if l == 1:
+                # Backward pass - output unit
+                delta = (out - y.reshape(-1,1))
+                delta = delta * self.last_act.derivative(nets[-1])
+            else:
+                # Backward pass - hidden unit
+                delta = np.matmul(self.weights[-l+1].T, delta)
+                delta = delta * self.act.derivative(nets[-l])
             
             nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
             nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l]) # regularization term derivative
@@ -183,10 +183,10 @@ class Network(metaclass=ABCMeta):
                 self.update_mini_batch(mini_batch, eta)
 
             if test_data:
-                score = self.evaluate(test_data, training_data)
+                score, preds = self.evaluate(test_data, training_data)
                 self.val_scores.append(score[0])
                 self.train_scores.append(score[1])
-                if self.debug: print(f"Epoch {e} completed. Score: {score}")
+                if self.debug: print(f"pred: {preds[1]} --> target: {training_data[1][1]} -- Epoch {e} completed. Score: {score}")
             else:
                 print(f"Epoch {e} completed.")
 
