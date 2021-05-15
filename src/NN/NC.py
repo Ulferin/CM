@@ -2,7 +2,8 @@ import numpy as np
 from sklearn.metrics import accuracy_score, mean_squared_error
 
 from Network import Network
-from functions import sigmoid, sigmoid_prime
+from ActivationFunctions import Sigmoid, Linear
+from LossFunctions import MeanSquaredError
 
 
 class NC(Network):
@@ -11,8 +12,7 @@ class NC(Network):
         super().__init__(sizes, seed, activation, lmbda, momentum, debug)
 
         # Defines the behavior of the last layer of the network
-        self.last_act = sigmoid
-        self.last_der = sigmoid_prime
+        self.last_act = Sigmoid
 
 
     def best_score(self):
@@ -49,8 +49,7 @@ class NR(Network):
         super().__init__(sizes, seed, activation, lmbda, momentum, debug)
 
         # Defines the behavior of the last layer of the network
-        self.last_act = lambda x: x
-        self.last_der = lambda x: 1
+        self.last_act = Linear
 
 
     def best_score(self):
@@ -70,11 +69,12 @@ class NR(Network):
         score_train = []
 
         preds_test = [np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in zip(test_data[0], test_data[1])]
-        truth_test = [y for y in test_data[1] ]
+        truth_test = [y for y in test_data[1]]
 
         preds_train = [np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in zip(train_data[0], train_data[1])]
         truth_train = [y for y in train_data[1]]
         
-        score_test.append(mean_squared_error(truth_test, preds_test))
-        score_train.append(mean_squared_error(truth_train, preds_train))
-        return (score_test, score_train)
+        score_test.append(MeanSquaredError.loss(truth_test, preds_test))
+        score_train.append(MeanSquaredError.loss(truth_train, preds_train))
+
+        return (score_test, score_train), preds_train
