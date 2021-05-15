@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     h1 = 20
     h2 = 16
-    activation = 'relu2'
+    activation = 'relu'
     lmbda = 0.1
     momentum = 0.9
     epochs = 300
@@ -46,15 +46,15 @@ if __name__ == '__main__':
                         for e in eta:
                             for l in lmbda:
                                 for m in momentum:
-                                    net = NR([input_units, h1, h2, output_units], 0, 'relu2', lmbda=l, momentum=m, debug=False)
+                                    net = NR([input_units, h1, h2, output_units], 0, 'relu', lmbda=l, momentum=m, debug=False)
                                     net.SGD((training_data, y_train), epochs=ep, batch_size=b, eta=e, test_data=(test_data, y_test))
                                     print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score()}")
                                     net.plot_score(f"test_np/cup")
 
     elif test == 'std':
-        net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
+        net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=True)
         net.SGD((training_data, y_train), epochs=epochs, batch_size=batch_size, eta=eta, test_data=(test_data, y_test))
-        print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score()}")
+        print(f"The best score for ep:{epochs}, h1:{h1}, h2:{h2}, b:{batch_size}, e:{eta}, l:{lmbda}, m:{momentum} was: {net.best_score()}")
         net.plot_score(f"test_np/cup")
 
     

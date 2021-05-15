@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score, mean_squared_error
 
 from Network import Network
-from functions import sigmoid, sigmoid_prime
+from ActivationFunctions import Sigmoid, Linear
 
 
 class NC(Network):
@@ -11,8 +11,7 @@ class NC(Network):
         super().__init__(sizes, seed, activation, lmbda, momentum, debug)
 
         # Defines the behavior of the last layer of the network
-        self.last_act = sigmoid
-        self.last_der = sigmoid_prime
+        self.last_act = Sigmoid
 
 
     def best_score(self):
@@ -49,8 +48,7 @@ class NR(Network):
         super().__init__(sizes, seed, activation, lmbda, momentum, debug)
 
         # Defines the behavior of the last layer of the network
-        self.last_act = lambda x: x
-        self.last_der = lambda x: 1
+        self.last_act = Linear
 
 
     def best_score(self):

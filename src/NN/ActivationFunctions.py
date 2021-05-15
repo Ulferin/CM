@@ -14,7 +14,8 @@ class ActivationFunction(metaclass=ABCMeta):
 
 class ReLU(ActivationFunction):
     
-    def function(self, x):
+    @staticmethod
+    def function(x):
         """Utility function that implements the ReLU function used in the NN units.
         It works both with vectors and scalars. 
 
@@ -23,7 +24,8 @@ class ReLU(ActivationFunction):
         """
         return np.maximum(x, 0.)
 
-    def derivative(self, x):
+    @staticmethod
+    def derivative(x):
         """Utility function that implements the ReLU function derivative.
         It works both with vectors and scalars.
 
@@ -35,7 +37,8 @@ class ReLU(ActivationFunction):
 
 class Sigmoid(ActivationFunction):
 
-    def function(self, x):
+    @staticmethod
+    def function(x):
         """Function that defines the sigmoid activation function used in the
         Neaural Network units. It works both with vectors and numbers.
 
@@ -46,13 +49,24 @@ class Sigmoid(ActivationFunction):
 
         return 1.0 / (1.0 + np.exp(-x))
 
-
-    def derivative(self, x):
+    @staticmethod
+    def derivative(x):
         """Derivative function of the sigmoid function.
 
         :param z: element to which apply the sigmoid derivative function.
         :return: an element with the same shape of the input with
                 sigmoid derivative function applied elementwise in case of a vector.
         """
-        x = self.function(x)
+        x = Sigmoid.function(x)
         return x * (1 - x)
+
+
+class Linear(ActivationFunction):
+
+    @staticmethod
+    def function(x):        
+        return x
+
+    @staticmethod
+    def derivative(x):
+        return 1
