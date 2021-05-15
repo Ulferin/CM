@@ -3,19 +3,18 @@
 # of ML
 
 from abc import ABCMeta, abstractmethod
+import time
+import random
+
 import numpy as np
 from numpy.linalg import norm
 from numpy.random import default_rng
 from sklearn.metrics import r2_score, mean_squared_error, accuracy_score
 from matplotlib import pyplot as plt
 
-import time
-import random
-
 from ActivationFunctions import ReLU, Sigmoid
 
 
-# TODO: la mean squared error nella evaluate va implementata da me!!! Non posso usare quella di sklearn
 # TODO: aggiungere size gradient per ogni step
 
 ACTIVATIONS = {
