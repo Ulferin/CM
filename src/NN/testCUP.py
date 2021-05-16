@@ -2,11 +2,11 @@ import numpy as np
 import sys
 
 
-from NC import NR
-import utils
+from src.NN.NC import NR
+import src.NN.utils as utils
 
 
-X_train, X_test, y_train, y_test = utils.load_CUP("../../data/ML-CUP20-TR.csv")
+X_train, X_test, y_train, y_test = utils.load_CUP("data/ML-CUP20-TR.csv")
 
 
 # Loads the input and output layers shape

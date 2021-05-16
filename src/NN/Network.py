@@ -12,7 +12,7 @@ from numpy.random import default_rng
 from sklearn.metrics import r2_score, mean_squared_error, accuracy_score
 from matplotlib import pyplot as plt
 
-from ActivationFunctions import ReLU, Sigmoid
+from src.NN.ActivationFunctions import ReLU, Sigmoid
 
 
 # TODO: aggiungere size gradient per ogni step

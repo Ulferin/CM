@@ -1,9 +1,9 @@
 import numpy as np
 from sklearn.metrics import accuracy_score, mean_squared_error
 
-from Network import Network
-from ActivationFunctions import Sigmoid, Linear
-from LossFunctions import MeanSquaredError
+from src.NN.Network import Network
+from src.NN.ActivationFunctions import Sigmoid, Linear
+from src.NN.LossFunctions import MeanSquaredError
 
 
 class NC(Network):
