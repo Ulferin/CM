@@ -43,7 +43,7 @@ class Network(metaclass=ABCMeta):
             of the network. 
         """
         
-        rng = default_rng(seed)
+        rng = default_rng(seed)     # needed for reproducibility
         self.training_size = None
         self.num_layers = len(sizes)
         self.sizes = sizes
@@ -148,7 +148,7 @@ class Network(metaclass=ABCMeta):
         self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
 
 
-    def SGD(self, training_data:tuple, epochs, batch_size, eta, test_data:tuple=None):
+    def SGD(self, training_data:tuple, epochs, eta, batch_size=None, test_data:tuple=None):
         """Trains the network using mini-batch stochastic gradient descent,
         applied to the training examples in :param training_data: for a given
         number of epochs and with the specified learning rate. If :param test_data:
@@ -175,9 +175,17 @@ class Network(metaclass=ABCMeta):
         rng = default_rng(0)
         rng.shuffle(training_data[1])
         for e in range(epochs):
-            mini_batches = [
-                (training_data[0][k:k+batch_size], training_data[1][k:k+batch_size]) for k in range(0, n, batch_size)
-            ]
+            mini_batches = []
+            
+            if batch_size is not None:
+                batches = int(n/batch_size)
+                for b in range(batches):
+                    start = b * batch_size
+                    end = (b+1) * batch_size
+                    mini_batches.append((training_data[0][start:end], training_data[1][start:end]))
+                mini_batches.append((training_data[0][b*batch_size:], training_data[1][b*batch_size:]))
+            else:
+                mini_batches.append((training_data[0], training_data[1]))
 
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta)
@@ -205,7 +213,7 @@ class Network(metaclass=ABCMeta):
         plt.title ('Loss NN CUP dataset')
         plt.draw()
 
-        plt.savefig(f"./res/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
+        plt.savefig(f"src/NN/res/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
         plt.clf()
 
 
