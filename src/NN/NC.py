@@ -16,7 +16,12 @@ class NC(Network):
 
 
     def best_score(self):
-        return (np.max(self.val_scores), np.max(self.train_scores))
+
+        best_score = ()
+        if len(self.val_scores) > 0:
+            best_score = (np.max(self.val_scores), np.max(self.train_scores))
+
+        return best_score
 
 
     def evaluate(self, test_data, train_data):
@@ -53,7 +58,11 @@ class NR(Network):
 
 
     def best_score(self):
-        return (np.min(self.val_scores), np.min(self.train_scores))
+        best_score = ()
+        if len(self.val_scores) > 0:
+            best_score = (np.min(self.val_scores), np.min(self.train_scores))
+
+        return best_score
 
     def evaluate(self, test_data:tuple, train_data:tuple):
             # TODO: cambiare descrizione di evaluate nelle due sottoclassi
