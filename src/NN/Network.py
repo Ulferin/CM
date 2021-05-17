@@ -11,6 +11,7 @@ from numpy import linalg
 from numpy.linalg import norm
 from numpy.random import default_rng
 from sklearn.metrics import r2_score, mean_squared_error, accuracy_score
+from LossFunctions import MeanSquaredError
 from matplotlib import pyplot as plt
 
 from ActivationFunctions import ReLU, Sigmoid
@@ -125,7 +126,7 @@ class Network(metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
-    def update_mini_batch(self, mini_batch: tuple, eta, sub=True):
+    def update_mini_batch(self, mini_batch: tuple, eta, sub=False):
         """Updates the network weights and biases by applying the backpropagation algorithm
         to the current set of examples contained in the :param mini_batch:. Computes the deltas
         used to update weights as an average over the size of the examples set, using the provided
@@ -150,10 +151,13 @@ class Network(metaclass=ABCMeta):
             self.weights = [w + velocity for w,velocity in zip(self.weights, self.wvelocities)]
             self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
         else:
-            # Compute search direction            
-            d = step/norm_g
-            self.weights = self.weights - d
+            # Compute search direction
+            self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))
+            dw = self.step/self.ngrad
+            db = self.step/self.ngrad
 
+            self.weights = [w - dw*nw for w,nw in zip(self.weights, nabla_w)]
+            self.biases = [b - db*nb for b,nb in zip(self.biases, nabla_b)]
 
     def SGD(self, training_data:tuple, epochs, batch_size, eta, test_data:tuple=None):
         """Trains the network using mini-batch stochastic gradient descent,
@@ -213,19 +217,19 @@ class Network(metaclass=ABCMeta):
             Used to evaluate the performances of the network among epochs. By default None.
         """                
         
-        x_ref = ()
+        x_ref = []
         f_ref = np.inf
         curr_iter = 1
 
         while True:
-            step = start * (1 / curr_iter)
+            self.step = start * (1 / curr_iter)
+
             
             preds_train = [np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in zip(training_data[0], training_data[1])]
             truth_train = [y for y in training_data[1]]
 
-            last_f = mean_squared_error(truth_train, preds_train)
+            last_f = MeanSquaredError.loss(truth_train, preds_train)
             self.update_mini_batch(training_data, 1, True)
-            norm_g = np.linalg.norm(self.weights)
 
             # found a better value
             if last_f < f_ref:
@@ -235,9 +239,7 @@ class Network(metaclass=ABCMeta):
             curr_iter += 1
             if curr_iter >= epochs: break
 
-            
-
-            print(norm_g, last_f)
+            print(f"{self.ngrad}\t\t{last_f}")
 
 
             
