@@ -1,5 +1,5 @@
 import pandas as pd
-from NC import NC
+from src.NN.NC import NC
 from sklearn.preprocessing import OneHotEncoder
 
 def load_monk(name):
@@ -35,7 +35,7 @@ def prepare_data(X_train, X_test):
 
 
 d_name = 'monks-3'
-X_train, X_test, y_train, y_test = load_monk(f"../../data/{d_name}")
+X_train, X_test, y_train, y_test = load_monk(f"data/MONK/{d_name}")
 X_train, X_test = prepare_data(X_train, X_test)
 
 # Loads the input and output layers shape

@@ -52,8 +52,7 @@ class Network(metaclass=ABCMeta):
         self.lmbda = lmbda
         self.last_act = None            # Must be defined by subclassing the Network
 
-        # TODO: non possiamo avere un singolo bias per layer invece che un bias per ogni unità?
-        #       controllare nel libro dove ha dato questo esempio cosa dice a riguardo
+
         self.biases = [np.zeros_like(y) for y in sizes[1:]]
         self.weights = [rng.normal(0, 0.01, (y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
@@ -190,7 +189,7 @@ class Network(metaclass=ABCMeta):
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta)
 
-            if test_data:
+            if test_data is not None:
                 score, preds = self.evaluate(test_data, training_data)
                 self.val_scores.append(score[0])
                 self.train_scores.append(score[1])
