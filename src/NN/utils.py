@@ -3,8 +3,6 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 def load_CUP(name):
-    df = pd.read_csv(name, header=None, index_col=0, skiprows=7)
-
     ml_cup = np.delete(np.genfromtxt(name, delimiter=','), obj=0, axis=1)
     M, b = ml_cup[:, :-2], ml_cup[:, -2:]
 
