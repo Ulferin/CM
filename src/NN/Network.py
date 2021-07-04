@@ -53,8 +53,8 @@ class Network(metaclass=ABCMeta):
         self.last_act = None            # Must be defined by subclassing the Network
 
 
-        self.biases = [np.zeros_like(y) for y in sizes[1:]]
-        self.weights = [rng.normal(0, 0.01, (y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
+        self.biases = [np.zeros_like(l) for l in sizes[1:]]
+        self.weights = [rng.normal(0, 1, (y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
         self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
         self.val_scores = []
@@ -190,10 +190,11 @@ class Network(metaclass=ABCMeta):
                 self.update_mini_batch(mini_batch, eta)
 
             if test_data is not None:
-                score, preds = self.evaluate(test_data, training_data)
+                score, preds_train, preds_test = self.evaluate(test_data, training_data)
                 self.val_scores.append(score[0])
                 self.train_scores.append(score[1])
-                if self.debug: print(f"pred: {preds[1]} --> target: {training_data[1][1]} -- Epoch {e} completed. Score: {score}")
+                if self.debug: print(f"pred train: {preds_train[1]} --> target: {training_data[1][1]} || pred test: {preds_test[1]} --> target {test_data[1][1]}")
+                print(f"Epoch {e} completed. Score: {score}")
             else:
                 print(f"Epoch {e} completed.")
 

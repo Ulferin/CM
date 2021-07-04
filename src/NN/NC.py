@@ -86,4 +86,4 @@ class NR(Network):
         score_test.append(MeanSquaredError.loss(truth_test, preds_test))
         score_train.append(MeanSquaredError.loss(truth_train, preds_train))
 
-        return (score_test, score_train), preds_train
+        return (score_test, score_train), preds_train, preds_test
