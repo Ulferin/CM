@@ -7,15 +7,19 @@ import time
 import random
 
 import numpy as np
+from numpy import linalg
 from numpy.linalg import norm
 from numpy.random import default_rng
 from sklearn.metrics import r2_score, mean_squared_error, accuracy_score
+from LossFunctions import MeanSquaredError
 from matplotlib import pyplot as plt
 
-from ActivationFunctions import ReLU, Sigmoid
+from src.NN.ActivationFunctions import ReLU, Sigmoid
 
 
 # TODO: aggiungere size gradient per ogni step
+# TODO: implmentare subgrad
+# TODO: usiamo Leaky ReLU e non ReLU
 
 ACTIVATIONS = {
     'relu': ReLU,
@@ -43,7 +47,7 @@ class Network(metaclass=ABCMeta):
             of the network. 
         """
         
-        rng = default_rng(seed)
+        rng = default_rng(seed)     # needed for reproducibility
         self.training_size = None
         self.num_layers = len(sizes)
         self.sizes = sizes
@@ -51,11 +55,11 @@ class Network(metaclass=ABCMeta):
         self.momentum = momentum
         self.lmbda = lmbda
         self.last_act = None            # Must be defined by subclassing the Network
+        self.g = None
 
-        # TODO: non possiamo avere un singolo bias per layer invece che un bias per ogni unità?
-        #       controllare nel libro dove ha dato questo esempio cosa dice a riguardo
-        self.biases = [np.zeros_like(y) for y in sizes[1:]]
-        self.weights = [rng.normal(0, 0.01, (y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
+
+        self.biases = [np.zeros_like(l) for l in sizes[1:]]
+        self.weights = [rng.normal(0, 1, (y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
         self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
         self.val_scores = []
@@ -105,13 +109,14 @@ class Network(metaclass=ABCMeta):
 
         # Forward computation
         units_out, nets, out = self.feedforward(x)
+        delta = 0
 
         # Backward pass
         for l in range(1, self.num_layers):
             if l == 1:
                 # Backward pass - output unit
                 delta = (out - y.reshape(-1,1))
-                delta = delta * self.last_act.derivative(nets[-1])
+                delta = delta * self.last_act.derivative(nets[-1])  # TODO: questo si puù cambiare con una sola riga come quella in 118
             else:
                 # Backward pass - hidden unit
                 delta = np.matmul(self.weights[-l+1].T, delta)
@@ -120,10 +125,12 @@ class Network(metaclass=ABCMeta):
             nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
             nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l]) # regularization term derivative
         
+        self.g = delta
+
         return nabla_b, nabla_w
 
 
-    def update_mini_batch(self, mini_batch: tuple, eta):
+    def update_mini_batch(self, mini_batch: tuple, eta, sub=False):
         """Updates the network weights and biases by applying the backpropagation algorithm
         to the current set of examples contained in the :param mini_batch:. Computes the deltas
         used to update weights as an average over the size of the examples set, using the provided
@@ -140,15 +147,23 @@ class Network(metaclass=ABCMeta):
             nabla_b = [ nb + db.T for nb,db in zip(nabla_b, delta_b)]
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
 
-        # Momentum updates
-        self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
-        self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
+        if not sub:
+            # Momentum updates
+            self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
+            self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
 
-        self.weights = [w + velocity for w,velocity in zip(self.weights, self.wvelocities)]
-        self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
+            self.weights = [w + velocity for w,velocity in zip(self.weights, self.wvelocities)]
+            self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
+        else:
+            # Compute search direction
+            self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))
+            dw = self.step/self.ngrad
+            db = self.step/self.ngrad
 
+            self.weights = [w - dw*nw for w,nw in zip(self.weights, nabla_w)]
+            self.biases = [b - db*nb for b,nb in zip(self.biases, nabla_b)]
 
-    def SGD(self, training_data:tuple, epochs, batch_size, eta, test_data:tuple=None):
+    def SGD(self, training_data:tuple, epochs, eta, batch_size=None, test_data:tuple=None):
         """Trains the network using mini-batch stochastic gradient descent,
         applied to the training examples in :param training_data: for a given
         number of epochs and with the specified learning rate. If :param test_data:
@@ -175,20 +190,72 @@ class Network(metaclass=ABCMeta):
         rng = default_rng(0)
         rng.shuffle(training_data[1])
         for e in range(epochs):
-            mini_batches = [
-                (training_data[0][k:k+batch_size], training_data[1][k:k+batch_size]) for k in range(0, n, batch_size)
-            ]
+            mini_batches = []
+            
+            if batch_size is not None:
+                batches = int(n/batch_size)
+                for b in range(batches):
+                    start = b * batch_size
+                    end = (b+1) * batch_size
+                    mini_batches.append((training_data[0][start:end], training_data[1][start:end]))
+                mini_batches.append((training_data[0][b*batch_size:], training_data[1][b*batch_size:]))
+            else:
+                mini_batches.append((training_data[0], training_data[1]))
 
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta)
 
-            if test_data:
-                score, preds = self.evaluate(test_data, training_data)
+            if test_data is not None:
+                score, preds_train, preds_test = self.evaluate(test_data, training_data)
                 self.val_scores.append(score[0])
                 self.train_scores.append(score[1])
-                if self.debug: print(f"pred: {preds[1]} --> target: {training_data[1][1]} -- Epoch {e} completed. Score: {score}")
+                if self.debug: print(f"pred train: {preds_train[1]} --> target: {training_data[1][1]} || pred test: {preds_test[1]} --> target {test_data[1][1]}")
+                print(f"Epoch {e} completed with gradient norm: {np.linalg.norm(self.g)}, {self.g.shape}. Score: {score}")
             else:
                 print(f"Epoch {e} completed.")
+
+
+    def subgrad(self, training_data, start, epochs, test_data=None):
+        """Subgradient metdo implementation using a diminishing step size.
+
+        Parameters
+        ----------
+        training_data : np.ndarray
+            Training samples to use for the training of the current network.
+        start : scalar
+            starting step to use during the diminishing step size.
+        epochs : scalar
+            Maximum number of epochs to run this method for.
+        test_data : np.ndarray, optional
+            Used to evaluate the performances of the network among epochs. By default None.
+        """                
+        
+        x_ref = []
+        f_ref = np.inf
+        curr_iter = 1
+
+        while True:
+            self.step = start * (1 / curr_iter)
+
+            
+            preds_train = [np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in zip(training_data[0], training_data[1])]
+            truth_train = [y for y in training_data[1]]
+
+            last_f = MeanSquaredError.loss(truth_train, preds_train)
+            self.update_mini_batch(training_data, 1, True)
+
+            # found a better value
+            if last_f < f_ref:
+                f_ref = last_f
+                x_ref = (self.weights, self.biases)
+
+            curr_iter += 1
+            if curr_iter >= epochs: break
+
+            print(f"{self.ngrad}\t\t{last_f}")
+
+
+            
 
     
     def plot_score(self,name):
@@ -199,13 +266,13 @@ class Network(metaclass=ABCMeta):
         """        
         plt.plot(self.val_scores, '--', label='Validation loss')
         plt.plot(self.train_scores, '--', label='Training loss')
-        plt.legend(loc='upper right')
+        plt.legend(loc='best')
         plt.xlabel ('Epochs')
         plt.ylabel ('Loss')
         plt.title ('Loss NN CUP dataset')
         plt.draw()
 
-        plt.savefig(f"./res/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
+        plt.savefig(f"src/NN/res/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
         plt.clf()
 
 

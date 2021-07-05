@@ -1,9 +1,9 @@
 import numpy as np
 from sklearn.metrics import accuracy_score, mean_squared_error
 
-from Network import Network
-from ActivationFunctions import Sigmoid, Linear
-from LossFunctions import MeanSquaredError
+from src.NN.Network import Network
+from src.NN.ActivationFunctions import Sigmoid, Linear
+from src.NN.LossFunctions import MeanSquaredError
 
 
 class NC(Network):
@@ -16,7 +16,12 @@ class NC(Network):
 
 
     def best_score(self):
-        return (np.max(self.val_scores), np.max(self.train_scores))
+
+        best_score = ()
+        if len(self.val_scores) > 0:
+            best_score = (np.max(self.val_scores), np.max(self.train_scores))
+
+        return best_score
 
 
     def evaluate(self, test_data, train_data):
@@ -29,18 +34,19 @@ class NC(Network):
         :return: The overall accuracy for the current prediction
         """        
 
-        score = []
+        score_test = []
+        score_train = []
 
-        preds_test = [ np.array(self.feedforward(x)[2] > 0.5).reshape(y.shape) for x,y in test_data]
-        truth_test = [ y for x,y in test_data ]
+        preds_test = [ np.array(self.feedforward(x)[2] > 0.5).reshape(y.shape) for x,y in zip(test_data[0], test_data[1])]
+        truth_test = [ y for y in test_data[1]]
 
-        preds_train = [np.array(self.feedforward(x)[2] > 0.5).reshape(y.shape) for x,y in train_data]
-        truth_train = [y for x,y in train_data]
+        preds_train = [np.array(self.feedforward(x)[2] > 0.5).reshape(y.shape) for x,y in zip(train_data[0], test_data[1])]
+        truth_train = [y for y in train_data[1]]
 
-        score.append(accuracy_score(truth_test, preds_test))
-        score.append(accuracy_score(truth_train, preds_train))
+        score_test.append(accuracy_score(truth_test, preds_test))
+        score_train.append(accuracy_score(truth_train, preds_train))
 
-        return score
+        return (score_test, score_train), preds_train, preds_test
 
 
 class NR(Network):
@@ -53,7 +59,11 @@ class NR(Network):
 
 
     def best_score(self):
-        return (np.min(self.val_scores), np.min(self.train_scores))
+        best_score = ()
+        if len(self.val_scores) > 0:
+            best_score = (np.min(self.val_scores), np.min(self.train_scores))
+
+        return best_score
 
     def evaluate(self, test_data:tuple, train_data:tuple):
             # TODO: cambiare descrizione di evaluate nelle due sottoclassi
@@ -77,4 +87,4 @@ class NR(Network):
         score_test.append(MeanSquaredError.loss(truth_test, preds_test))
         score_train.append(MeanSquaredError.loss(truth_train, preds_train))
 
-        return (score_test, score_train), preds_train
+        return (score_test, score_train), preds_train, preds_test
