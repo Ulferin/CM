@@ -16,6 +16,7 @@ from src.NN.ActivationFunctions import ReLU, Sigmoid
 
 
 # TODO: aggiungere size gradient per ogni step
+# TODO: usiamo Leaky ReLU e non ReLU
 
 ACTIVATIONS = {
     'relu': ReLU,
@@ -51,6 +52,7 @@ class Network(metaclass=ABCMeta):
         self.momentum = momentum
         self.lmbda = lmbda
         self.last_act = None            # Must be defined by subclassing the Network
+        self.g = None
 
 
         self.biases = [np.zeros_like(l) for l in sizes[1:]]
@@ -104,13 +106,14 @@ class Network(metaclass=ABCMeta):
 
         # Forward computation
         units_out, nets, out = self.feedforward(x)
+        delta = 0
 
         # Backward pass
         for l in range(1, self.num_layers):
             if l == 1:
                 # Backward pass - output unit
                 delta = (out - y.reshape(-1,1))
-                delta = delta * self.last_act.derivative(nets[-1])
+                delta = delta * self.last_act.derivative(nets[-1])  # TODO: questo si puù cambiare con una sola riga come quella in 118
             else:
                 # Backward pass - hidden unit
                 delta = np.matmul(self.weights[-l+1].T, delta)
@@ -119,6 +122,8 @@ class Network(metaclass=ABCMeta):
             nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
             nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l]) # regularization term derivative
         
+        self.g = delta
+
         return nabla_b, nabla_w
 
 
@@ -194,7 +199,7 @@ class Network(metaclass=ABCMeta):
                 self.val_scores.append(score[0])
                 self.train_scores.append(score[1])
                 if self.debug: print(f"pred train: {preds_train[1]} --> target: {training_data[1][1]} || pred test: {preds_test[1]} --> target {test_data[1][1]}")
-                print(f"Epoch {e} completed. Score: {score}")
+                print(f"Epoch {e} completed with gradient norm: {np.linalg.norm(self.g)}, {self.g.shape}. Score: {score}")
             else:
                 print(f"Epoch {e} completed.")
 
@@ -207,7 +212,7 @@ class Network(metaclass=ABCMeta):
         """        
         plt.plot(self.val_scores, '--', label='Validation loss')
         plt.plot(self.train_scores, '--', label='Training loss')
-        plt.legend(loc='upper right')
+        plt.legend(loc='best')
         plt.xlabel ('Epochs')
         plt.ylabel ('Loss')
         plt.title ('Loss NN CUP dataset')

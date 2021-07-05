@@ -29,14 +29,14 @@ momentum = [0.5, 0.9]
 if __name__ == '__main__':
     test = sys.argv[1]
 
-    h1 = 79
-    h2 = 61
+    h1 = 16
+    h2 = 32
     activation = 'relu'
-    lmbda = 0.001
-    momentum = 0.9
-    epochs = 600
+    lmbda = 0
+    momentum = 0.5
+    epochs = 3000
     batch_size = 32
-    eta = 0.0005
+    eta = 0.001
 
     if test == 'grid':
         for ep in epochs:
