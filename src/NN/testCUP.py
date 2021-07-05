@@ -2,11 +2,11 @@ import numpy as np
 import sys
 
 
-from NC import NR
-import utils
+from src.NN.NC import NR
+import src.NN.utils as utils
 
 
-X_train, X_test, y_train, y_test = utils.load_CUP("../../data/ML-CUP20-TR.csv")
+X_train, X_test, y_train, y_test = utils.load_CUP("data/ML-CUP20-TR.csv")
 
 
 # Loads the input and output layers shape
@@ -29,13 +29,13 @@ momentum = [0.5, 0.9]
 if __name__ == '__main__':
     test = sys.argv[1]
 
-    h1 = 20
-    h2 = 16
+    h1 = 16
+    h2 = 32
     activation = 'relu'
-    lmbda = 0.0001
-    momentum = 0.9
-    epochs = 300
-    batch_size = 20
+    lmbda = 0
+    momentum = 0.5
+    epochs = 3000
+    batch_size = 32
     eta = 0.001
 
     if test == 'grid':
@@ -52,7 +52,7 @@ if __name__ == '__main__':
                                     net.plot_score(f"test_np/cup")
 
     elif test == 'std':
-        net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=True)
+        net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
         net.SGD((training_data, y_train), epochs=epochs, batch_size=batch_size, eta=eta, test_data=(test_data, y_test))
         print(f"The best score for ep:{epochs}, h1:{h1}, h2:{h2}, b:{batch_size}, e:{eta}, l:{lmbda}, m:{momentum} was: {net.best_score()}")
         net.plot_score(f"test_np/cup")
