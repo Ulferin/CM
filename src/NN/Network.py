@@ -19,6 +19,7 @@ from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU
 
 # TODO: aggiungere size gradient per ogni step
 # TODO: implmentare subgrad
+# TODO: magari si può includere bias in matrice weights
 
 ACTIVATIONS = {
     'relu': ReLU,
@@ -130,15 +131,19 @@ class Network(metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
-    def update_mini_batch(self, mini_batch: tuple, eta, der, sub=False):
+    def update_mini_batch(self, mini_batch, eta, der, sub=False):     
         """Updates the network weights and biases by applying the backpropagation algorithm
-        to the current set of examples contained in the :param mini_batch:. Computes the deltas
+        to the current set of examples contained in the :mini_batch: param. Computes the deltas
         used to update weights as an average over the size of the examples set, using the provided
-        :param eta: as learning rate.
+        :eta: parameter as learning rate.
 
-        :param mini_batch: Set of examples to use to update the network weights and biases
-        :param eta: Learning rate
+        Args:
+            mini_batch (tuple): Set of examples to use to update the network weights and biases
+            eta (float): Learning rate
+            der (function): [description]
+            sub (bool, optional): If True, subgradient update is performed. Stochastic one otherwise. Defaults to False.
         """
+
         nabla_b = [ np.zeros(b.shape) for b in self.biases ]
         nabla_w = [ np.zeros(w.shape) for w in self.weights ]
 
@@ -156,9 +161,11 @@ class Network(metaclass=ABCMeta):
             self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
         else:
             # Compute search direction
-            self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))    # TODO: attenzione, è questa l'operazione che va eseguita? Oppure ci interessa la norma del grad rispetto ad x?
-            dw = self.step/self.ngrad
-            db = self.step/self.ngrad
+            self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))
+            self.wgnorm = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w]))
+            self.bgnorm = np.linalg.norm(np.hstack([el.ravel() for el in nabla_b]))
+            dw = self.step/self.wgnorm
+            db = self.step/self.bgnorm
 
             self.weights = [w - dw*nw for w,nw in zip(self.weights, nabla_w)]
             self.biases = [b - db*nb for b,nb in zip(self.biases, nabla_b)]
@@ -254,7 +261,7 @@ class Network(metaclass=ABCMeta):
             curr_iter += 1
             if curr_iter >= epochs: break
 
-            print(f"{self.ngrad}\t\t{last_f}")
+            print(f"{self.ngrad}\t\t{self.wgnorm}\t\t{self.bgnorm}\t\t{last_f}")
 
 
     def plot_score(self,name):
