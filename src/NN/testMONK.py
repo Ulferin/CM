@@ -66,8 +66,8 @@ momentum = [0.2, 0.5, 0.9]
 #                         print(f"Best for (ep: {ep}, h1: {h1}, b: {b}, e: {e}) is:  {best}")
 
 
-net = NC([input_units, 2, output_units], 0, lmbda=0.005, momentum=0.5, debug=False)
-net.SGD((training_data, y_train), epochs=250, batch_size=20, eta=0.2, test_data=(test_data, y_test))
+net = NC([input_units, 5, output_units], 0, activation='relu', lmbda=0.001, momentum=0.5, debug=False)
+net.SGD((training_data, y_train), epochs=1000, batch_size=32, eta=0.01, test_data=(test_data, y_test))
 
 net.plot_score(f"MONK/{d_name}")
 best = net.best_score()
