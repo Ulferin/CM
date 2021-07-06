@@ -92,7 +92,7 @@ class Network(metaclass=ABCMeta):
         return units_out, nets, out
 
 
-    def backpropagation(self, x, y, sub=False):
+    def backpropagation(self, x, y, der):
         """Performs a backpropagation step for the given input sample. It runs a forward
         step to compute the current output and error. It then uses the error to compute
         the contribution of each network unit to the final error. It finally updates weights
@@ -120,8 +120,7 @@ class Network(metaclass=ABCMeta):
             else:
                 # Backward pass - hidden unit
                 delta = np.matmul(self.weights[-l+1].T, delta)
-                der = np.where(sub, self.act.subgrad(nets[-l]), self.act.derivative(nets[-l]))
-                delta = delta * self.act.derivative(nets[-l])
+                delta = delta * der(nets[-l])
             
             nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
             nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l]) # regularization term derivative
@@ -131,7 +130,7 @@ class Network(metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
-    def update_mini_batch(self, mini_batch: tuple, eta, sub=False):
+    def update_mini_batch(self, mini_batch: tuple, eta, der, sub=False):
         """Updates the network weights and biases by applying the backpropagation algorithm
         to the current set of examples contained in the :param mini_batch:. Computes the deltas
         used to update weights as an average over the size of the examples set, using the provided
@@ -144,7 +143,7 @@ class Network(metaclass=ABCMeta):
         nabla_w = [ np.zeros(w.shape) for w in self.weights ]
 
         for x, y in zip(mini_batch[0], mini_batch[1]):
-            delta_b, delta_w = self.backpropagation(x,y, True)
+            delta_b, delta_w = self.backpropagation(x, y, der)
             nabla_b = [ nb + db.T for nb,db in zip(nabla_b, delta_b)]
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
 
@@ -157,7 +156,7 @@ class Network(metaclass=ABCMeta):
             self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
         else:
             # Compute search direction
-            self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))
+            self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))    # TODO: attenzione, è questa l'operazione che va eseguita? Oppure ci interessa la norma del grad rispetto ad x?
             dw = self.step/self.ngrad
             db = self.step/self.ngrad
 
@@ -205,7 +204,7 @@ class Network(metaclass=ABCMeta):
                 mini_batches.append((training_data[0], training_data[1]))
 
             for mini_batch in mini_batches:
-                self.update_mini_batch(mini_batch, eta)
+                self.update_mini_batch(mini_batch, eta, self.act.derivative)
 
             if test_data is not None:
                 score, preds_train, preds_test = self.evaluate(test_data, training_data)
@@ -244,7 +243,8 @@ class Network(metaclass=ABCMeta):
             truth_train = [y for y in training_data[1]]
 
             last_f = MeanSquaredError.loss(truth_train, preds_train)
-            self.update_mini_batch(training_data, 1, True)
+            # TODO: per adesso è in versione full batch, magari creare anche qui mini-batch
+            self.update_mini_batch(training_data, 1, self.act.subgrad, sub=True)
 
             # found a better value
             if last_f < f_ref:

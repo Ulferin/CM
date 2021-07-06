@@ -58,7 +58,7 @@ if __name__ == '__main__':
         net.plot_score(f"test_np/cup")
 
     elif test == 'sub':
-        net = NR([input_units, 2, 3, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
+        net = NR([input_units, 16, 32, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
         net.subgrad((training_data, y_train), epochs=5000, start=11)
 
     
