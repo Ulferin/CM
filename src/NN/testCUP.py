@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     h1 = 16
     h2 = 32
-    activation = 'relu'
+    activation = 'Lrelu'
     lmbda = 0
     momentum = 0.5
     epochs = 3000
