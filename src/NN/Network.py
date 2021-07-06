@@ -120,7 +120,7 @@ class Network(metaclass=ABCMeta):
             else:
                 # Backward pass - hidden unit
                 delta = np.matmul(self.weights[-l+1].T, delta)
-                if sub: der = self.act.subgrad(nets[-l])
+                der = np.where(sub, self.act.subgrad(nets[-l]), self.act.derivative(nets[-l]))
                 delta = delta * self.act.derivative(nets[-l])
             
             nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
