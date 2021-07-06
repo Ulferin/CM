@@ -1,5 +1,9 @@
 import numpy as np
+from numpy.random import default_rng
+
 from abc import ABCMeta, abstractmethod
+
+# TODO: generate doc strings with new "standard"
 
 class ActivationFunction(metaclass=ABCMeta):
 
@@ -9,6 +13,10 @@ class ActivationFunction(metaclass=ABCMeta):
 
     @abstractmethod
     def derivative(self, x):
+        pass
+
+    @abstractmethod
+    def subgrad(self, x):
         pass
 
 
@@ -34,6 +42,53 @@ class ReLU(ActivationFunction):
         """    
         return 1. * (x > 0)
 
+    
+    @staticmethod
+    def subgrad(x):
+        rng = default_rng()
+
+        return np.where(x>0, 1, np.where(x<0, 0, rng.uniform()))
+
+
+class LeakyReLU(ActivationFunction): 
+
+    @staticmethod
+    def function(x):
+        """Implements the leaky ReLU activation function used in the NN units.
+        Works both with vectors and scalars.
+        
+        NOTE: the alpha parameter is hardcoded here, not the best of solutions,
+        but not important in this setting.
+
+        Args:
+            x: input vector/scalar
+
+        Returns:
+            x if x >= 0, 0.01*x otherwise 
+        """
+
+        return np.where(x>=0, x, 0.01*x)
+
+
+    @staticmethod
+    def derivative(x):
+        """Implements leaky ReLU function derivative.
+
+        Args:
+            x: input vector/scalar
+
+        Returns:
+            1 if x > 0, 0.01 otherwise
+        """        
+        return np.where(x<0, 0.01, 1)
+
+
+    @staticmethod
+    def subgrad(x):
+        rng = default_rng()
+
+        return np.where(x>0, 1, np.where(x<0, 0.01, rng.uniform()))
+
 
 class Sigmoid(ActivationFunction):
 
@@ -49,6 +104,7 @@ class Sigmoid(ActivationFunction):
 
         return 1.0 / (1.0 + np.exp(-x))
 
+
     @staticmethod
     def derivative(x):
         """Derivative function of the sigmoid function.
@@ -60,6 +116,11 @@ class Sigmoid(ActivationFunction):
         x = Sigmoid.function(x)
         return x * (1 - x)
 
+    
+    @staticmethod
+    def subgrad(x):
+        return Sigmoid.derivative(x)
+
 
 class Linear(ActivationFunction):
 
@@ -67,6 +128,12 @@ class Linear(ActivationFunction):
     def function(x):        
         return x
 
+
     @staticmethod
     def derivative(x):
         return 1
+
+    
+    @staticmethod
+    def subgrad(x):
+        return Linear.derivative(x)
