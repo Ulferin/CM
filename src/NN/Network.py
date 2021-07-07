@@ -17,9 +17,7 @@ from matplotlib import pyplot as plt
 from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU
 
 
-# TODO: aggiungere size gradient per ogni step
-# TODO: implmentare subgrad
-# TODO: magari si può includere bias in matrice weights
+# TODO: controllare come effettuare il plotting del gradiente. Prendo la stima corrente data dall'ultimo batch testato?
 
 ACTIVATIONS = {
     'relu': ReLU,
@@ -57,6 +55,8 @@ class Network(metaclass=ABCMeta):
         self.lmbda = lmbda
         self.last_act = None            # Must be defined by subclassing the Network
         self.g = None
+        self.grad_est = None
+        self.grad_est_per_epoch = []
 
 
         self.biases = [np.zeros_like(l) for l in sizes[1:]]
@@ -93,6 +93,7 @@ class Network(metaclass=ABCMeta):
         return units_out, nets, out
 
 
+    # TODO: magari provare a definire backprop per un intero batch invece che singolo elemento
     def backpropagation(self, x, y, der):
         """Performs a backpropagation step for the given input sample. It runs a forward
         step to compute the current output and error. It then uses the error to compute
@@ -123,10 +124,10 @@ class Network(metaclass=ABCMeta):
                 delta = np.matmul(self.weights[-l+1].T, delta)
                 delta = delta * der(nets[-l])
             
-            nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
-            nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l]) # regularization term derivative
+            nabla_b[-l] = delta
+            nabla_w[-l] = np.matmul(delta, units_out[-l-1].T)
         
-        self.g = delta
+        self.g = delta # TODO: controllare qui, non dovremmo dividere per il numero di esempi nel batch?
 
         return nabla_b, nabla_w
 
@@ -151,21 +152,20 @@ class Network(metaclass=ABCMeta):
             delta_b, delta_w = self.backpropagation(x, y, der)
             nabla_b = [ nb + db.T for nb,db in zip(nabla_b, delta_b)]
             nabla_w = [ nw + dw for nw,dw in zip(nabla_w, delta_w) ]
+            self.grad_est += self.g
 
         if not sub:
             # Momentum updates
             self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
             self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
 
-            self.weights = [w + velocity for w,velocity in zip(self.weights, self.wvelocities)]
+            self.weights = [w + velocity - (self.lmbda/len(mini_batch[0]) * w) for w,velocity in zip(self.weights, self.wvelocities)]
             self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
         else:
             # Compute search direction
             self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))
-            self.wgnorm = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w]))
-            self.bgnorm = np.linalg.norm(np.hstack([el.ravel() for el in nabla_b]))
-            dw = self.step/self.wgnorm
-            db = self.step/self.bgnorm
+            dw = self.step/self.ngrad
+            db = self.step/self.ngrad
 
             self.weights = [w - dw*nw for w,nw in zip(self.weights, nabla_w)]
             self.biases = [b - db*nb for b,nb in zip(self.biases, nabla_b)]
@@ -199,7 +199,8 @@ class Network(metaclass=ABCMeta):
         rng.shuffle(training_data[1])
         for e in range(epochs):
             mini_batches = []
-            
+            self.grad_est = 0
+
             if batch_size is not None:
                 batches = int(n/batch_size)
                 for b in range(batches):
@@ -213,12 +214,16 @@ class Network(metaclass=ABCMeta):
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta, self.act.derivative)
 
+            # Compute current gradient estimate
+            self.grad_est = self.grad_est/self.training_size
+            self.grad_est_per_epoch.append(np.linalg.norm(self.grad_est))
+
             if test_data is not None:
                 score, preds_train, preds_test = self.evaluate(test_data, training_data)
                 self.val_scores.append(score[0])
                 self.train_scores.append(score[1])
                 if self.debug: print(f"pred train: {preds_train[1]} --> target: {training_data[1][1]} || pred test: {preds_test[1]} --> target {test_data[1][1]}")
-                print(f"Epoch {e} completed with gradient norm: {np.linalg.norm(self.g)}, {self.g.shape}. Score: {score}")
+                print(f"Epoch {e} completed with gradient norm: {np.linalg.norm(self.grad_est)}, {self.g.shape}. Score: {score}")
             else:
                 print(f"Epoch {e} completed.")
 
@@ -238,6 +243,11 @@ class Network(metaclass=ABCMeta):
             Used to evaluate the performances of the network among epochs. By default None.
         """                
         
+        self.batch_size = len(training_data[0])
+        self.eta = start
+        self.epochs = epochs
+        self.training_size = len(training_data[0])
+
         x_ref = []
         f_ref = np.inf
         curr_iter = 1
@@ -261,7 +271,16 @@ class Network(metaclass=ABCMeta):
             curr_iter += 1
             if curr_iter >= epochs: break
 
-            print(f"{self.ngrad}\t\t{self.wgnorm}\t\t{self.bgnorm}\t\t{last_f}")
+            if self.debug: print(f"{self.ngrad}\t\t{np.linalg.norm(self.g)}\t\t{last_f}")
+
+            if test_data is not None:
+                score, preds_train, preds_test = self.evaluate(test_data, training_data)
+                self.val_scores.append(score[0])
+                self.train_scores.append(score[1])
+                if self.debug: print(f"pred train: {preds_train[1]} --> target: {training_data[1][1]} || pred test: {preds_test[1]} --> target {test_data[1][1]}")
+                print(f"Epoch {curr_iter} completed with gradient norm: {np.linalg.norm(self.g)}, {self.g.shape}. Score: {score}")
+            else:
+                print(f"Epoch {curr_iter} completed.")
 
 
     def plot_score(self,name):
@@ -279,6 +298,16 @@ class Network(metaclass=ABCMeta):
         plt.draw()
 
         plt.savefig(f"src/NN/res/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
+        plt.clf()
+
+        plt.plot(self.grad_est_per_epoch, '--', label='Validation loss')
+        plt.legend(loc='best')
+        plt.xlabel ('Epochs')
+        plt.ylabel ('Gradient\'s norm')
+        plt.title ('Gradient norm estimate')
+        plt.draw()
+
+        plt.savefig(f"src/NN/res/gradient.png")
         plt.clf()
 
 
