@@ -162,10 +162,8 @@ class Network(metaclass=ABCMeta):
         else:
             # Compute search direction
             self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))
-            self.wgnorm = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w]))
-            self.bgnorm = np.linalg.norm(np.hstack([el.ravel() for el in nabla_b]))
-            dw = self.step/self.wgnorm
-            db = self.step/self.bgnorm
+            dw = self.step/self.ngrad
+            db = self.step/self.ngrad
 
             self.weights = [w - dw*nw for w,nw in zip(self.weights, nabla_w)]
             self.biases = [b - db*nb for b,nb in zip(self.biases, nabla_b)]
@@ -238,6 +236,11 @@ class Network(metaclass=ABCMeta):
             Used to evaluate the performances of the network among epochs. By default None.
         """                
         
+        self.batch_size = len(training_data[0])
+        self.eta = start
+        self.epochs = epochs
+        self.training_size = len(training_data[0])
+
         x_ref = []
         f_ref = np.inf
         curr_iter = 1
@@ -261,7 +264,16 @@ class Network(metaclass=ABCMeta):
             curr_iter += 1
             if curr_iter >= epochs: break
 
-            print(f"{self.ngrad}\t\t{self.wgnorm}\t\t{self.bgnorm}\t\t{last_f}")
+            if self.debug: print(f"{self.ngrad}\t\t{np.linalg.norm(self.g)}\t\t{last_f}")
+
+            if test_data is not None:
+                score, preds_train, preds_test = self.evaluate(test_data, training_data)
+                self.val_scores.append(score[0])
+                self.train_scores.append(score[1])
+                if self.debug: print(f"pred train: {preds_train[1]} --> target: {training_data[1][1]} || pred test: {preds_test[1]} --> target {test_data[1][1]}")
+                print(f"Epoch {curr_iter} completed with gradient norm: {np.linalg.norm(self.g)}, {self.g.shape}. Score: {score}")
+            else:
+                print(f"Epoch {curr_iter} completed.")
 
 
     def plot_score(self,name):
