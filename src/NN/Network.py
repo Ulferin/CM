@@ -18,8 +18,7 @@ from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU
 
 
 # TODO: aggiungere size gradient per ogni step
-# TODO: implmentare subgrad
-# TODO: magari si può includere bias in matrice weights
+# TODO: siamo sicuri che il subgrad dell'intera funzione è semplicemente il subgrad della activation?
 
 ACTIVATIONS = {
     'relu': ReLU,
@@ -93,6 +92,7 @@ class Network(metaclass=ABCMeta):
         return units_out, nets, out
 
 
+    # TODO: magari provare a definire backprop per un intero batch invece che singolo elemento
     def backpropagation(self, x, y, der):
         """Performs a backpropagation step for the given input sample. It runs a forward
         step to compute the current output and error. It then uses the error to compute
@@ -123,10 +123,11 @@ class Network(metaclass=ABCMeta):
                 delta = np.matmul(self.weights[-l+1].T, delta)
                 delta = delta * der(nets[-l])
             
+            # TODO: vogliamo regolarizzare anche i bias?
             nabla_b[-l] = delta + (2 * self.lmbda * self.biases[-l].T)     # regularization term derivative
             nabla_w[-l] = np.matmul(delta, units_out[-l-1].T) + (2 * self.lmbda * self.weights[-l]) # regularization term derivative
         
-        self.g = delta
+        self.g = delta # TODO: controllare qui, non dovremmo dividere per il numero di esempi nel batch?
 
         return nabla_b, nabla_w
 
@@ -154,6 +155,7 @@ class Network(metaclass=ABCMeta):
 
         if not sub:
             # Momentum updates
+            # TODO: attenzione qui, perché stiamo dividendo per lunghezza del minibatch anche il regularization term, probabilmente non lo vogliamo
             self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
             self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
 
