@@ -65,7 +65,7 @@ class NR(Network):
 
         return best_score
 
-    def evaluate(self, test_data:tuple, train_data:tuple):
+    def evaluate(self, test_data:tuple, train_data:tuple, batch=False):
             # TODO: cambiare descrizione di evaluate nelle due sottoclassi
         """Evaluates the performances of the Network in the current state,
         propagating the test examples through the network via a complete feedforward
@@ -78,11 +78,18 @@ class NR(Network):
         score_test = []
         score_train = []
 
-        preds_test = [np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in zip(test_data[0], test_data[1])]
-        truth_test = [y for y in test_data[1]]
+        if batch:
+            preds_test = self.feedforward_batch(test_data[0])[2]
+            truth_test = test_data[1]
 
-        preds_train = [np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in zip(train_data[0], train_data[1])]
-        truth_train = [y for y in train_data[1]]
+            preds_train = self.feedforward_batch(train_data[0])[2]
+            truth_train = train_data[1]
+        else:
+            preds_test = [np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in zip(test_data[0], test_data[1])]
+            truth_test = [y for y in test_data[1]]
+
+            preds_train = [np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in zip(train_data[0], train_data[1])]
+            truth_train = [y for y in train_data[1]]
         
         score_test.append(MeanSquaredError.loss(truth_test, preds_test))
         score_train.append(MeanSquaredError.loss(truth_train, preds_train))

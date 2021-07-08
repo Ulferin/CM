@@ -17,6 +17,7 @@ output_units = y_train.shape[1]
 training_data = X_train.reshape(X_train.shape[0], 1, -1)
 test_data = X_test.reshape(X_test.shape[0], 1, -1)
 
+
 epochs = [200, 400, 600]
 hidden1 = [2, 5, 10, 20]
 hidden2 = [2, 5, 10, 20]
@@ -52,10 +53,15 @@ if __name__ == '__main__':
                                     net.plot_score(f"test_np/cup")
 
     elif test == 'std':
+        print("End")
         net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
-        net.SGD((training_data, y_train), epochs=epochs, batch_size=None, eta=eta, test_data=(test_data, y_test))
-        print(f"The best score for ep:{epochs}, h1:{h1}, h2:{h2}, b:{batch_size}, e:{eta}, l:{lmbda}, m:{momentum} was: {net.best_score()}")
-        net.plot_score(f"test_np/cup")
+        net.SGD((training_data.copy(), y_train.copy()), epochs=epochs, batch_size=None, eta=eta, test_data=(test_data.copy(), y_test.copy()), batch=True)
+
+        net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
+        net.SGD((training_data.copy(), y_train.copy()), epochs=epochs, batch_size=None, eta=eta, test_data=(test_data.copy(),y_test.copy()))
+
+        # print(f"The best score for ep:{epochs}, h1:{h1}, h2:{h2}, b:{batch_size}, e:{eta}, l:{lmbda}, m:{momentum} was: {net.best_score()}")
+        # net.plot_score(f"test_np/cup")
 
     elif test == 'sub':
         net = NR([input_units, 16, 32, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
