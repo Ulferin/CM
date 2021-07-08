@@ -133,7 +133,7 @@ class Network(metaclass=ABCMeta):
         """
 
         nabla_b, nabla_w = self.backpropagation_batch(mini_batch[0], mini_batch[1], der)
-        self.grad_est += np.linalg.norm(self.g.ravel())
+        self.grad_est += np.linalg.norm(self.g)
 
 
         if not sub:
@@ -239,10 +239,10 @@ class Network(metaclass=ABCMeta):
 
         while True:
             self.step = start * (1 / curr_iter)
-
+            self.grad_est = 0
             
-            preds_train = [np.array(self.feedforward(x)[2]).reshape(y.shape) for x,y in zip(training_data[0], training_data[1])]
-            truth_train = [y for y in training_data[1]]
+            preds_train = self.feedforward_batch(training_data[0])[2]
+            truth_train = training_data[1]
 
             last_f = MeanSquaredError.loss(truth_train, preds_train)
             # TODO: per adesso è in versione full batch, magari creare anche qui mini-batch
@@ -263,7 +263,7 @@ class Network(metaclass=ABCMeta):
                 self.val_scores.append(score[0])
                 self.train_scores.append(score[1])
                 if self.debug: print(f"pred train: {preds_train[1]} --> target: {training_data[1][1]} || pred test: {preds_test[1]} --> target {test_data[1][1]}")
-                print(f"Epoch {curr_iter} completed with gradient norm: {np.linalg.norm(self.g)}, {self.g.shape}. Score: {score}")
+                print(f"Epoch {curr_iter} completed with gradient norm: {self.grad_est/self.training_size}. Score: {score}")
             else:
                 print(f"Epoch {curr_iter} completed.")
 

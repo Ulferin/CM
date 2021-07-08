@@ -26,14 +26,14 @@ momentum = [0.5, 0.9]
 if __name__ == '__main__':
     test = sys.argv[1]
 
-    h1 = 3
-    h2 = 4
+    h1 = 90
+    h2 = 61
     activation = 'Lrelu'
-    lmbda = 0
-    momentum = 0.5
-    epochs = 200
+    lmbda = 0.2
+    momentum = 0.9
+    epochs = 2000
     batch_size = 32
-    eta = 0.001
+    eta = 0.005
 
     if test == 'grid':
         for ep in epochs:
@@ -44,17 +44,17 @@ if __name__ == '__main__':
                             for l in lmbda:
                                 for m in momentum:
                                     net = NR([input_units, h1, h2, output_units], 0, 'relu', lmbda=l, momentum=m, debug=False)
-                                    net.SGD((training_data, y_train), epochs=ep, batch_size=b, eta=e, test_data=(test_data, y_test))
+                                    net.SGD((X_train, y_train), epochs=ep, batch_size=b, eta=e, test_data=(X_test, y_test))
                                     print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score()}")
                                     net.plot_score(f"test_np/cup")
 
     if test == 'std_batch':
-        net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
+        net = NR([input_units, h1, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
         net.SGD((X_train, y_train), epochs=epochs, batch_size=batch_size, eta=eta, test_data=(X_test, y_test))
         print(f"The best score for ep:{epochs}, h1:{h1}, h2:{h2}, b:{batch_size}, e:{eta}, l:{lmbda}, m:{momentum} was: {net.best_score()}")
 
     elif test == 'sub':
         net = NR([input_units, 16, 32, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
-        net.subgrad((X_train, y_train), epochs=5000, start=11)
+        net.subgrad((X_train, y_train), epochs=5000, start=11, test_data=(X_test, y_test))
 
     
