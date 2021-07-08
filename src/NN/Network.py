@@ -92,8 +92,8 @@ class Network(metaclass=ABCMeta):
     # given that we are throwing an entire pass over the network as matrix multiplication, except for the last level
     # of the network
     def backpropagation_batch(self, x, y, der):
-        nabla_b = [0 for b in self.biases]
-        nabla_w = [0 for w in self.weights]
+        nabla_b = [0]*(len(self.sizes)-1)
+        nabla_w = [0]*(len(self.sizes)-1)
 
         # Forward computation
         units_out, nets, out = self.feedforward_batch(x)
@@ -130,7 +130,7 @@ class Network(metaclass=ABCMeta):
         """
 
         nabla_b, nabla_w = self.backpropagation_batch(mini_batch[0], mini_batch[1], der)
-        self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))
+        self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))/len(mini_batch[0])
 
         if not sub:
             # Momentum updates
@@ -199,17 +199,17 @@ class Network(metaclass=ABCMeta):
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta, self.act.derivative)
                 self.grad_est += self.ngrad
-            self.grad_est = self.grad_est/self.training_size
+            self.grad_est = self.grad_est/batches
 
             # Compute current gradient estimate
-            self.grad_est_per_epoch.append(np.linalg.norm(self.grad_est))
+            self.grad_est_per_epoch.append(self.grad_est)
 
             if test_data is not None:
                 score, preds_train, preds_test = self.evaluate(test_data, training_data)
                 self.val_scores.append(score[0])
                 self.train_scores.append(score[1])
                 if self.debug: print(f"pred train: {preds_train[1]} --> target: {training_data[1][1]} || pred test: {preds_test[1]} --> target {test_data[1][1]}")
-                print(f"Epoch {e} completed with gradient norm: {self.grad_est}. Score: {score}")
+                print(f"Epoch {e}. Gradient norm: {self.grad_est}. Score: {score}")
             else:
                 print(f"Epoch {e} completed.")
 
