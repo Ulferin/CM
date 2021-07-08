@@ -113,9 +113,6 @@ class Network(metaclass=ABCMeta):
             nabla_b[-l] = delta.sum(axis=0)
             nabla_w[-l] = np.matmul(delta.T, units_out[-l-1])
 
-        # TODO controllare come calcolare gradiente
-        self.g = delta.ravel() 
-
         return nabla_b, nabla_w
 
 
@@ -133,8 +130,7 @@ class Network(metaclass=ABCMeta):
         """
 
         nabla_b, nabla_w = self.backpropagation_batch(mini_batch[0], mini_batch[1], der)
-        self.grad_est += np.linalg.norm(self.g)
-
+        self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))
 
         if not sub:
             # Momentum updates
@@ -145,7 +141,6 @@ class Network(metaclass=ABCMeta):
             self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
         else:
             # Compute search direction
-            self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))
             dw = self.step/self.ngrad
             db = self.step/self.ngrad
 
@@ -169,38 +164,44 @@ class Network(metaclass=ABCMeta):
         at each phase, defaults to None.
         """   
 
+        # Store auxiliary informations to pretty-print statistics
         self.batch_size = batch_size
         self.eta = eta
         self.epochs = epochs
         self.training_size = len(training_data[0])
 
         # TODO: magari questo si può mettere nelle specifiche indicando che sia train che test devono avere vettore obiettivo come 2d vector
+        # Reshape vectors to fit needed shape
         training_data = (training_data[0], training_data[1].reshape(training_data[1].shape[0], 1 if len(training_data[1].shape)==1 else training_data[1].shape[1]))
 
-        n = len(training_data[0])
         rng = default_rng(0)
         rng.shuffle(training_data[0])
         rng = default_rng(0)
         rng.shuffle(training_data[1])
+
         for e in range(epochs):
             mini_batches = []
             self.grad_est = 0
 
             if batch_size is not None:
-                batches = int(n/batch_size)
+                batches = int(self.training_size/batch_size)
                 for b in range(batches):
                     start = b * batch_size
                     end = (b+1) * batch_size
                     mini_batches.append((training_data[0][start:end], training_data[1][start:end]))
+                
+                # Add remaining data as last batch
+                # (it may have different size than previous batches, up to |batch|-1 more elements)
                 mini_batches.append((training_data[0][b*batch_size:], training_data[1][b*batch_size:]))
             else:
                 mini_batches.append((training_data[0], training_data[1]))
 
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta, self.act.derivative)
+                self.grad_est += self.ngrad
+            self.grad_est = self.grad_est/self.training_size
 
             # Compute current gradient estimate
-            self.grad_est = self.grad_est/self.training_size
             self.grad_est_per_epoch.append(np.linalg.norm(self.grad_est))
 
             if test_data is not None:
@@ -268,7 +269,7 @@ class Network(metaclass=ABCMeta):
                 print(f"Epoch {curr_iter} completed.")
 
 
-    def plot_score(self,name):
+    def plot_score(self, name):
         """Utility function, allows to build a plot of the scores achieved during training
         for the validation set and the training set.
 
@@ -285,6 +286,8 @@ class Network(metaclass=ABCMeta):
         plt.savefig(f"src/NN/res/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
         plt.clf()
 
+    
+    def plot_grad(self, name):
         plt.plot(self.grad_est_per_epoch, '--', label='Validation loss')
         plt.legend(loc='best')
         plt.xlabel ('Epochs')
@@ -292,7 +295,7 @@ class Network(metaclass=ABCMeta):
         plt.title ('Gradient norm estimate')
         plt.draw()
 
-        plt.savefig(f"src/NN/res/gradient.png")
+        plt.savefig(f"src/NN/res/grads/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
         plt.clf()
 
 
