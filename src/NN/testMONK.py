@@ -64,7 +64,7 @@ if __name__ == '__main__':
     activation = 'Lrelu'
     lmbda = 0
     momentum = 0.5
-    epochs = 3000
+    epochs = 400
     batch_size = 32
     eta = 0.001
 
@@ -80,11 +80,10 @@ if __name__ == '__main__':
                                 print(f"The best score for ep:{ep}, h1:{h1}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score()}")
                                 net.plot_score(f"MONK/{d_name}")
 
-    elif test == 'std':
+    if test == 'std_batch':
         net = NC([input_units, 3, output_units], 0, activation='Lrelu', lmbda=0.0, momentum=0.9, debug=False)
-        net.SGD((training_data, y_train), epochs=1000, batch_size=32, eta=0.1, test_data=(test_data, y_test))
+        net.SGD((training_data, y_train), epochs=epochs, batch_size=batch_size, eta=0.1, test_data=(test_data, y_test))
         print(f"The best score for ep:{epochs}, h1:{h1}, h2:{h2}, b:{batch_size}, e:{eta}, l:{lmbda}, m:{momentum} was: {net.best_score()}")
-        net.plot_score(f"MONK/{d_name}")
 
     elif test == 'sub':
         net = NC([input_units, 10, output_units], 0, activation='relu', lmbda=0.001, momentum=0.5, debug=False)

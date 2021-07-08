@@ -13,10 +13,6 @@ X_train, X_test, y_train, y_test = utils.load_CUP("data/ML-CUP20-TR.csv")
 input_units = X_train.shape[1]
 output_units = y_train.shape[1]
 
-# Builds the training data for the NN
-training_data = X_train.reshape(X_train.shape[0], 1, -1)
-test_data = X_test.reshape(X_test.shape[0], 1, -1)
-
 
 epochs = [200, 400, 600]
 hidden1 = [2, 5, 10, 20]
@@ -30,8 +26,8 @@ momentum = [0.5, 0.9]
 if __name__ == '__main__':
     test = sys.argv[1]
 
-    h1 = 16
-    h2 = 32
+    h1 = 3
+    h2 = 4
     activation = 'Lrelu'
     lmbda = 0
     momentum = 0.5
@@ -52,19 +48,13 @@ if __name__ == '__main__':
                                     print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score()}")
                                     net.plot_score(f"test_np/cup")
 
-    elif test == 'std':
-        print("End")
+    if test == 'std_batch':
         net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
-        net.SGD((training_data.copy(), y_train.copy()), epochs=epochs, batch_size=None, eta=eta, test_data=(test_data.copy(), y_test.copy()), batch=True)
-
-        net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
-        net.SGD((training_data.copy(), y_train.copy()), epochs=epochs, batch_size=None, eta=eta, test_data=(test_data.copy(),y_test.copy()))
-
-        # print(f"The best score for ep:{epochs}, h1:{h1}, h2:{h2}, b:{batch_size}, e:{eta}, l:{lmbda}, m:{momentum} was: {net.best_score()}")
-        # net.plot_score(f"test_np/cup")
+        net.SGD((X_train, y_train), epochs=epochs, batch_size=batch_size, eta=eta, test_data=(X_test, y_test))
+        print(f"The best score for ep:{epochs}, h1:{h1}, h2:{h2}, b:{batch_size}, e:{eta}, l:{lmbda}, m:{momentum} was: {net.best_score()}")
 
     elif test == 'sub':
         net = NR([input_units, 16, 32, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
-        net.subgrad((training_data, y_train), epochs=5000, start=11)
+        net.subgrad((X_train, y_train), epochs=5000, start=11)
 
     
