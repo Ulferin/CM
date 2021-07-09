@@ -54,19 +54,19 @@ if __name__ == '__main__':
                                     net.plot_score(f"test_np/{dataset}")
 
     else:
-        h1 = 3
+        h1 = 79
         h2 = 61
         activation = 'Lrelu'
-        lmbda = 0.2
+        lmbda = 0.01
         momentum = 0.9
-        epochs = 500
-        batch_size = 128
-        eta = 0.05
+        epochs = 5000
+        batch_size = 64
+        eta = 0.001
 
-        if test == 'std_batch':
+        if test == 'std':
 
             if dataset == 'cup':
-                net = NR([input_units, h1, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
+                net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
             else:
                 net = NC([input_units, h1, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
 
@@ -75,7 +75,14 @@ if __name__ == '__main__':
             net.plot_grad('gradient')
 
         elif test == 'sub':
-            net = NR([input_units, 16, 32, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
-            net.subgrad((X_train, y_train), epochs=epochs, batch_size=batch_size, start=11, test_data=(X_test, y_test))
+            if dataset == 'cup':
+                net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
+            else:
+                net = NC([input_units, h1, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
+            net.subgrad((X_train, y_train), epochs=epochs, batch_size=batch_size, start=5, test_data=(X_test, y_test))
+            print(f"The best score for ep:{epochs}, h1:{h1}, h2:{h2}, b:{batch_size}, e:{eta}, l:{lmbda}, m:{momentum} was: {net.best_score()}")
+
+        else:
+            print(f"I still don't know how to handle \'{test}\' mode!")
 
     

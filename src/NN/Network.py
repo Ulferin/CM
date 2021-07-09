@@ -25,7 +25,6 @@ ACTIVATIONS = {
     'sigmoid': Sigmoid
 }
 
-
 class Network(metaclass=ABCMeta):
     """This class represents a standard Neural Network, also called Multilayer Perceptron.
     It allows to build a network for both classification and regression tasks.
@@ -87,10 +86,6 @@ class Network(metaclass=ABCMeta):
         return units_out, nets, out
 
     
-    # TODO: specificare quali sono i vantaggi di usare una singola funzione di attivazione per tutti i layer
-    # Batch computation allows us to exploit parallel computation and efficient libraries matrix multiplication
-    # given that we are throwing an entire pass over the network as matrix multiplication, except for the last level
-    # of the network
     def backpropagation_batch(self, x, y, der):
         nabla_b = [0]*(len(self.sizes)-1)
         nabla_w = [0]*(len(self.sizes)-1)
@@ -141,11 +136,10 @@ class Network(metaclass=ABCMeta):
             self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
         else:
             # Compute search direction
-            dw = self.step/self.ngrad
-            db = self.step/self.ngrad
+            d = self.step/self.ngrad
 
-            self.weights = [w - dw*nw for w,nw in zip(self.weights, nabla_w)]
-            self.biases = [b - db*nb for b,nb in zip(self.biases, nabla_b)]
+            self.weights = [w - d*nw for w,nw in zip(self.weights, nabla_w)]
+            self.biases = [b - d*nb for b,nb in zip(self.biases, nabla_b)]
 
 
     def SGD(self, training_data:tuple, epochs, eta, batch_size=None, test_data:tuple=None):
@@ -201,7 +195,7 @@ class Network(metaclass=ABCMeta):
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta, self.act.derivative)
                 self.grad_est += self.ngrad
-            self.grad_est = self.grad_est/batches
+            self.grad_est = self.grad_est/batches # TODO: da fixare, quando batch_size è None questo non esiste
 
             # Compute current gradient estimate
             self.grad_est_per_epoch.append(self.grad_est)
@@ -252,8 +246,26 @@ class Network(metaclass=ABCMeta):
             truth_train = training_data[1]
 
             last_f = MeanSquaredError.loss(truth_train, preds_train)
-            # TODO: per adesso è in versione full batch, magari creare anche qui mini-batch
-            self.update_mini_batch(training_data, 1, self.act.subgrad, sub=True)
+
+            mini_batches = []
+
+            if batch_size is not None:
+                batches = int(self.training_size/batch_size)
+                for b in range(batches):
+                    start = b * batch_size
+                    end = (b+1) * batch_size
+                    mini_batches.append((training_data[0][start:end], training_data[1][start:end]))
+                
+                # Add remaining data as last batch
+                # (it may have different size than previous batches, up to |batch|-1 more elements)
+                mini_batches.append((training_data[0][b*batch_size:], training_data[1][b*batch_size:]))
+            else:
+                mini_batches.append((training_data[0], training_data[1]))
+
+            for mini_batch in mini_batches:
+                self.update_mini_batch(mini_batch, 1, self.act.subgrad, sub=True)
+                self.grad_est += self.ngrad
+            self.grad_est = self.grad_est/batches
 
             # found a better value
             if last_f < f_ref:
@@ -270,7 +282,7 @@ class Network(metaclass=ABCMeta):
                 self.val_scores.append(score[0])
                 self.train_scores.append(score[1])
                 if self.debug: print(f"pred train: {preds_train[1]} --> target: {training_data[1][1]} || pred test: {preds_test[1]} --> target {test_data[1][1]}")
-                print(f"Epoch {curr_iter} completed with gradient norm: {self.grad_est/self.training_size}. Score: {score}")
+                print(f"Epoch {curr_iter} completed with gradient norm: {self.grad_est}. Score: {score} -- preds/exp: {preds_train[0]}/{training_data[1][0]}")
             else:
                 print(f"Epoch {curr_iter} completed.")
 
