@@ -60,7 +60,7 @@ if __name__ == '__main__':
         lmbda = 0.2
         momentum = 0.9
         epochs = 500
-        batch_size = 32
+        batch_size = 128
         eta = 0.05
 
         if test == 'std_batch':
@@ -76,6 +76,6 @@ if __name__ == '__main__':
 
         elif test == 'sub':
             net = NR([input_units, 16, 32, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
-            net.subgrad((X_train, y_train), epochs=5000, start=11, test_data=(X_test, y_test))
+            net.subgrad((X_train, y_train), epochs=epochs, batch_size=batch_size, start=11, test_data=(X_test, y_test))
 
     

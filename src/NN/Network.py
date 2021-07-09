@@ -172,8 +172,10 @@ class Network(metaclass=ABCMeta):
 
         # TODO: magari questo si può mettere nelle specifiche indicando che sia train che test devono avere vettore obiettivo come 2d vector
         # Reshape vectors to fit needed shape
-        training_data = (training_data[0], training_data[1].reshape(training_data[1].shape[0], 1 if len(training_data[1].shape)==1 else training_data[1].shape[1]))
+        training_data = (training_data[0], training_data[1].reshape(training_data[1].shape[0], -1))
 
+
+        # magari aggiungere shuffling all'interno della creazione delle batches
         rng = default_rng(0)
         rng.shuffle(training_data[0])
         rng = default_rng(0)
@@ -214,7 +216,7 @@ class Network(metaclass=ABCMeta):
                 print(f"Epoch {e} completed.")
 
 
-    def subgrad(self, training_data, start, epochs, test_data=None):
+    def subgrad(self, training_data, start, epochs, batch_size, test_data=None):
         """Subgradient metod implementation using a diminishing step size.
 
         Parameters
@@ -237,6 +239,10 @@ class Network(metaclass=ABCMeta):
         x_ref = []
         f_ref = np.inf
         curr_iter = 1
+
+        # TODO: magari questo si può mettere nelle specifiche indicando che sia train che test devono avere vettore obiettivo come 2d vector
+        # Reshape vectors to fit needed shape
+        training_data = (training_data[0], training_data[1].reshape(training_data[1].shape[0], -1))
 
         while True:
             self.step = start * (1 / curr_iter)
