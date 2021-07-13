@@ -187,7 +187,7 @@ class Network(metaclass=ABCMeta):
         score_test.append(self.loss.loss(truth_test, preds_test))
         score_train.append(self.loss.loss(truth_train, preds_train))
 
-        self.val_scores.append(score_test)
-        self.train_scores.append(score_train)
+        self.val_scores.append(score_test[-1])
+        self.train_scores.append(score_train[-1])
 
         return (score_test, score_train), preds_train, preds_test
