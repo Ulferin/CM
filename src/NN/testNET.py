@@ -54,28 +54,45 @@ if __name__ == '__main__':
                                     net.plot_score(f"test_np/{dataset}")
 
     else:
-        h1 = 79
-        h2 = 61
-        activation = 'Lrelu'
-        lmbda = 0.2
-        momentum = 0.9
-        epochs = 500
-        batch_size = 128
-        eta = 0.001
+
+        params = {
+            'cup': {
+                'h1': 16,
+                'h2': 32,
+                'activation': 'Lrelu',
+                'lmbda': 0.1,
+                'momentum': 0.7,
+                'epochs': 2000,
+                'batch_size': 64,
+                'eta': 0.001
+            },
+            'monk': {
+                'h1': 3,
+                'activation': 'Lrelu',
+                'lmbda': 0.2,
+                'momentum': 0.9,
+                'epochs': 500,
+                'batch_size': 32,
+                'eta': 0.1
+            }
+        }
 
         if test == 'std':
 
             if dataset == 'cup':
-                net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
+                net = NR([input_units, params['cup']['h1'], params['cup']['h2'], output_units], 0, params['cup']['activation'], lmbda=params['cup']['lmbda'], momentum=params['cup']['momentum'], debug=False)
             else:
-                net = NC([input_units, h1, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
+                dataset = 'monk'
+                net = NC([input_units, params['monk']['h1'], output_units], 0, params['monk']['activation'], lmbda=params['monk']['lmbda'], momentum=params['monk']['momentum'], debug=False)
 
-            net.SGD((X_train, y_train), epochs=epochs, batch_size=batch_size, eta=eta, test_data=(X_test, y_test))
-            print(f"The best score for ep:{epochs}, h1:{h1}, h2:{h2}, b:{batch_size}, e:{eta}, l:{lmbda}, m:{momentum} was: {net.best_score()}")
-            net.plot_grad('gradient')
+            net.SGD((X_train, y_train), epochs=params[dataset]['epochs'], batch_size=params[dataset]['batch_size'], eta=params[dataset]['eta'], test_data=(X_test, y_test))
+            print(f"The best score for ep:{params[dataset]['epochs']}, h1:{params[dataset]['h1']}, \
+                h2:{params[dataset]['h2']}, b:{params[dataset]['batch_size']}, e:{params[dataset]['eta']},\
+                     l:{params[dataset]['lmbda']}, m:{params[dataset]['momentum']} was: {net.best_score()}")
+            # net.plot_grad('gradient')
 
         elif test == 'sub':
-            net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
-            net.subgrad((X_train, y_train), epochs=epochs, batch_size=batch_size, start=5, test_data=(X_test, y_test))
+            net = NR([input_units, params['cup']['h1'], params['cup']['h2'], output_units], 0, params['cup']['activation'], lmbda=params['cup']['lmbda'], momentum=params['cup']['momentum'], debug=False)
+            net.subgrad((X_train, y_train), epochs=params['cup']['epochs'], batch_size=params['cup']['batch_size'], start=15, test_data=(X_test, y_test))
 
     

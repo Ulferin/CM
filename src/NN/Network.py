@@ -20,8 +20,6 @@ from src.NN.LossFunctions import MeanSquaredError
 from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU
 
 
-# TODO: controllare come effettuare il plotting del gradiente. Prendo la stima corrente data dall'ultimo batch testato?
-
 ACTIVATIONS = {
     'relu': ReLU,
     'Lrelu':LeakyReLU,
@@ -175,31 +173,11 @@ class Network(metaclass=ABCMeta):
         # TODO: magari questo si può mettere nelle specifiche indicando che sia train che test devono avere vettore obiettivo come 2d vector
         # Reshape vectors to fit needed shape
         training_data = (training_data[0], training_data[1].reshape(training_data[1].shape[0], -1))
-
-
-        # TODO: magari aggiungere shuffling all'interno della creazione delle batches
-        rng = default_rng(0)
-        rng.shuffle(training_data[0])
-        rng = default_rng(0)
-        rng.shuffle(training_data[1])
-
         batches = int(self.training_size/batch_size) if batch_size is not None else 1
 
         for e in range(epochs):
-            mini_batches = []
+            mini_batches = self.create_batches(batches, training_data)
             self.grad_est = 0
-
-            if batch_size is not None:
-                for b in range(batches):
-                    start = b * batch_size
-                    end = (b+1) * batch_size
-                    mini_batches.append((training_data[0][start:end], training_data[1][start:end]))
-                
-                # Add remaining data as last batch
-                # (it may have different size than previous batches, up to |batch|-1 more elements)
-                mini_batches.append((training_data[0][b*batch_size:], training_data[1][b*batch_size:]))
-            else:
-                mini_batches.append((training_data[0], training_data[1]))
 
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta, self.act.derivative)
@@ -234,7 +212,7 @@ class Network(metaclass=ABCMeta):
             Used to evaluate the performances of the network among epochs. By default None.
         """                
         
-        self.batch_size = len(training_data[0])
+        self.batch_size = batch_size
         self.eta = start
         self.epochs = epochs
         self.training_size = len(training_data[0])
@@ -257,22 +235,8 @@ class Network(metaclass=ABCMeta):
 
             last_f = MeanSquaredError.loss(truth_train, preds_train)
 
-            mini_batches = []
+            mini_batches = self.create_batches(batches, training_data)
             self.grad_est = 0
-
-            if batch_size is not None:
-                for b in range(batches):
-                    # TODO: magari aggiungere shuffling all'interno della creazione delle batches
-                    training_data = shuffle(training_data[0], training_data[1])
-                    start = b * batch_size
-                    end = (b+1) * batch_size
-                    mini_batches.append((training_data[0][start:end], training_data[1][start:end]))
-                
-                # Add remaining data as last batch
-                # (it may have different size than previous batches, up to |batch|-1 more elements)
-                mini_batches.append((training_data[0][b*batch_size:], training_data[1][b*batch_size:]))
-            else:
-                mini_batches.append((training_data[0], training_data[1]))
 
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, 1, self.act.subgrad, sub=True)
@@ -297,6 +261,24 @@ class Network(metaclass=ABCMeta):
 
             curr_iter += 1
             if curr_iter >= epochs: break
+
+
+    def create_batches(self, batches, training_data):
+        mini_batches = []
+
+        if self.batch_size is not None:
+            for b in range(batches):
+                start = b * self.batch_size
+                end = (b+1) * self.batch_size
+                mini_batches.append((training_data[0][start:end], training_data[1][start:end]))
+            
+            # Add remaining data as last batch
+            # (it may have different size than previous batches, up to |batch|-1 more elements)
+            mini_batches.append((training_data[0][b*self.batch_size:], training_data[1][b*self.batch_size:]))
+        else:
+            mini_batches.append((training_data[0], training_data[1]))
+
+        return mini_batches
 
 
     def plot_score(self, name):
