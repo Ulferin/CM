@@ -93,10 +93,6 @@ class Network(metaclass=ABCMeta):
         return units_out, nets, out
 
     
-    # TODO: specificare quali sono i vantaggi di usare una singola funzione di attivazione per tutti i layer
-    # Batch computation allows us to exploit parallel computation and efficient libraries matrix multiplication
-    # given that we are throwing an entire pass over the network as matrix multiplication, except for the last level
-    # of the network
     def backpropagation_batch(self, x, y, der):
         nabla_b = [0]*(len(self.sizes)-1)
         nabla_w = [0]*(len(self.sizes)-1)
@@ -106,7 +102,6 @@ class Network(metaclass=ABCMeta):
         delta = 0
 
         # Backward pass
-        # TODO: si può cambiare mettendo fuori dal loop il primo caso
         for l in range(1, self.num_layers):
             if l == 1:
                 # Backward pass - output unit

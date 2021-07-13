@@ -41,6 +41,7 @@ class Optimizer(metaclass=ABCMeta):
 
         return mini_batches
 
+
     def evaluate(self, e, nn):
         if self.test_data is not None:
             score, preds_train, preds_test = nn.evaluate(self.test_data, self.training_data)
