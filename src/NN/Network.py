@@ -10,10 +10,13 @@ import numpy as np
 from numpy import linalg
 from numpy.linalg import norm
 from numpy.random import default_rng
+
 from sklearn.metrics import r2_score, mean_squared_error, accuracy_score
-from src.NN.LossFunctions import MeanSquaredError
+from sklearn.utils import shuffle
+
 from matplotlib import pyplot as plt
 
+from src.NN.LossFunctions import MeanSquaredError
 from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU
 
 
@@ -130,7 +133,7 @@ class Network(metaclass=ABCMeta):
         """
 
         nabla_b, nabla_w = self.backpropagation_batch(mini_batch[0], mini_batch[1], der)
-        self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))/len(mini_batch[0])
+        self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))
 
         if not sub:
             # Momentum updates
@@ -141,11 +144,10 @@ class Network(metaclass=ABCMeta):
             self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
         else:
             # Compute search direction
-            dw = self.step/self.ngrad
-            db = self.step/self.ngrad
+            d = self.step/self.ngrad
 
-            self.weights = [w - dw*nw for w,nw in zip(self.weights, nabla_w)]
-            self.biases = [b - db*nb for b,nb in zip(self.biases, nabla_b)]
+            self.weights = [w - (d/len(mini_batch[0]))*nw for w,nw in zip(self.weights, nabla_w)]
+            self.biases = [b - (d/len(mini_batch[0]))*nb for b,nb in zip(self.biases, nabla_b)]
 
 
     def SGD(self, training_data:tuple, epochs, eta, batch_size=None, test_data:tuple=None):
@@ -175,18 +177,19 @@ class Network(metaclass=ABCMeta):
         training_data = (training_data[0], training_data[1].reshape(training_data[1].shape[0], -1))
 
 
-        # magari aggiungere shuffling all'interno della creazione delle batches
+        # TODO: magari aggiungere shuffling all'interno della creazione delle batches
         rng = default_rng(0)
         rng.shuffle(training_data[0])
         rng = default_rng(0)
         rng.shuffle(training_data[1])
+
+        batches = int(self.training_size/batch_size) if batch_size is not None else 1
 
         for e in range(epochs):
             mini_batches = []
             self.grad_est = 0
 
             if batch_size is not None:
-                batches = int(self.training_size/batch_size)
                 for b in range(batches):
                     start = b * batch_size
                     end = (b+1) * batch_size
@@ -243,6 +246,7 @@ class Network(metaclass=ABCMeta):
         # TODO: magari questo si può mettere nelle specifiche indicando che sia train che test devono avere vettore obiettivo come 2d vector
         # Reshape vectors to fit needed shape
         training_data = (training_data[0], training_data[1].reshape(training_data[1].shape[0], -1))
+        batches = int(self.training_size/batch_size) if batch_size is not None else 1
 
         while True:
             self.step = start * (1 / curr_iter)
@@ -252,16 +256,33 @@ class Network(metaclass=ABCMeta):
             truth_train = training_data[1]
 
             last_f = MeanSquaredError.loss(truth_train, preds_train)
-            # TODO: per adesso è in versione full batch, magari creare anche qui mini-batch
-            self.update_mini_batch(training_data, 1, self.act.subgrad, sub=True)
+
+            mini_batches = []
+            self.grad_est = 0
+
+            if batch_size is not None:
+                for b in range(batches):
+                    # TODO: magari aggiungere shuffling all'interno della creazione delle batches
+                    training_data = shuffle(training_data[0], training_data[1])
+                    start = b * batch_size
+                    end = (b+1) * batch_size
+                    mini_batches.append((training_data[0][start:end], training_data[1][start:end]))
+                
+                # Add remaining data as last batch
+                # (it may have different size than previous batches, up to |batch|-1 more elements)
+                mini_batches.append((training_data[0][b*batch_size:], training_data[1][b*batch_size:]))
+            else:
+                mini_batches.append((training_data[0], training_data[1]))
+
+            for mini_batch in mini_batches:
+                self.update_mini_batch(mini_batch, 1, self.act.subgrad, sub=True)
+                self.grad_est += self.ngrad
+            self.grad_est = self.grad_est/batches
 
             # found a better value
             if last_f < f_ref:
                 f_ref = last_f
                 x_ref = (self.weights, self.biases)
-
-            curr_iter += 1
-            if curr_iter >= epochs: break
 
             if self.debug: print(f"{self.ngrad}\t\t{np.linalg.norm(self.g)}\t\t{last_f}")
 
@@ -270,9 +291,12 @@ class Network(metaclass=ABCMeta):
                 self.val_scores.append(score[0])
                 self.train_scores.append(score[1])
                 if self.debug: print(f"pred train: {preds_train[1]} --> target: {training_data[1][1]} || pred test: {preds_test[1]} --> target {test_data[1][1]}")
-                print(f"Epoch {curr_iter} completed with gradient norm: {self.grad_est/self.training_size}. Score: {score}")
+                print(f"Epoch {curr_iter} completed with gradient norm: {self.ngrad}. Score: {score}")
             else:
                 print(f"Epoch {curr_iter} completed.")
+
+            curr_iter += 1
+            if curr_iter >= epochs: break
 
 
     def plot_score(self, name):

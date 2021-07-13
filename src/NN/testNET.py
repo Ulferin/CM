@@ -49,24 +49,24 @@ if __name__ == '__main__':
                                     else:
                                         net = NC([input_units, h1, output_units], 0, 'Lrelu', lmbda=l, momentum=m, debug=False)
 
-                                    net.SGD((X_train, y_train), epochs=ep, batch_size=b, eta=e, test_data=(X_test, y_test))
+                                    net.SGD((X_train.reshape(X_train.shape[0],1,-1), y_train), epochs=ep, batch_size=b, eta=e, test_data=(X_test.reshape(X_test.shape[0],1,-1), y_test))
                                     print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score()}")
                                     net.plot_score(f"test_np/{dataset}")
 
     else:
-        h1 = 3
+        h1 = 79
         h2 = 61
         activation = 'Lrelu'
         lmbda = 0.2
         momentum = 0.9
         epochs = 500
         batch_size = 128
-        eta = 0.05
+        eta = 0.001
 
-        if test == 'std_batch':
+        if test == 'std':
 
             if dataset == 'cup':
-                net = NR([input_units, h1, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
+                net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
             else:
                 net = NC([input_units, h1, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
 
@@ -75,7 +75,7 @@ if __name__ == '__main__':
             net.plot_grad('gradient')
 
         elif test == 'sub':
-            net = NR([input_units, 16, 32, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
-            net.subgrad((X_train, y_train), epochs=epochs, batch_size=batch_size, start=11, test_data=(X_test, y_test))
+            net = NR([input_units, h1, h2, output_units], 0, activation, lmbda=lmbda, momentum=momentum, debug=False)
+            net.subgrad((X_train, y_train), epochs=epochs, batch_size=batch_size, start=5, test_data=(X_test, y_test))
 
     
