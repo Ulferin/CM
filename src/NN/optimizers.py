@@ -63,14 +63,9 @@ class Optimizer(metaclass=ABCMeta):
         """
 
         nabla_b, nabla_w = nn.backpropagation_batch(mini_batch[0], mini_batch[1], der)
-        self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))
+        self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b])/len(mini_batch[0]))
 
         return nabla_b, nabla_w
-
-
-    @abstractmethod
-    def update_mini_batch(self, nn, mini_batch):
-        pass
 
 
     def update_batches(self, nn):
@@ -81,6 +76,11 @@ class Optimizer(metaclass=ABCMeta):
             self.update_mini_batch(nn, mini_batch)
             self.grad_est += self.ngrad
         self.grad_est = self.grad_est/self.batches
+
+
+    @abstractmethod
+    def update_mini_batch(self, nn, mini_batch):
+        pass
 
 
     @abstractmethod
@@ -130,8 +130,9 @@ class SGD(Optimizer):
 
 class SGM(Optimizer):
 
-    def __init__(self, training_data, epochs, eta, batch_size=None, test_data=None):
+    def __init__(self, training_data, epochs, eta, eps=1e-5, batch_size=None, test_data=None):
         super().__init__(training_data, epochs, eta, batch_size=batch_size, test_data=test_data)
+        self.eps = eps
 
 
     def optimize(self, nn):
@@ -152,7 +153,7 @@ class SGM(Optimizer):
         x_ref = []
         f_ref = np.inf
 
-        for e in range(1, self.epochs):
+        for e in range(1, self.epochs+1):
             self.step = self.eta * (1 / e)
             
             preds_train = nn.feedforward_batch(self.training_data[0])[2]
@@ -165,7 +166,11 @@ class SGM(Optimizer):
             # found a better value
             if last_f < f_ref:
                 f_ref = last_f
-                x_ref = (nn.weights, nn.biases)
+                x_ref = (nn.weights.copy(), nn.biases.copy())
+
+            if self.ngrad < self.eps:
+                print("Reached desired accuracy.")
+                break
 
             self.evaluate(e, nn)
 
@@ -174,7 +179,7 @@ class SGM(Optimizer):
         nabla_b, nabla_w = self.compute_grad(nn, mini_batch, nn.act.subgrad)
 
         # Compute search direction
-        d = self.eta/self.ngrad
+        d = self.step/self.ngrad
 
-        nn.weights = [w - (d/len(mini_batch[0]))*nw for w,nw in zip(nn.weights, nabla_w)]
-        nn.biases = [b - (d/len(mini_batch[0]))*nb for b,nb in zip(nn.biases, nabla_b)]
+        nn.weights = [w - d*nw for w,nw in zip(nn.weights, nabla_w)]
+        nn.biases = [b - d*nb for b,nb in zip(nn.biases, nabla_b)]

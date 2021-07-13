@@ -73,9 +73,9 @@ if __name__ == '__main__':
                     'activation': 'Lrelu',
                     'lmbda': 0.1,
                     'momentum': 0.7,
-                    'epochs': 500,
-                    'batch_size': 64,
-                    'eta': 11
+                    'epochs': 1000,
+                    'batch_size': 32,
+                    'eta': 1
                 }
             },
             'monk': {
@@ -93,11 +93,11 @@ if __name__ == '__main__':
                     'h1': 3,
                     'h2': None,
                     'activation': 'Lrelu',
-                    'lmbda': 0.2,
-                    'momentum': 0.9,
+                    'lmbda': 0.,
+                    'momentum': 0.,
                     'epochs': 500,
                     'batch_size': 32,
-                    'eta': 0.1
+                    'eta': 5
                 }
             }
         }
