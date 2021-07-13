@@ -15,8 +15,6 @@ class Optimizer(metaclass=ABCMeta):
         self.training_size = len(training_data[0])
         self.batches = int(self.training_size/batch_size) if batch_size is not None else 1
         self.grad_est_per_epoch = []
-        self.val_scores = []
-        self.train_scores = []
 
         # TODO: magari questo si può mettere nelle specifiche indicando che sia train che test devono avere vettore obiettivo come 2d vector
         # Reshape vectors to fit needed shape
@@ -51,7 +49,7 @@ class Optimizer(metaclass=ABCMeta):
             print(f"Epoch {e} completed.")
 
 
-    def __update_mini_batch__(self, nn, mini_batch, der):     
+    def compute_grad(self, nn, mini_batch, der):     
         """Updates the network weights and biases by applying the backpropagation algorithm
         to the current set of examples contained in the :mini_batch: param. Computes the deltas
         used to update weights as an average over the size of the examples set, using the provided
@@ -120,7 +118,7 @@ class SGD(Optimizer):
 
 
     def update_mini_batch(self, nn, mini_batch):
-        nabla_b, nabla_w = self.__update_mini_batch__(nn, mini_batch, nn.act.derivative)
+        nabla_b, nabla_w = self.compute_grad(nn, mini_batch, nn.act.derivative)
 
         # Momentum updates
         nn.wvelocities = [nn.momentum * velocity - (self.eta/len(mini_batch[0]))*nw for velocity,nw in zip(nn.wvelocities, nabla_w)]
@@ -173,7 +171,7 @@ class SGM(Optimizer):
 
 
     def update_mini_batch(self, nn, mini_batch):
-        nabla_b, nabla_w = self.__update_mini_batch__(nn, mini_batch, nn.act.subgrad)
+        nabla_b, nabla_w = self.compute_grad(nn, mini_batch, nn.act.subgrad)
 
         # Compute search direction
         d = self.eta/self.ngrad

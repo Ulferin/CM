@@ -1,9 +1,8 @@
 import numpy as np
-from sklearn.metrics import accuracy_score, mean_squared_error
 
 from src.NN.Network import Network
 from src.NN.ActivationFunctions import Sigmoid, Linear
-from src.NN.LossFunctions import MeanSquaredError
+from src.NN.LossFunctions import MeanSquaredError, AccuracyScore
 
 
 class NC(Network):
@@ -13,7 +12,7 @@ class NC(Network):
 
         # Defines the behavior of the last layer of the network
         self.last_act = Sigmoid
-        self.loss = accuracy_score
+        self.loss = AccuracyScore
 
 
     def best_score(self):

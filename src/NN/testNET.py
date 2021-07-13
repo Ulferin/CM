@@ -57,35 +57,59 @@ if __name__ == '__main__':
 
         params = {
             'cup': {
-                'h1': 16,
-                'h2': 32,
-                'activation': 'Lrelu',
-                'lmbda': 0.1,
-                'momentum': 0.7,
-                'epochs': 500,
-                'batch_size': 64,
-                'eta': 0.001,
-                'start': 11
+                'SGD': {
+                    'h1': 16,
+                    'h2': 32,
+                    'activation': 'Lrelu',
+                    'lmbda': 0.1,
+                    'momentum': 0.7,
+                    'epochs': 500,
+                    'batch_size': 64,
+                    'eta': 0.001,
+                },
+                'SGM': {
+                    'h1': 16,
+                    'h2': 32,
+                    'activation': 'Lrelu',
+                    'lmbda': 0.1,
+                    'momentum': 0.7,
+                    'epochs': 500,
+                    'batch_size': 64,
+                    'eta': 11
+                }
             },
             'monk': {
-                'h1': 3,
-                'activation': 'Lrelu',
-                'lmbda': 0.2,
-                'momentum': 0.9,
-                'epochs': 500,
-                'batch_size': 32,
-                'eta': 0.1
+                'SGD': {
+                    'h1': 3,
+                    'h2': None,
+                    'activation': 'Lrelu',
+                    'lmbda': 0.2,
+                    'momentum': 0.9,
+                    'epochs': 500,
+                    'batch_size': 32,
+                    'eta': 0.1
+                },
+                'SGM': {
+                    'h1': 3,
+                    'h2': None,
+                    'activation': 'Lrelu',
+                    'lmbda': 0.2,
+                    'momentum': 0.9,
+                    'epochs': 500,
+                    'batch_size': 32,
+                    'eta': 0.1
+                }
             }
         }
 
         if dataset == 'cup':
-            net = NR([input_units, params['cup']['h1'], params['cup']['h2'], output_units], 0, params['cup']['activation'], lmbda=params['cup']['lmbda'], momentum=params['cup']['momentum'], debug=False)
+            net = NR([input_units, params[dataset][test]['h1'], params[dataset][test]['h2'], output_units], 0, params[dataset][test]['activation'], lmbda=params[dataset][test]['lmbda'], momentum=params[dataset][test]['momentum'], debug=False)
         else:
             dataset = 'monk'
-            net = NC([input_units, params['monk']['h1'], output_units], 0, params['monk']['activation'], lmbda=params['monk']['lmbda'], momentum=params['monk']['momentum'], debug=False)
+            net = NC([input_units, params[dataset][test]['h1'], output_units], 0, params[dataset][test]['activation'], lmbda=params[dataset][test]['lmbda'], momentum=params[dataset][test]['momentum'], debug=False)
 
-        net.train(test, (X_train, y_train), epochs=params[dataset]['epochs'], batch_size=params[dataset]['batch_size'], eta=params[dataset]['eta'], test_data=(X_test, y_test))
-        print(f"The best score for ep:{params[dataset]['epochs']}, h1:{params[dataset]['h1']}, h2:{params[dataset]['h2']}, b:{params[dataset]['batch_size']}, e:{params[dataset]['eta']}, l:{params[dataset]['lmbda']}, m:{params[dataset]['momentum']} was: {net.best_score()}")
-            # net.plot_grad('gradient')
+        net.train(test, (X_train, y_train), epochs=params[dataset][test]['epochs'], batch_size=params[dataset][test]['batch_size'], eta=params[dataset][test]['eta'], test_data=(X_test, y_test))
+        print(f"The best score for ep:{params[dataset][test]['epochs']}, h1:{params[dataset][test]['h1']}, h2:{params[dataset][test]['h2']}, b:{params[dataset][test]['batch_size']}, e:{params[dataset][test]['eta']}, l:{params[dataset][test]['lmbda']}, m:{params[dataset][test]['momentum']} was: {net.best_score()}")
+        # net.plot_grad('gradient')
 
     
