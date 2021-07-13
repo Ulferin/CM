@@ -123,6 +123,46 @@ class Network(metaclass=ABCMeta):
         self.optimizer.optimize(self)
 
 
+    def evaluate(self, test_data, train_data):
+        """Evaluates the performances of the Network in the current state,
+        propagating the test examples through the network via a complete feedforward
+        step. It evaluates the performance using the R2 metric in order to be
+        comparable with sklearn out-of-the-box NN results.
+
+        :param test_data: test data to evaluate the NN
+        :return: The R2 score as defined by sklearn library
+        """
+
+        score_test = []
+        score_train = []
+            
+        preds_test = self.predict(test_data[0])
+        truth_test = test_data[1]
+
+        preds_train = self.predict(train_data[0])
+        truth_train = train_data[1]
+        
+        score_test.append(self.loss.loss(truth_test, preds_test))
+        score_train.append(self.loss.loss(truth_train, preds_train))
+
+        self.val_scores.append(score_test[-1])
+        self.train_scores.append(score_train[-1])
+
+        return (score_test, score_train), preds_train, preds_test
+
+
+    @abstractmethod
+    def best_score(self):
+        """Returns the best score achieved during the fitting of the current network.
+        """        
+        pass
+
+
+    @abstractmethod
+    def predict(self, data):
+        pass
+
+
     def plot_score(self, name):
         """Utility function, allows to build a plot of the scores achieved during training
         for the validation set and the training set.
@@ -151,43 +191,3 @@ class Network(metaclass=ABCMeta):
 
         plt.savefig(f"src/NN/res/grads/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
         plt.clf()
-
-
-    @abstractmethod
-    def best_score(self):
-        """Returns the best score achieved during the fitting of the current network.
-        """        
-        pass
-
-
-    @abstractmethod
-    def predict(self, data):
-        pass
-
-
-    def evaluate(self, test_data, train_data):
-        """Evaluates the performances of the Network in the current state,
-        propagating the test examples through the network via a complete feedforward
-        step. It evaluates the performance using the R2 metric in order to be
-        comparable with sklearn out-of-the-box NN results.
-
-        :param test_data: test data to evaluate the NN
-        :return: The R2 score as defined by sklearn library
-        """
-
-        score_test = []
-        score_train = []
-            
-        preds_test = self.predict(test_data[0])
-        truth_test = test_data[1]
-
-        preds_train = self.predict(train_data[0])
-        truth_train = train_data[1]
-        
-        score_test.append(self.loss.loss(truth_test, preds_test))
-        score_train.append(self.loss.loss(truth_train, preds_train))
-
-        self.val_scores.append(score_test[-1])
-        self.train_scores.append(score_train[-1])
-
-        return (score_test, score_train), preds_train, preds_test
