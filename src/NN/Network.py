@@ -3,11 +3,8 @@
 # of ML
 
 from abc import ABCMeta, abstractmethod
-import time
-import random
 
 import numpy as np
-from numpy import linalg
 from numpy.linalg import norm
 from numpy.random import default_rng
 
@@ -16,7 +13,8 @@ from sklearn.utils import shuffle
 
 from matplotlib import pyplot as plt
 
-from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU
+from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU, Linear
+from src.NN.LossFunctions import MeanSquaredError, AccuracyScore
 from src.NN.optimizers import SGD, SGM
 
 
@@ -33,24 +31,40 @@ OPTIMIZERS = {
 
 
 class Network(metaclass=ABCMeta):
-    """This class represents a standard Neural Network, also called Multilayer Perceptron.
-    It allows to build a network for both classification and regression tasks.
+    """Abstract class representing a standard Neural Network, also known as Multilayer Perceptron.
+    It allows to build a network for both classification and regression tasks by using the
+    preferred optimization technique between sub-gradient method and stochastic gradient descent.
+    Must be extended to specify which kind of task the network should solve.
     """    
     
     @abstractmethod
     def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.0, debug=True):
-        """Initializes the network based on the given :param sizes:.
-        Builds the weights and biase vectors for each layer of the network.
-        Each layer will be initialized randomly following the normal distribution. 
+        """Initializes the network topology based on the given :sizes: which represents the amount
+        of units to use for each of the layers of the current network. Builds the weights and bias
+        vectors for each layer of the network accordingly. Each layer will be initialized randomly
+        following the normal distribution. Various hyperparameters can be specified, like momentum
+        and regularization coefficients.
+        # TODO: usiamo veramente normal distribution? 
 
-        :param sizes: Tuple (i, l1, l2, ..., ln, o) containig the number of units
-            for each layer, where the first and last elements represents, respectively,
-            the input layer and the output layer.
-        :param seed: seed for random number generator used for initializing this network
-            weights and biases. Needed for reproducibility.
-        :param activation: specifies which activation function to use for the hidden layers
-            of the network. 
-        """
+        Parameters
+        ----------
+        sizes : tuple
+            Tuple (i, l1, l2, ..., ln, o) containig the number of units for each layer,
+            where the first and last elements represents, respectively, the input layer
+            and the output layer units.
+        seed : int
+            seed for random number generator used for initializing this network weights
+            and biases. Needed for reproducibility.
+        activation : function, optional
+            specifies which activation function to use for the hidden layers of the network,
+            by default 'sigmoid'
+        lmbda : int, optional
+            l2 regularization coefficient, by default 0.0
+        momentum : int, optional
+            momentum coefficient, by default 0.0
+        debug : bool, optional
+            debugging flag, by default True
+        """        
         
         rng = default_rng(seed)     # needed for reproducibility
         self.training_size = None
@@ -75,7 +89,23 @@ class Network(metaclass=ABCMeta):
         self.debug = debug
 
 
-    def feedforward_batch(self, inp):
+    def _feedforward_batch(self, inp):
+        """Performs a feedforward pass through the network to compute the
+        output for the current input to the network.
+
+        Parameters
+        ----------
+        inp : np.ndarray
+            Input to the network used to perform the feedforward pass.
+
+        Returns
+        -------
+        np.ndarray, list, list
+            An np.ndarray representing the output related the the current input
+            :inp: and two lists representing respectively the list of inputs and outputs
+            for each unit in the network.
+        """        
+
         out = inp
         units_out = [out]
         nets = []
@@ -93,12 +123,34 @@ class Network(metaclass=ABCMeta):
         return units_out, nets, out
 
     
-    def backpropagation_batch(self, x, y, der):
+    def _backpropagation_batch(self, x, y, der):
+        """Performs a backward pass by using the chain rule to compute the gradient
+        for each weight and bias in the network for the current input/output samples.
+        The computed gradient is dependend to the :der: parameter which specifies the
+        function to use to compute the derivative.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Samples the will be used to estimate the current gradient values.
+        y : np.ndarray
+            Expected output for the :x: samples. Used to loss computation.
+        der : function
+            Function to be used to compute the derivative of the loss function
+            w.r.t. each weight and bias in the network.
+
+        Returns
+        -------
+        list, list
+            Lists of np.ndarray containing for each layer the gradient matrix for each
+            weight and bias in the network.
+        """        
+
         nabla_b = [0]*(len(self.sizes)-1)
         nabla_w = [0]*(len(self.sizes)-1)
 
         # Forward computation
-        units_out, nets, out = self.feedforward_batch(x)
+        units_out, nets, out = self._feedforward_batch(x)
         delta = 0
 
         # Backward pass
@@ -126,20 +178,33 @@ class Network(metaclass=ABCMeta):
     def evaluate(self, test_data, train_data):
         """Evaluates the performances of the Network in the current state,
         propagating the test examples through the network via a complete feedforward
-        step. It evaluates the performance using the R2 metric in order to be
-        comparable with sklearn out-of-the-box NN results.
+        step. It evaluates the performance using the associated loss for this Network.
+        Typical scores are MeanSquaredError and AccuracyScore.
 
-        :param test_data: test data to evaluate the NN
-        :return: The R2 score as defined by sklearn library
-        """
+        Parameters
+        ----------
+        test_data : tuple
+            Couple of np.ndarray representing test samples and associated outputs. Used
+            to test the generalization capabilities of the network.
+        train_data : tuple
+            Couple of np.ndarray representing training samples and associated outputs. Used
+            to train the network and update weights accordingly.
+
+        Returns
+        -------
+        tuple, list, list
+            (score_test, score_train) representing the achieved score for both test and training samples;
+            preds_train list of predictions for the training samples :train_data:;
+            preds_test list of predictions for the test samples :test_data:
+        """        
 
         score_test = []
         score_train = []
             
-        preds_test = self.predict(test_data[0])
+        preds_test = self._predict(test_data[0])
         truth_test = test_data[1]
 
-        preds_train = self.predict(train_data[0])
+        preds_train = self._predict(train_data[0])
         truth_train = train_data[1]
         
         score_test.append(self.loss.loss(truth_test, preds_test))
@@ -153,13 +218,13 @@ class Network(metaclass=ABCMeta):
 
     @abstractmethod
     def best_score(self):
-        """Returns the best score achieved during the fitting of the current network.
+        """Returns the best score achieved during the training of the current network.
         """        
         pass
 
 
     @abstractmethod
-    def predict(self, data):
+    def _predict(self, data):
         pass
 
 
@@ -167,8 +232,12 @@ class Network(metaclass=ABCMeta):
         """Utility function, allows to build a plot of the scores achieved during training
         for the validation set and the training set.
 
-        :param name: Prefix name for the file related to the plot.
+        Parameters
+        ----------
+        name : string
+            Prefix name for the plot file.
         """        
+
         plt.plot(self.val_scores, '--', label='Validation loss')
         plt.plot(self.train_scores, '--', label='Training loss')
         plt.legend(loc='best')
@@ -182,6 +251,15 @@ class Network(metaclass=ABCMeta):
 
     
     def plot_grad(self, name):
+        """Utility function, allows to build a plot of the gradient values achieved during
+        training of the current Network.
+
+        Parameters
+        ----------
+        name : string
+            Prefix name for the plot file.
+        """        
+
         plt.plot(self.grad_est_per_epoch, '--', label='Validation loss')
         plt.legend(loc='best')
         plt.xlabel ('Epochs')
@@ -191,3 +269,140 @@ class Network(metaclass=ABCMeta):
 
         plt.savefig(f"src/NN/res/grads/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
         plt.clf()
+
+
+
+class NC(Network): 
+
+    def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.5, debug=True):
+        """Neural Network implementation for classification tasks with sigmoid activation function
+        in the output layer. 
+
+        Parameters
+        ----------
+        sizes : tuple
+            Tuple (i, l1, l2, ..., ln, o) containig the number of units for each layer,
+            where the first and last elements represents, respectively, the input layer
+            and the output layer units.
+        seed : int
+            seed for random number generator used for initializing this network weights
+            and biases. Needed for reproducibility.
+        activation : function, optional
+            specifies which activation function to use for the hidden layers of the network,
+            by default 'sigmoid'
+        lmbda : int, optional
+            l2 regularization coefficient, by default 0.0
+        momentum : int, optional
+            momentum coefficient, by default 0.0
+        debug : bool, optional
+            debugging flag, by default True
+        """        
+
+        super().__init__(sizes, seed, activation, lmbda, momentum, debug)
+
+        # Defines the behavior of the last layer of the network
+        self.last_act = Sigmoid
+        self.loss = AccuracyScore
+
+
+    def best_score(self):
+        """Returns the best score achieved during the training of the
+        current Network.
+
+        Returns
+        -------
+        tuple
+            Couple of values representing the best score for validation and training sets.
+        """        
+
+        best_score = ()
+        if len(self.val_scores) > 0:
+            best_score = (np.max(self.val_scores), np.max(self.train_scores))
+
+        return best_score
+
+
+    def _predict(self, data):
+        """Performs a feedforward pass through the network for the given :data: samples,
+        returns the classification values for each sample.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Samples to use for prediction using the current configuration of the Network.
+
+        Returns
+        -------
+        np.ndarray
+            Binary classification prediction values for the given :data: samples.
+        """        
+        return self._feedforward_batch(data)[2] >= 0.5
+
+
+
+class NR(Network):
+
+    def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.5, debug=True):
+        """Neural Network implementation for regression tasks with linear activation function
+        in the output layer. 
+
+        Parameters
+        ----------
+        sizes : tuple
+            Tuple (i, l1, l2, ..., ln, o) containig the number of units for each layer,
+            where the first and last elements represents, respectively, the input layer
+            and the output layer units.
+        seed : int
+            seed for random number generator used for initializing this network weights
+            and biases. Needed for reproducibility.
+        activation : function, optional
+            specifies which activation function to use for the hidden layers of the network,
+            by default 'sigmoid'
+        lmbda : int, optional
+            l2 regularization coefficient, by default 0.0
+        momentum : int, optional
+            momentum coefficient, by default 0.0
+        debug : bool, optional
+            debugging flag, by default True
+        """ 
+
+        super().__init__(sizes, seed, activation, lmbda, momentum, debug)
+
+        # Defines the behavior of the last layer of the network
+        self.last_act = Linear
+        self.loss = MeanSquaredError
+
+
+    def best_score(self):
+        """Returns the best score achieved during the training of the
+        current Network.
+
+        Returns
+        -------
+        tuple
+            Couple of values representing the best score for validation and training sets.
+        """ 
+
+        best_score = ()
+        if len(self.val_scores) > 0:
+            best_score = (np.min(self.val_scores), np.min(self.train_scores))
+
+        return best_score
+
+
+    def _predict(self, data):
+        """Performs a feedforward pass through the network for the given :data: samples,
+        returns the values for each sample for the regression task.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Samples to use for prediction using the current configuration of the Network.
+
+        Returns
+        -------
+        np.ndarray
+            Regression prediction values for the given :data: samples.
+        """
+
+        return self._feedforward_batch(data)[2]
