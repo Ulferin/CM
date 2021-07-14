@@ -15,6 +15,7 @@ datasets = {
 if __name__ == '__main__':
     test = sys.argv[1]
     dataset = sys.argv[2]
+    grid = len(sys.argv) > 3 and sys.argv[3] == 'grid'
 
     if dataset == 'cup':
         X_train, X_test, y_train, y_test = utils.load_CUP(datasets[dataset])
@@ -35,7 +36,7 @@ if __name__ == '__main__':
     momentum = [0.5, 0.9]
 
     # Performs gridsearch over the specified hyperparameters
-    if test == 'grid':
+    if grid:
         for ep in epochs:
             for h1 in hidden1:
                 for h2 in hidden2:

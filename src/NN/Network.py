@@ -2,6 +2,9 @@
 # implemented from scratch following the advices taken during the course
 # of ML
 
+import thread
+
+
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
