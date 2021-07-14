@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 
-from src.NN.NC import NR, NC
+from src.NN.Network import NR, NC
 import src.NN.utils as utils
 
 datasets = {

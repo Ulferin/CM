@@ -17,7 +17,7 @@ class MeanSquaredError(LossFunction):
         return 1/2 * np.average((np.array(y_true) - np.array(y_pred))**2)
 
 class AccuracyScore(LossFunction):
-
+    # TODO: magari implementarla come si deve a manina
     @staticmethod
     def loss(y_true, y_pred):
         return accuracy_score(y_true, y_pred)
