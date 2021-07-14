@@ -454,7 +454,7 @@ class NC(Network):
             best_score = (np.max(self.val_scores), np.max(self.train_scores))
 
         score_file = open(f"src/NN/res/scores/{name}.txt", 'a')
-        stats = f"ep{self.epochs}s{self.sizes[1:-1]}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum} - score: {best_score}\n"
+        stats = f"ep:{self.epochs} s:{self.sizes[1:-1]} b:{self.batch_size} e:{self.eta} lmbda:{self.lmbda} m:{self.momentum} - score:{best_score}\n"
         score_file.write(stats)
         score_file.close()
 
@@ -527,7 +527,7 @@ class NR(Network):
             best_score = (np.min(self.val_scores), np.min(self.train_scores))
 
         score_file = open(f"src/NN/res/scores/{name}.txt", 'a')
-        stats = f"ep{self.epochs}s{self.sizes[1:-1]}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum} - score: {best_score}\n"
+        stats = f"ep:{self.epochs} s:{self.sizes[1:-1]} b:{self.batch_size} e:{self.eta} lmbda:{self.lmbda} m:{self.momentum} - score:{best_score}\n"
         score_file.write(stats)
         score_file.close()
 

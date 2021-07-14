@@ -26,12 +26,12 @@ if __name__ == '__main__':
     input_units = X_train.shape[1]
     output_units = y_train.shape[1] if len(y_train.shape) == 2 else 1
 
-    epochs = [200, 400, 600]
-    hidden1 = [2, 5, 10, 20]
-    hidden2 = [2, 5, 10, 20]
-    batch = [10, 30]
-    eta = [0.00001, 0.0001, 0.001, 0.01, 0.1]
-    lmbda = [0.00001, 0.001]
+    epochs = [500, 1500]
+    hidden1 = [16, 32, 50]
+    hidden2 = [16, 32, 50]
+    batch = [32]
+    eta = [0.0001, 0.001, 0.01, 0.1]
+    lmbda = [0.001, 0.01, 0.1]
     momentum = [0.5, 0.9]
 
     # Performs gridsearch over the specified hyperparameters
@@ -49,9 +49,9 @@ if __name__ == '__main__':
                                     else:
                                         net = NC([input_units, h1, output_units], 0, 'Lrelu', lmbda=l, momentum=m, debug=False)
 
-                                    net.SGD((X_train.reshape(X_train.shape[0],1,-1), y_train), epochs=ep, batch_size=b, eta=e, test_data=(X_test.reshape(X_test.shape[0],1,-1), y_test))
-                                    print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score()}")
-                                    net.plot_score(f"test_np/{dataset}")
+                                    net.train(test, (X_train, y_train), epochs=ep, batch_size=b, eta=e, test_data=(X_test, y_test))
+                                    print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score(f'{dataset}_{test}', save=True)}")
+                                    net.plot_score(f"test_np/{dataset}_{test}")
 
     else:
 
@@ -74,7 +74,7 @@ if __name__ == '__main__':
                     'activation': 'Lrelu',
                     'lmbda': 0.1,
                     'momentum': 0.7,
-                    'epochs': 1000,
+                    'epochs': 100,
                     'batch_size': 64,
                     'eta': 1
                 }
