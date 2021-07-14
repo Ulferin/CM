@@ -133,9 +133,6 @@ class Network(metaclass=ABCMeta):
             Samples the will be used to estimate the current gradient values.
         y : np.ndarray
             Expected output for the :x: samples. Used to loss computation.
-        der : function
-            Function to be used to compute the derivative of the loss function
-            w.r.t. each weight and bias in the network.
 
         Returns
         -------
@@ -170,8 +167,6 @@ class Network(metaclass=ABCMeta):
 
     def _create_batches(self, batches, training_data):
         """Creates a list of mini-batches that will be used during optimization.
-        Each time a new mini-batch is created, the data are shuffled, it is not
-        guaranteed that each bach will have different elements than the other ones.
 
         Parameters
         ----------
@@ -189,7 +184,6 @@ class Network(metaclass=ABCMeta):
 
         if self.batch_size is not None:
             for b in range(batches):
-                training_data = shuffle(training_data[0], training_data[1])
                 start = b * self.batch_size
                 end = (b+1) * self.batch_size
                 mini_batches.append((training_data[0][start:end], training_data[1][start:end]))
@@ -202,17 +196,17 @@ class Network(metaclass=ABCMeta):
 
         return mini_batches
 
-
+    # TODO: check shuffle
     def _update_batches(self, training_data):
-        """Creates batches and updates the Neural Network weights and biases by using the
-        number of batches for the current optimizer.
+        """Creates batches and updates the Neural Network weights and biases by performing
+        updates using the optimizer associated to the current network.
 
         Parameters
         ----------
-        nn : Object
-            Neural Network object to use for updates.
+        training_data : tuple
+            tuple of np.ndarray containing the training samples and the associated expected outputs.
         """               
-
+        # training_data = shuffle(training_data[0], training_data[1], random_state=42)
         mini_batches = self._create_batches(self.batches, training_data)
         self.grad_est = 0
 
@@ -224,18 +218,12 @@ class Network(metaclass=ABCMeta):
 
     def _compute_grad(self, mini_batch):
         """Computes the gradient values and norm for the current :mini_batch: samples by
-        using the backpropagation method implemented by the :nn: Neural Network object.
-        The derivative method to be used is specified by :der: indicating whether a gradient
-        or subgradient computation should be used.
+        using the backpropagation method implemented by the Neural Network object.
 
         Parameters
         ----------
-        nn : Object
-            Neural Network object used for backpropagation.
         mini_batch : np.ndarray
             mini-batch samples for which to compute the gradient.
-        der : function
-            Indicated the technique used to compute the gradient.
 
         Returns
         -------
@@ -251,6 +239,28 @@ class Network(metaclass=ABCMeta):
 
 
     def train(self, optimizer, training_data, epochs, eta, batch_size=None, test_data=None):
+        """Trains the neural network on :training_data: sample for a given number of :epochs:
+        by fine-tuning the weights and biases by using the update rules relative to
+        the provided :optimizer:. The way updates are performed is also determined by the
+        configurations relative to :batch_size: and :eta: parameters.
+
+        Parameters
+        ----------
+        optimizer : string
+            Specifies which optimizer technique should be used for updates.
+        training_data : tuple
+            Tuple containing the training samples to use for training the neural network and the
+            associated expected outputs for each sample.
+        epochs : int
+            Max number of iterations for the training of the network.
+        eta : float
+            Learning rate parameter if SGD optimizer is used, starting step for SGM.
+        batch_size : int, optional
+            If specified determines the size of the batches used to train the network, by default None
+        test_data : tuple, optional
+            If provided, test samples and expected outputs are used to evaluate the performance
+            of the current network at each epoch of training, by default None
+        """        
         
         self.der = self.act.derivative if optimizer == 'SGD' else self.act.subgrad
 
@@ -273,12 +283,14 @@ class Network(metaclass=ABCMeta):
             self.grad_est_per_epoch.append(self.grad_est)
             self.score = self.evaluate(e)
 
-            self.optimizer.iteration_end(e, self)
+            if self.optimizer.iteration_end(e, self):
+                print("Reached desired precision in gradient norm, stopping.")
+                break
 
 
+    # TODO: in questo caso i due evaluate si possono unire
     def evaluate(self, e):
-        """Utility function acting as a wrapper around the evaluate method of the Neural Network :nn:.
-        Returns statistics for the current epoch if test data are provided while calling the optimizer.
+        """Returns statistics for the current epoch if test data are provided while training the network.
         It prints the current epoch, gradient norm for convergence analysis and the current score computed
         as loss value.
 
@@ -286,8 +298,11 @@ class Network(metaclass=ABCMeta):
         ----------
         e : int
             current epoch.
-        nn : Object
-            Neural Network object used during optimization.
+
+        Returns
+        -------
+        float
+            latest score achieved during evaluation over training data.
         """              
 
         if self.test_data is not None:
@@ -302,7 +317,7 @@ class Network(metaclass=ABCMeta):
 
     def _evaluate(self, test_data, train_data):
         """Evaluates the performances of the Network in the current state,
-        propagating the test examples through the network via a complete feedforward
+        propagating the test and training examples through the network via a complete feedforward
         step. It evaluates the performance using the associated loss for this Network.
         Typical scores are MeanSquaredError and AccuracyScore.
 

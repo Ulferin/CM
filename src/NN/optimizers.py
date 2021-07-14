@@ -2,16 +2,17 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-from src.NN.LossFunctions import MeanSquaredError
+
 
 class Optimizer(metaclass=ABCMeta):
 
     @abstractmethod
-    def __init__(self, training_data, epochs, eta, batch_size=None, test_data=None):
+    def __init__(self, training_data, epochs, eta, eps=1e-5, batch_size=None, test_data=None):
+
         # Store auxiliary informations to pretty-print statistics
         self.batch_size = batch_size
         self.eta = eta
-        self.epochs = epochs
+        self.eps = eps
         self.training_size = len(training_data[0])
         self.batches = int(self.training_size/batch_size) if batch_size is not None else 1
         self.grad_est_per_epoch = []
@@ -42,26 +43,12 @@ class Optimizer(metaclass=ABCMeta):
         pass
 
 
+
 class SGD(Optimizer):
 
-    def __init__(self, training_data, epochs, eta, batch_size=None, test_data=None):
-        super().__init__(training_data, epochs, eta, batch_size=batch_size, test_data=test_data)
+    def __init__(self, training_data, epochs, eta, eps=1e-5, batch_size=None, test_data=None):
+        super().__init__(training_data, epochs, eta, eps=eps, batch_size=batch_size, test_data=test_data)
 
-
-    def iteration_end(self, e, nn):
-        """Trains the Neural Network :nn: using mini-batch stochastic gradient descent,
-        applied to the training examples for the current optimizer for a given
-        number of epochs and with the specified learning rate. If test_data exists,
-        the learning algorithm will print progresses during the training phase.
-
-        Parameters
-        ----------
-        nn : Object
-            Neural Network to train with the current optimization method.
-        """           
-
-        # TODO: vedere cosa fare al termine di ogni iterazione, magari controllare norma gradiente e terminare se raggiunta soluzione
-        pass
 
     def update_mini_batch(self, nn, nabla_b, nabla_w, size):
         """Updates weights and biases of the specified Neural Network object :nn: by
@@ -85,27 +72,79 @@ class SGD(Optimizer):
         nn.biases = [b + velocity for b,velocity in zip(nn.biases, nn.bvelocities)]
 
 
+    def iteration_end(self, e, nn):
+        """Checks at each iteration if the optimizer has reached an optimal state.
+
+        Parameters
+        ----------
+        e : int
+            Current epoch of training for the given network :nn:.
+        nn : Object
+            Neural Network object being trained using this optimizer.
+
+        Returns
+        -------
+        bool
+            Whether the optimizer has reached an optimal state.
+        """        
+
+        if nn.ngrad < self.eps:
+            return True
+
+        return False
+
+
+
 class SGM(Optimizer):
 
     def __init__(self, training_data, epochs, eta, eps=1e-5, batch_size=None, test_data=None):
-        super().__init__(training_data, epochs, eta, batch_size=batch_size, test_data=test_data)
-        self.eps = eps
+        super().__init__(training_data, epochs, eta, eps=eps, batch_size=batch_size, test_data=test_data)
         self.step = eta
         self.x_ref = []
         self.f_ref = np.inf
 
 
-    def iteration_end(self, e, nn):
-        """Trains the Neural Network :nn: using mini-batch sub-gradient method,
-        applied to the training examples for the current optimizer for a given
-        number of epochs and with the specified step-size. If test_data exists,
-        the learning algorithm will print progresses during the training phase.
+    def update_mini_batch(self, nn, nabla_b, nabla_w, size):
+        """Updates weights and biases of the specified Neural Network object :nn: by
+        using the current gradient values :nabla_b: for biases and :nabla_w: for weights.
+        Uses a diminishing step-size rule for updates.
 
         Parameters
         ----------
         nn : Object
-            Neural Network to train with the current optimization method.
-        """
+            Neural Network to use for updates and gradient computation.
+        nabla_b : list
+            List of gradients for the biases of each layer of the network.
+        nabla_w : list
+            List of gradients for the weights of each layer of the network.
+        size : int
+            Not used in SGM. Only used in SGD optimizer.
+        """        
+
+        # Compute search direction
+        d = self.step/nn.ngrad
+
+        nn.weights = [w - d*nw for w,nw in zip(nn.weights, nabla_w)]
+        nn.biases = [b - d*nb for b,nb in zip(nn.biases, nabla_b)]
+
+
+    def iteration_end(self, e, nn):      
+        """Checks at each iteration if the optimizer has reached an optimal state,
+        updates the learning rate given the current epoch :e: and the reference values
+        for the current optimizer based on results coming from the :nn:.
+
+        Parameters
+        ----------
+        e : int
+            Current epoch of training for the given network :nn:.
+        nn : Object
+            Neural Network object being trained using this optimizer.
+
+        Returns
+        -------
+        bool
+            Whether the optimizer has reached an optimal state.
+        """        
 
         self.step = self.eta * (1 / e)
 
@@ -117,24 +156,6 @@ class SGM(Optimizer):
             self.x_ref = (nn.weights.copy(), nn.biases.copy())
 
         if nn.ngrad < self.eps:
-            print("Reached desired precision.")
+            return True
 
-
-    def update_mini_batch(self, nn, nabla_b, nabla_w, size):
-        """Updates weights and biases of the specified Neural Network object :nn: by
-        using the current mini-batch samples :mini_batch:. Uses a diminishing step-size
-        rule for updates.
-
-        Parameters
-        ----------
-        nn : Object
-            Neural Network to use for updates and gradient computation.
-        mini_batch : np.ndarray
-            mini-batch samples to use for updates.
-        """
-
-        # Compute search direction
-        d = self.step/nn.ngrad
-
-        nn.weights = [w - d*nw for w,nw in zip(nn.weights, nabla_w)]
-        nn.biases = [b - d*nb for b,nb in zip(nn.biases, nabla_b)]
+        return False
