@@ -5,10 +5,8 @@
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
-from numpy.linalg import norm
 from numpy.random import default_rng
 
-from sklearn.metrics import r2_score, mean_squared_error, accuracy_score
 from sklearn.utils import shuffle
 
 from matplotlib import pyplot as plt
@@ -123,7 +121,7 @@ class Network(metaclass=ABCMeta):
         return units_out, nets, out
 
     
-    def _backpropagation_batch(self, x, y, der):
+    def _backpropagation_batch(self, x, y):
         """Performs a backward pass by using the chain rule to compute the gradient
         for each weight and bias in the network for the current input/output samples.
         The computed gradient is dependend to the :der: parameter which specifies the
@@ -162,7 +160,7 @@ class Network(metaclass=ABCMeta):
             else:
                 # Backward pass - hidden unit
                 delta = np.matmul(delta, self.weights[-l+1])
-                delta = delta * der(nets[-l])
+                delta = delta * self.der(nets[-l])
 
             nabla_b[-l] = delta.sum(axis=0)
             nabla_w[-l] = np.matmul(delta.T, units_out[-l-1])
@@ -170,12 +168,139 @@ class Network(metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
+    def _create_batches(self, batches, training_data):
+        """Creates a list of mini-batches that will be used during optimization.
+        Each time a new mini-batch is created, the data are shuffled, it is not
+        guaranteed that each bach will have different elements than the other ones.
+
+        Parameters
+        ----------
+        batches : int
+            number of batches that will be created from the current :training_data:.
+        training_data : np.ndarray
+            training data samples used to build the batches used for training.
+
+        Returns
+        -------
+        list
+            a list of mini-batches created with the specified :batches: number from the :training_data: samples.
+        """                      
+        mini_batches = []
+
+        if self.batch_size is not None:
+            for b in range(batches):
+                training_data = shuffle(training_data[0], training_data[1])
+                start = b * self.batch_size
+                end = (b+1) * self.batch_size
+                mini_batches.append((training_data[0][start:end], training_data[1][start:end]))
+            
+            # Add remaining data as last batch
+            # (it may have different size than previous batches, up to |batch|-1 more elements)
+            mini_batches.append((training_data[0][b*self.batch_size:], training_data[1][b*self.batch_size:]))
+        else:
+            mini_batches.append((training_data[0], training_data[1]))
+
+        return mini_batches
+
+
+    def _update_batches(self, training_data):
+        """Creates batches and updates the Neural Network weights and biases by using the
+        number of batches for the current optimizer.
+
+        Parameters
+        ----------
+        nn : Object
+            Neural Network object to use for updates.
+        """               
+
+        mini_batches = self._create_batches(self.batches, training_data)
+        self.grad_est = 0
+
+        for mini_batch in mini_batches:
+            nabla_b, nabla_w = self._compute_grad(mini_batch)
+            self.optimizer.update_mini_batch(self, nabla_b, nabla_w, len(mini_batch[0]))
+            self.grad_est += self.ngrad
+
+
+    def _compute_grad(self, mini_batch):
+        """Computes the gradient values and norm for the current :mini_batch: samples by
+        using the backpropagation method implemented by the :nn: Neural Network object.
+        The derivative method to be used is specified by :der: indicating whether a gradient
+        or subgradient computation should be used.
+
+        Parameters
+        ----------
+        nn : Object
+            Neural Network object used for backpropagation.
+        mini_batch : np.ndarray
+            mini-batch samples for which to compute the gradient.
+        der : function
+            Indicated the technique used to compute the gradient.
+
+        Returns
+        -------
+        np.ndarray, np.ndarray
+            Couple of np.ndarray indicating the gradient values for both
+            weights and biases.
+        """        
+
+        nabla_b, nabla_w = self._backpropagation_batch(mini_batch[0], mini_batch[1])
+        self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b])/len(mini_batch[0]))
+
+        return nabla_b, nabla_w
+
+
     def train(self, optimizer, training_data, epochs, eta, batch_size=None, test_data=None):
+        
+        self.der = self.act.derivative if optimizer == 'SGD' else self.act.subgrad
+
+        self.batch_size = batch_size
+        self.eta = eta
+        self.epochs = epochs
+        self.training_size = len(training_data[0])
+        self.batches = int(self.training_size/batch_size) if batch_size is not None else 1
+
+        self.training_data = training_data
+        self.test_data = test_data
+
         self.optimizer = OPTIMIZERS[optimizer](training_data, epochs, eta, batch_size=batch_size, test_data=test_data)
-        self.optimizer.optimize(self)
+
+        for e in range(1, self.epochs+1):
+            self._update_batches(training_data)
+
+            # Compute current gradient estimate
+            self.grad_est = self.grad_est/self.batches
+            self.grad_est_per_epoch.append(self.grad_est)
+            self.score = self.evaluate(e)
+
+            self.optimizer.iteration_end(e, self)
 
 
-    def evaluate(self, test_data, train_data):
+    def evaluate(self, e):
+        """Utility function acting as a wrapper around the evaluate method of the Neural Network :nn:.
+        Returns statistics for the current epoch if test data are provided while calling the optimizer.
+        It prints the current epoch, gradient norm for convergence analysis and the current score computed
+        as loss value.
+
+        Parameters
+        ----------
+        e : int
+            current epoch.
+        nn : Object
+            Neural Network object used during optimization.
+        """              
+
+        if self.test_data is not None:
+            score, preds_train, preds_test = self._evaluate(self.test_data, self.training_data)
+            if self.debug: print(f"pred train: {preds_train[1]} --> target: {self.training_data[1][1]} || pred test: {preds_test[1]} --> target {self.test_data[1][1]}")
+            print(f"Epoch {e}. Gradient norm: {self.grad_est}. Score: {score}")
+        else:
+            print(f"Epoch {e} completed.")
+
+        return score[1]
+
+
+    def _evaluate(self, test_data, train_data):
         """Evaluates the performances of the Network in the current state,
         propagating the test examples through the network via a complete feedforward
         step. It evaluates the performance using the associated loss for this Network.
@@ -197,23 +322,17 @@ class Network(metaclass=ABCMeta):
             preds_train list of predictions for the training samples :train_data:;
             preds_test list of predictions for the test samples :test_data:
         """        
-
-        score_test = []
-        score_train = []
             
         preds_test = self._predict(test_data[0])
         truth_test = test_data[1]
 
         preds_train = self._predict(train_data[0])
         truth_train = train_data[1]
-        
-        score_test.append(self.loss.loss(truth_test, preds_test))
-        score_train.append(self.loss.loss(truth_train, preds_train))
 
-        self.val_scores.append(score_test[-1])
-        self.train_scores.append(score_train[-1])
+        self.val_scores.append(self.loss.loss(truth_test, preds_test))
+        self.train_scores.append(self.loss.loss(truth_train, preds_train))
 
-        return (score_test, score_train), preds_train, preds_test
+        return (self.val_scores[-1], self.train_scores[-1]), preds_train, preds_test
 
 
     @abstractmethod

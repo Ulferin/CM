@@ -55,6 +55,7 @@ if __name__ == '__main__':
 
     else:
 
+        # TODO: aggiungere json di configurazione
         params = {
             'cup': {
                 'SGD': {
@@ -63,7 +64,7 @@ if __name__ == '__main__':
                     'activation': 'Lrelu',
                     'lmbda': 0.1,
                     'momentum': 0.7,
-                    'epochs': 500,
+                    'epochs': 1000,
                     'batch_size': 64,
                     'eta': 0.001,
                 },
@@ -74,7 +75,7 @@ if __name__ == '__main__':
                     'lmbda': 0.1,
                     'momentum': 0.7,
                     'epochs': 1000,
-                    'batch_size': 32,
+                    'batch_size': 64,
                     'eta': 1
                 }
             },
