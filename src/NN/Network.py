@@ -351,7 +351,7 @@ class Network(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def best_score(self):
+    def best_score(self, name, save=False):
         """Returns the best score achieved during the training of the current network.
         """        
         pass
@@ -439,7 +439,7 @@ class NC(Network):
         self.loss = AccuracyScore
 
 
-    def best_score(self):
+    def best_score(self, name, save=False):
         """Returns the best score achieved during the training of the
         current Network.
 
@@ -452,6 +452,11 @@ class NC(Network):
         best_score = ()
         if len(self.val_scores) > 0:
             best_score = (np.max(self.val_scores), np.max(self.train_scores))
+
+        score_file = open(f"src/NN/res/scores/{name}.txt", 'a')
+        stats = f"ep{self.epochs}s{self.sizes[1:-1]}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum} - score: {best_score}\n"
+        score_file.write(stats)
+        score_file.close()
 
         return best_score
 
@@ -507,7 +512,7 @@ class NR(Network):
         self.loss = MeanSquaredError
 
 
-    def best_score(self):
+    def best_score(self, name, save=False):
         """Returns the best score achieved during the training of the
         current Network.
 
@@ -520,6 +525,11 @@ class NR(Network):
         best_score = ()
         if len(self.val_scores) > 0:
             best_score = (np.min(self.val_scores), np.min(self.train_scores))
+
+        score_file = open(f"src/NN/res/scores/{name}.txt", 'a')
+        stats = f"ep{self.epochs}s{self.sizes[1:-1]}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum} - score: {best_score}\n"
+        score_file.write(stats)
+        score_file.close()
 
         return best_score
 

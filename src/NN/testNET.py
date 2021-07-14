@@ -110,7 +110,7 @@ if __name__ == '__main__':
             net = NC([input_units, params[dataset][test]['h1'], output_units], 0, params[dataset][test]['activation'], lmbda=params[dataset][test]['lmbda'], momentum=params[dataset][test]['momentum'], debug=False)
 
         net.train(test, (X_train, y_train), epochs=params[dataset][test]['epochs'], batch_size=params[dataset][test]['batch_size'], eta=params[dataset][test]['eta'], test_data=(X_test, y_test))
-        print(f"The best score for ep:{params[dataset][test]['epochs']}, h1:{params[dataset][test]['h1']}, h2:{params[dataset][test]['h2']}, b:{params[dataset][test]['batch_size']}, e:{params[dataset][test]['eta']}, l:{params[dataset][test]['lmbda']}, m:{params[dataset][test]['momentum']} was: {net.best_score()}")
+        print(f"The best score for ep:{params[dataset][test]['epochs']}, h1:{params[dataset][test]['h1']}, h2:{params[dataset][test]['h2']}, b:{params[dataset][test]['batch_size']}, e:{params[dataset][test]['eta']}, l:{params[dataset][test]['lmbda']}, m:{params[dataset][test]['momentum']} was: {net.best_score(f'{dataset}_{test}', save=True)}")
         # net.plot_grad('gradient')
 
     
