@@ -37,7 +37,7 @@ class MeanSquaredError(LossFunction):
 class AccuracyScore(LossFunction):
     """Static class that implements the accuracy score for classifiers.
     """
-    # TODO: magari implementarla come si deve a manina
+
     @staticmethod
     def loss(y_true, y_pred):
         """Returns the accuracy score given the truth values :y_true: and

@@ -156,7 +156,7 @@ class LeakyReLU(ActivationFunction):
         The returned value, for each element of :x: is:
             
             · 1         if x > 0
-            · [0,1]     if x = 0    (value selected with a uniform distribution)
+            · [0.01,1]  if x = 0    (value selected with a uniform distribution)
             · 0.01      if x < 0
 
         Parameters
@@ -172,7 +172,7 @@ class LeakyReLU(ActivationFunction):
         """
 
         rng = default_rng()
-        return np.where(x>0, 1, np.where(x<0, 0.01, rng.uniform()))
+        return np.where(x>0, 1, np.where(x<0, 0.01, rng.uniform(0.01, 1)))
 
 
 class Sigmoid(ActivationFunction):
