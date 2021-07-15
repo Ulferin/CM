@@ -55,4 +55,4 @@ class AccuracyScore(LossFunction):
         float
             Returns the proportion of correctly classified samples among all.
         """        
-        return accuracy_score(y_true, y_pred)
+        return np.average(y_true == y_pred)
