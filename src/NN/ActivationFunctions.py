@@ -3,7 +3,6 @@ from numpy.random import default_rng
 
 from abc import ABCMeta, abstractmethod
 
-# TODO: generate doc strings with new "standard"
 
 class ActivationFunction(metaclass=ABCMeta):
 
@@ -21,50 +20,105 @@ class ActivationFunction(metaclass=ABCMeta):
 
 
 class ReLU(ActivationFunction):
+    """Class that implements static utility functions related to
+    the ReLU activation function."""    
     
     @staticmethod
     def function(x):
-        """Utility function that implements the ReLU function used in the NN units.
-        It works both with vectors and scalars. 
+        """Implements the ReLU activation function.
+        The function is applied elementwise in the case :x: is a vector.
+        The returned values, for each element of :x: is:
 
-        :param x: input vector/scalar
-        :return: x if x >= 0, 0 otherwise
+            · x_i       if x_i >= 0
+            · 0         otherwise
+
+        Parameters
+        ----------
+        x : np.ndarray
+            input vector/scalar
+
+        Returns
+        -------
+        np.ndarray
+            Vector with the same shape as input :x: with the ReLU function applied
+            elementwise.
         """
+
         return np.maximum(x, 0.)
 
     @staticmethod
     def derivative(x):
-        """Utility function that implements the ReLU function derivative.
-        It works both with vectors and scalars.
+        """Implements the derivative of the ReLU activation function.
+        The derivative is applied elementwise in the case :x: is a vector.
+        The returned values, for each element of :x: is:
 
-        :param x: input vector/scalar
-        :return: 1 if :param x: is greater than 0, 0 otherwise
-        """    
-        return 1. * (x > 0)
+            · 1         if x_i >= 0
+            · 0         otherwise
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Input vector/scalar.
+
+        Returns
+        -------
+        np.ndarray
+            Vector with the same shape as input :x: with the ReLU derivative
+            applied elementswise.
+        """        
+
+        return 1. * (x >= 0)
 
     
     @staticmethod
     def subgrad(x):
-        rng = default_rng()
+        """Implements the subgradient of the ReLU activation function.
+        The subgradient is applied elementwise in the case :x: is a vector.
+        The returned value, for each element of :x: is:
+            
+            · 1         if x > 0
+            · [0,1]     if x = 0    (value selected with a uniform distribution)
+            · 0         if x < 0
 
+        Parameters
+        ----------
+        x : np.ndarray
+            Input vector/scalar.
+
+        Returns
+        -------
+        np.ndarray
+            Vector with the same shape as input :x: with the ReLU subgradient
+            function applied elementwise.
+        """        
+
+        rng = default_rng()
         return np.where(x>0, 1, np.where(x<0, 0, rng.uniform()))
 
 
 class LeakyReLU(ActivationFunction): 
+    """Class that implements static utility functions related to
+    the Leaky ReLU activation function.""" 
 
     @staticmethod
     def function(x):
-        """Implements the leaky ReLU activation function used in the NN units.
-        Works both with vectors and scalars.
-        
-        NOTE: the alpha parameter is hardcoded here, not the best of solutions,
-        but not important in this setting.
+        """Implements the Leaky ReLU activation function with constant 0.01.
+        The function is applied elementwise in the case :x: is a vector.
+        The returned values, for each element of :x: is:
 
-        Args:
-            x: input vector/scalar
+            · x_i           if x_i >= 0
+            · 0.01 * x_i    otherwise
 
-        Returns:
-            x if x >= 0, 0.01*x otherwise 
+        Parameters
+        ----------
+        x : np.ndarray
+            input vector/scalar
+
+        Returns
+        -------
+        np.ndarray
+            Vector with the same shape as input :x: with the Leaky ReLU
+            function applied elementwise.
         """
 
         return np.where(x>=0, x, 0.01*x)
@@ -72,34 +126,77 @@ class LeakyReLU(ActivationFunction):
 
     @staticmethod
     def derivative(x):
-        """Implements leaky ReLU function derivative.
+        """Implements the derivative of the Leaky ReLU activation function.
+        The derivative is applied elementwise in the case :x: is a vector.
+        The returned values, for each element of :x: is:
 
-        Args:
-            x: input vector/scalar
+            · 1         if x_i >= 0
+            · 0.01      otherwise
 
-        Returns:
-            1 if x > 0, 0.01 otherwise
-        """        
+        Parameters
+        ----------
+        x : np.ndarray
+            Input vector/scalar.
+
+        Returns
+        -------
+        np.ndarray
+            Vector with the same shape as input :x: with the Leaky ReLU
+            derivative applied elementwise.
+        """
+
         return np.where(x<0, 0.01, 1)
 
 
+    # TODO: controllare subgradient di Leaky Relu
     @staticmethod
     def subgrad(x):
-        rng = default_rng()
+        """Implements the subgradient of the Leaky ReLU activation function.
+        The subgradient is applied elementwise in the case :x: is a vector.
+        The returned value, for each element of :x: is:
+            
+            · 1         if x > 0
+            · [0,1]     if x = 0    (value selected with a uniform distribution)
+            · 0.01      if x < 0
 
+        Parameters
+        ----------
+        x : np.ndarray
+            Input vector/scalar.
+
+        Returns
+        -------
+        np.ndarray
+            Vector with the same shape as input :x: with the ReLU subgradient
+            function applied elementwise.
+        """
+
+        rng = default_rng()
         return np.where(x>0, 1, np.where(x<0, 0.01, rng.uniform()))
 
 
 class Sigmoid(ActivationFunction):
+    """Class that implements static utility functions related to
+    the Sigmoid activation function."""
 
     @staticmethod
     def function(x):
-        """Function that defines the sigmoid activation function used in the
-        Neaural Network units. It works both with vectors and numbers.
+        """Implements the Sigmoid activation function.
+        The function is applied elementwise in the case :x: is a vector.
+        The returned values, for each element of :x: is:
 
-        :param z: element to which apply the sigmoid function.
-        :return: an element with the same shape of the input with
-                sigmoid function applied elementwise in case of a vector.
+            · 1.0 / (1.0 + exp(-x_i))
+
+        Parameters
+        ----------
+        x : np.ndarray
+            input vector/scalar
+
+        Returns
+        -------
+        np.ndarray
+            Vector with the same shape as input :x: with the Sigmoid
+            function applied elementwise.
         """
 
         return 1.0 / (1.0 + np.exp(-x))
@@ -107,33 +204,89 @@ class Sigmoid(ActivationFunction):
 
     @staticmethod
     def derivative(x):
-        """Derivative function of the sigmoid function.
+        """Implements the derivative of the Sigmoid activation function.
+        The derivative is applied elementwise in the case :x: is a vector.
+        The returned values, for each element of :x: is:
 
-        :param z: element to which apply the sigmoid derivative function.
-        :return: an element with the same shape of the input with
-                sigmoid derivative function applied elementwise in case of a vector.
+            · sigmoid(x_i) * (1 - sigmoid(x_i))
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Input vector/scalar.
+
+        Returns
+        -------
+        np.ndarray
+            Vector with the same shape as input :x: with the Sigmoid
+            derivative applied elementwise.
         """
+
         x = Sigmoid.function(x)
         return x * (1 - x)
 
     
     @staticmethod
     def subgrad(x):
+        """Since Sigmoid activation function is derivable, this is equivalent of
+        the derivative function."""
+
         return Sigmoid.derivative(x)
 
 
 class Linear(ActivationFunction):
+    """Class that implements static utility functions related to
+    the Linear activation function."""
 
     @staticmethod
-    def function(x):        
+    def function(x):      
+        """Implements the Linear activation function.
+        The function is applied elementwise in the case :x: is a vector.
+        The returned values, for each element of :x: is:
+
+            · x_i
+
+        Parameters
+        ----------
+        x : np.ndarray
+            input vector/scalar
+
+        Returns
+        -------
+        np.ndarray
+            Vector with the same shape as input :x: with the Linear
+            function applied elementwise.
+        """
+
         return x
 
 
     @staticmethod
     def derivative(x):
+        """Implements the derivative of the Linear activation function.
+        The derivative is applied elementwise in the case :x: is a vector.
+        The returned values, for each element of :x: is:
+
+            · 1
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Input vector/scalar.
+
+        Returns
+        -------
+        np.ndarray
+            Vector with the same shape as input :x: with the Linear
+            derivative applied elementwise.
+        """
+
         return 1
 
     
     @staticmethod
     def subgrad(x):
+        """Since Linear activation function is derivable, this is equivalent of
+        the derivative function."""
+
         return Linear.derivative(x)
