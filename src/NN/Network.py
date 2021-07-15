@@ -2,22 +2,20 @@
 # implemented from scratch following the advices taken during the course
 # of ML
 
+
+
 from abc import ABCMeta, abstractmethod
-import time
-import random
 
 import numpy as np
-from numpy import linalg
-from numpy.linalg import norm
 from numpy.random import default_rng
 
-from sklearn.metrics import r2_score, mean_squared_error, accuracy_score
 from sklearn.utils import shuffle
 
 from matplotlib import pyplot as plt
 
-from src.NN.LossFunctions import MeanSquaredError
-from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU
+from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU, Linear
+from src.NN.LossFunctions import MeanSquaredError, AccuracyScore
+from src.NN.optimizers import SGD, SGM
 
 
 ACTIVATIONS = {
@@ -26,26 +24,46 @@ ACTIVATIONS = {
     'sigmoid': Sigmoid
 }
 
+OPTIMIZERS = {
+    'SGD': SGD,
+    'SGM': SGM
+}
+
 
 class Network(metaclass=ABCMeta):
-    """This class represents a standard Neural Network, also called Multilayer Perceptron.
-    It allows to build a network for both classification and regression tasks.
+    """Abstract class representing a standard Neural Network, also known as Multilayer Perceptron.
+    It allows to build a network for both classification and regression tasks by using the
+    preferred optimization technique between sub-gradient method and stochastic gradient descent.
+    Must be extended to specify which kind of task the network should solve.
     """    
     
     @abstractmethod
     def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.0, debug=True):
-        """Initializes the network based on the given :param sizes:.
-        Builds the weights and biase vectors for each layer of the network.
-        Each layer will be initialized randomly following the normal distribution. 
+        """Initializes the network topology based on the given :sizes: which represents the amount
+        of units to use for each of the layers of the current network. Builds the weights and bias
+        vectors for each layer of the network accordingly. Each layer will be initialized randomly
+        following the LeCun uniform initializer formula. Various hyperparameters can be specified,
+        like momentum and regularization coefficients.
 
-        :param sizes: Tuple (i, l1, l2, ..., ln, o) containig the number of units
-            for each layer, where the first and last elements represents, respectively,
-            the input layer and the output layer.
-        :param seed: seed for random number generator used for initializing this network
-            weights and biases. Needed for reproducibility.
-        :param activation: specifies which activation function to use for the hidden layers
-            of the network. 
-        """
+        Parameters
+        ----------
+        sizes : tuple
+            Tuple (i, l1, l2, ..., ln, o) containig the number of units for each layer,
+            where the first and last elements represents, respectively, the input layer
+            and the output layer units.
+        seed : int
+            seed for random number generator used for initializing this network weights
+            and biases. Needed for reproducibility.
+        activation : function, optional
+            specifies which activation function to use for the hidden layers of the network,
+            by default 'sigmoid'
+        lmbda : int, optional
+            l2 regularization coefficient, by default 0.0
+        momentum : int, optional
+            momentum coefficient, by default 0.0
+        debug : bool, optional
+            debugging flag, by default True
+        """        
         
         rng = default_rng(seed)     # needed for reproducibility
         self.training_size = None
@@ -60,8 +78,8 @@ class Network(metaclass=ABCMeta):
         self.grad_est_per_epoch = []
 
 
-        self.biases = [np.zeros_like(l) for l in sizes[1:]]
-        self.weights = [rng.normal(0, 1, (y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
+        self.biases = [rng.normal(0,0.5,l) for l in sizes[1:]]
+        self.weights = [rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)) for x, y in zip(sizes[:-1], sizes[1:])]
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
         self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
         self.val_scores = []
@@ -70,7 +88,23 @@ class Network(metaclass=ABCMeta):
         self.debug = debug
 
 
-    def feedforward_batch(self, inp):
+    def _feedforward_batch(self, inp):
+        """Performs a feedforward pass through the network to compute the
+        output for the current input to the network.
+
+        Parameters
+        ----------
+        inp : np.ndarray
+            Input to the network used to perform the feedforward pass.
+
+        Returns
+        -------
+        np.ndarray, list, list
+            An np.ndarray representing the output related the the current input
+            :inp: and two lists representing respectively the list of inputs and outputs
+            for each unit in the network.
+        """        
+
         out = inp
         units_out = [out]
         nets = []
@@ -88,16 +122,31 @@ class Network(metaclass=ABCMeta):
         return units_out, nets, out
 
     
-    # TODO: specificare quali sono i vantaggi di usare una singola funzione di attivazione per tutti i layer
-    # Batch computation allows us to exploit parallel computation and efficient libraries matrix multiplication
-    # given that we are throwing an entire pass over the network as matrix multiplication, except for the last level
-    # of the network
-    def backpropagation_batch(self, x, y, der):
+    def _backpropagation_batch(self, x, y):
+        """Performs a backward pass by using the chain rule to compute the gradient
+        for each weight and bias in the network for the current input/output samples.
+        The computed gradient is dependend to the :der: parameter which specifies the
+        function to use to compute the derivative.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Samples the will be used to estimate the current gradient values.
+        y : np.ndarray
+            Expected output for the :x: samples. Used to loss computation.
+
+        Returns
+        -------
+        list, list
+            Lists of np.ndarray containing for each layer the gradient matrix for each
+            weight and bias in the network.
+        """        
+
         nabla_b = [0]*(len(self.sizes)-1)
         nabla_w = [0]*(len(self.sizes)-1)
 
         # Forward computation
-        units_out, nets, out = self.feedforward_batch(x)
+        units_out, nets, out = self._feedforward_batch(x)
         delta = 0
 
         # Backward pass
@@ -109,7 +158,7 @@ class Network(metaclass=ABCMeta):
             else:
                 # Backward pass - hidden unit
                 delta = np.matmul(delta, self.weights[-l+1])
-                delta = delta * der(nets[-l])
+                delta = delta * self.der(nets[-l])
 
             nabla_b[-l] = delta.sum(axis=0)
             nabla_w[-l] = np.matmul(delta.T, units_out[-l-1])
@@ -117,153 +166,21 @@ class Network(metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
-    def update_mini_batch(self, mini_batch, eta, der, sub=False):     
-        """Updates the network weights and biases by applying the backpropagation algorithm
-        to the current set of examples contained in the :mini_batch: param. Computes the deltas
-        used to update weights as an average over the size of the examples set, using the provided
-        :eta: parameter as learning rate.
-
-        Args:
-            mini_batch (tuple): Set of examples to use to update the network weights and biases
-            eta (float): Learning rate
-            der (function): [description]
-            sub (bool, optional): If True, subgradient update is performed. Stochastic one otherwise. Defaults to False.
-        """
-
-        nabla_b, nabla_w = self.backpropagation_batch(mini_batch[0], mini_batch[1], der)
-        self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b]))
-
-        if not sub:
-            # Momentum updates
-            self.wvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nw for velocity,nw in zip(self.wvelocities, nabla_w)]
-            self.bvelocities = [self.momentum * velocity - (eta/len(mini_batch[0]))*nb for velocity,nb in zip(self.bvelocities, nabla_b)]
-
-            self.weights = [w + velocity - (self.lmbda/len(mini_batch[0]) * w) for w,velocity in zip(self.weights, self.wvelocities)]
-            self.biases = [b + velocity for b,velocity in zip(self.biases, self.bvelocities)]
-        else:
-            # Compute search direction
-            d = self.step/self.ngrad
-
-            self.weights = [w - (d/len(mini_batch[0]))*nw for w,nw in zip(self.weights, nabla_w)]
-            self.biases = [b - (d/len(mini_batch[0]))*nb for b,nb in zip(self.biases, nabla_b)]
-
-
-    def SGD(self, training_data:tuple, epochs, eta, batch_size=None, test_data:tuple=None):
-        """Trains the network using mini-batch stochastic gradient descent,
-        applied to the training examples in :param training_data: for a given
-        number of epochs and with the specified learning rate. If :param test_data:
-        is specified, the learning algorithm will print progresses during the
-        training phase.
-
-        :param training_data: training data represented as a numpy ndarray, each row
-        represents an example, the last element of each row is the expected output.
-        :param epochs: number of epochs for training.
-        :param batch_size: number of examples to use at each backward pass.
-        :param eta: learning rate.
-        :param test_data: optional parameter, used to estimate the performance of the network
-        at each phase, defaults to None.
-        """   
-
-        # Store auxiliary informations to pretty-print statistics
-        self.batch_size = batch_size
-        self.eta = eta
-        self.epochs = epochs
-        self.training_size = len(training_data[0])
-
-        # TODO: magari questo si può mettere nelle specifiche indicando che sia train che test devono avere vettore obiettivo come 2d vector
-        # Reshape vectors to fit needed shape
-        training_data = (training_data[0], training_data[1].reshape(training_data[1].shape[0], -1))
-        batches = int(self.training_size/batch_size) if batch_size is not None else 1
-
-        for e in range(epochs):
-            mini_batches = self.create_batches(batches, training_data)
-            self.grad_est = 0
-
-            for mini_batch in mini_batches:
-                self.update_mini_batch(mini_batch, eta, self.act.derivative)
-                self.grad_est += self.ngrad
-            self.grad_est = self.grad_est/batches
-
-            # Compute current gradient estimate
-            self.grad_est_per_epoch.append(self.grad_est)
-
-            if test_data is not None:
-                score, preds_train, preds_test = self.evaluate(test_data, training_data)
-                self.val_scores.append(score[0])
-                self.train_scores.append(score[1])
-                if self.debug: print(f"pred train: {preds_train[1]} --> target: {training_data[1][1]} || pred test: {preds_test[1]} --> target {test_data[1][1]}")
-                print(f"Epoch {e}. Gradient norm: {self.grad_est}. Score: {score}")
-            else:
-                print(f"Epoch {e} completed.")
-
-
-    def subgrad(self, training_data, start, epochs, batch_size, test_data=None):
-        """Subgradient metod implementation using a diminishing step size.
+    def _create_batches(self, batches, training_data):
+        """Creates a list of mini-batches that will be used during optimization.
 
         Parameters
         ----------
+        batches : int
+            number of batches that will be created from the current :training_data:.
         training_data : np.ndarray
-            Training samples to use for the training of the current network.
-        start : scalar
-            starting step to use during the diminishing step size.
-        epochs : scalar
-            Maximum number of epochs to run this method for.
-        test_data : np.ndarray, optional
-            Used to evaluate the performances of the network among epochs. By default None.
-        """                
-        
-        self.batch_size = batch_size
-        self.eta = start
-        self.epochs = epochs
-        self.training_size = len(training_data[0])
+            training data samples used to build the batches used for training.
 
-        x_ref = []
-        f_ref = np.inf
-        curr_iter = 1
-
-        # TODO: magari questo si può mettere nelle specifiche indicando che sia train che test devono avere vettore obiettivo come 2d vector
-        # Reshape vectors to fit needed shape
-        training_data = (training_data[0], training_data[1].reshape(training_data[1].shape[0], -1))
-        batches = int(self.training_size/batch_size) if batch_size is not None else 1
-
-        while True:
-            self.step = start * (1 / curr_iter)
-            self.grad_est = 0
-            
-            preds_train = self.feedforward_batch(training_data[0])[2]
-            truth_train = training_data[1]
-
-            last_f = MeanSquaredError.loss(truth_train, preds_train)
-
-            mini_batches = self.create_batches(batches, training_data)
-            self.grad_est = 0
-
-            for mini_batch in mini_batches:
-                self.update_mini_batch(mini_batch, 1, self.act.subgrad, sub=True)
-                self.grad_est += self.ngrad
-            self.grad_est = self.grad_est/batches
-
-            # found a better value
-            if last_f < f_ref:
-                f_ref = last_f
-                x_ref = (self.weights, self.biases)
-
-            if self.debug: print(f"{self.ngrad}\t\t{np.linalg.norm(self.g)}\t\t{last_f}")
-
-            if test_data is not None:
-                score, preds_train, preds_test = self.evaluate(test_data, training_data)
-                self.val_scores.append(score[0])
-                self.train_scores.append(score[1])
-                if self.debug: print(f"pred train: {preds_train[1]} --> target: {training_data[1][1]} || pred test: {preds_test[1]} --> target {test_data[1][1]}")
-                print(f"Epoch {curr_iter} completed with gradient norm: {self.ngrad}. Score: {score}")
-            else:
-                print(f"Epoch {curr_iter} completed.")
-
-            curr_iter += 1
-            if curr_iter >= epochs: break
-
-
-    def create_batches(self, batches, training_data):
+        Returns
+        -------
+        list
+            a list of mini-batches created with the specified :batches: number from the :training_data: samples.
+        """                      
         mini_batches = []
 
         if self.batch_size is not None:
@@ -281,12 +198,180 @@ class Network(metaclass=ABCMeta):
         return mini_batches
 
 
+    def _update_batches(self, training_data):
+        """Creates batches and updates the Neural Network weights and biases by performing
+        updates using the optimizer associated to the current network.
+
+        Parameters
+        ----------
+        training_data : tuple
+            tuple of np.ndarray containing the training samples and the associated expected outputs.
+        """               
+        # training_data = shuffle(training_data[0], training_data[1], random_state=42)
+        mini_batches = self._create_batches(self.batches, training_data)
+        self.grad_est = 0
+
+        for mini_batch in mini_batches:
+            nabla_b, nabla_w = self._compute_grad(mini_batch)
+            self.optimizer.update_mini_batch(self, nabla_b, nabla_w, len(mini_batch[0]))
+            self.grad_est += self.ngrad
+
+
+    def _compute_grad(self, mini_batch):
+        """Computes the gradient values and norm for the current :mini_batch: samples by
+        using the backpropagation method implemented by the Neural Network object.
+
+        Parameters
+        ----------
+        mini_batch : np.ndarray
+            mini-batch samples for which to compute the gradient.
+
+        Returns
+        -------
+        np.ndarray, np.ndarray
+            Couple of np.ndarray indicating the gradient values for both
+            weights and biases.
+        """        
+
+        nabla_b, nabla_w = self._backpropagation_batch(mini_batch[0], mini_batch[1])
+        self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b])/len(mini_batch[0]))
+
+        return nabla_b, nabla_w
+
+
+    def train(self, optimizer, training_data, epochs, eta, eps=1e-5, batch_size=None, test_data=None):
+        """Trains the neural network on :training_data: sample for a given number of :epochs:
+        by fine-tuning the weights and biases by using the update rules relative to
+        the provided :optimizer:. The way updates are performed is also determined by the
+        configurations relative to :batch_size: and :eta: parameters.
+
+        Parameters
+        ----------
+        optimizer : string
+            Specifies which optimizer technique should be used for updates.
+        training_data : tuple
+            Tuple containing the training samples to use for training the neural network and the
+            associated expected outputs for each sample.
+        epochs : int
+            Max number of iterations for the training of the network.
+        eta : float
+            Learning rate parameter if SGD optimizer is used, starting step for SGM.
+        batch_size : int, optional
+            If specified determines the size of the batches used to train the network, by default None
+        test_data : tuple, optional
+            If provided, test samples and expected outputs are used to evaluate the performance
+            of the current network at each epoch of training, by default None
+        """        
+        
+        self.der = self.act.derivative if optimizer == 'SGD' else self.act.subgrad
+
+        self.batch_size = batch_size
+        self.eta = eta
+        self.epochs = epochs
+        self.training_size = len(training_data[0])
+        self.batches = int(self.training_size/batch_size) if batch_size is not None else 1
+
+        self.training_data = training_data
+        self.test_data = test_data
+
+        self.optimizer = OPTIMIZERS[optimizer](training_data, epochs, eta, eps=eps, batch_size=batch_size, test_data=test_data)
+
+        for e in range(1, self.epochs+1):
+            self._update_batches(training_data)
+
+            # Compute current gradient estimate
+            self.grad_est = self.grad_est/self.batches
+            self.grad_est_per_epoch.append(self.grad_est)
+            self.score = self.evaluate(e)
+
+            if self.optimizer.iteration_end(e, self):
+                print("Reached desired precision in gradient norm, stopping.")
+                break
+
+
+    def evaluate(self, e):
+        """Returns statistics for the current epoch if test data are provided while training the network.
+        It prints the current epoch, gradient norm for convergence analysis and the current score computed
+        as loss value.
+
+        Parameters
+        ----------
+        e : int
+            current epoch.
+
+        Returns
+        -------
+        float
+            latest score achieved during evaluation over training data.
+        """              
+
+        if self.test_data is not None:
+            score, preds_train, preds_test = self._evaluate(self.test_data, self.training_data)
+            if self.debug: print(f"pred train: {preds_train[1]} --> target: {self.training_data[1][1]} || pred test: {preds_test[1]} --> target {self.test_data[1][1]}")
+            print(f"Epoch {e}. Gradient norm: {self.ngrad}. Score: {score}")
+        else:
+            print(f"Epoch {e} completed.")
+
+        return score[1]
+
+
+    def _evaluate(self, test_data, train_data):
+        """Evaluates the performances of the Network in the current state,
+        propagating the test and training examples through the network via a complete feedforward
+        step. It evaluates the performance using the associated loss for this Network.
+        Typical scores are MeanSquaredError and AccuracyScore.
+
+        Parameters
+        ----------
+        test_data : tuple
+            Couple of np.ndarray representing test samples and associated outputs. Used
+            to test the generalization capabilities of the network.
+        train_data : tuple
+            Couple of np.ndarray representing training samples and associated outputs. Used
+            to train the network and update weights accordingly.
+
+        Returns
+        -------
+        tuple, list, list
+            (score_test, score_train) representing the achieved score for both test and training samples;
+            preds_train list of predictions for the training samples :train_data:;
+            preds_test list of predictions for the test samples :test_data:
+        """        
+            
+        preds_test = self._predict(test_data[0])
+        truth_test = test_data[1]
+
+        preds_train = self._predict(train_data[0])
+        truth_train = train_data[1]
+
+        self.val_scores.append(self.loss.loss(truth_test, preds_test))
+        self.train_scores.append(self.loss.loss(truth_train, preds_train))
+
+        return (self.val_scores[-1], self.train_scores[-1]), preds_train, preds_test
+
+
+    @abstractmethod
+    def best_score(self, name, save=False):
+        """Returns the best score achieved during the training of the current network.
+        """        
+        pass
+
+
+    @abstractmethod
+    def _predict(self, data):
+        pass
+
+
     def plot_score(self, name):
         """Utility function, allows to build a plot of the scores achieved during training
         for the validation set and the training set.
 
-        :param name: Prefix name for the file related to the plot.
+        Parameters
+        ----------
+        name : string
+            Prefix name for the plot file.
         """        
+
         plt.plot(self.val_scores, '--', label='Validation loss')
         plt.plot(self.train_scores, '--', label='Training loss')
         plt.legend(loc='best')
@@ -300,6 +385,15 @@ class Network(metaclass=ABCMeta):
 
     
     def plot_grad(self, name):
+        """Utility function, allows to build a plot of the gradient values achieved during
+        training of the current Network.
+
+        Parameters
+        ----------
+        name : string
+            Prefix name for the plot file.
+        """        
+
         plt.plot(self.grad_est_per_epoch, '--', label='Validation loss')
         plt.legend(loc='best')
         plt.xlabel ('Epochs')
@@ -311,22 +405,148 @@ class Network(metaclass=ABCMeta):
         plt.clf()
 
 
-    @abstractmethod
-    def best_score(self):
-        """Returns the best score achieved during the fitting of the current network.
+
+class NC(Network): 
+
+    def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.5, debug=True):
+        """Neural Network implementation for classification tasks with sigmoid activation function
+        in the output layer. 
+
+        Parameters
+        ----------
+        sizes : tuple
+            Tuple (i, l1, l2, ..., ln, o) containig the number of units for each layer,
+            where the first and last elements represents, respectively, the input layer
+            and the output layer units.
+        seed : int
+            seed for random number generator used for initializing this network weights
+            and biases. Needed for reproducibility.
+        activation : function, optional
+            specifies which activation function to use for the hidden layers of the network,
+            by default 'sigmoid'
+        lmbda : int, optional
+            l2 regularization coefficient, by default 0.0
+        momentum : int, optional
+            momentum coefficient, by default 0.0
+        debug : bool, optional
+            debugging flag, by default True
         """        
-        pass
+
+        super().__init__(sizes, seed, activation, lmbda, momentum, debug)
+
+        # Defines the behavior of the last layer of the network
+        self.last_act = Sigmoid
+        self.loss = AccuracyScore
 
 
-    @abstractmethod
-    def evaluate(self, test_data, train_data):
-        """Evaluates the performances of the Network in the current state,
-        propagating the test examples through the network via a complete feedforward
-        step. It evaluates the performance using the R2 metric in order to be
-        comparable with sklearn out-of-the-box NN results.
+    def best_score(self, name, save=False):
+        """Returns the best score achieved during the training of the
+        current Network.
 
-        :param test_data: test data to evaluate the NN
-        :return: The R2 score as defined by sklearn library
+        Returns
+        -------
+        tuple
+            Couple of values representing the best score for validation and training sets.
         """        
 
-        pass
+        best_score = ()
+        if len(self.val_scores) > 0:
+            best_score = (np.max(self.val_scores), np.max(self.train_scores))
+
+        score_file = open(f"src/NN/res/scores/{name}.txt", 'a')
+        stats = f"ep:{self.epochs} s:{self.sizes[1:-1]} b:{self.batch_size} e:{self.eta} lmbda:{self.lmbda} m:{self.momentum} - score:{best_score}\n"
+        score_file.write(stats)
+        score_file.close()
+
+        return best_score
+
+
+    def _predict(self, data):
+        """Performs a feedforward pass through the network for the given :data: samples,
+        returns the classification values for each sample.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Samples to use for prediction using the current configuration of the Network.
+
+        Returns
+        -------
+        np.ndarray
+            Binary classification prediction values for the given :data: samples.
+        """        
+        return self._feedforward_batch(data)[2] >= 0.5
+
+
+
+class NR(Network):
+
+    def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.5, debug=True):
+        """Neural Network implementation for regression tasks with linear activation function
+        in the output layer. 
+
+        Parameters
+        ----------
+        sizes : tuple
+            Tuple (i, l1, l2, ..., ln, o) containig the number of units for each layer,
+            where the first and last elements represents, respectively, the input layer
+            and the output layer units.
+        seed : int
+            seed for random number generator used for initializing this network weights
+            and biases. Needed for reproducibility.
+        activation : function, optional
+            specifies which activation function to use for the hidden layers of the network,
+            by default 'sigmoid'
+        lmbda : int, optional
+            l2 regularization coefficient, by default 0.0
+        momentum : int, optional
+            momentum coefficient, by default 0.0
+        debug : bool, optional
+            debugging flag, by default True
+        """ 
+
+        super().__init__(sizes, seed, activation, lmbda, momentum, debug)
+
+        # Defines the behavior of the last layer of the network
+        self.last_act = Linear
+        self.loss = MeanSquaredError
+
+
+    def best_score(self, name, save=False):
+        """Returns the best score achieved during the training of the
+        current Network.
+
+        Returns
+        -------
+        tuple
+            Couple of values representing the best score for validation and training sets.
+        """ 
+
+        best_score = ()
+        if len(self.val_scores) > 0:
+            best_score = (np.min(self.val_scores), np.min(self.train_scores))
+
+        score_file = open(f"src/NN/res/scores/{name}.txt", 'a')
+        stats = f"ep:{self.epochs} s:{self.sizes[1:-1]} b:{self.batch_size} e:{self.eta} lmbda:{self.lmbda} m:{self.momentum} - score:{best_score}\n"
+        score_file.write(stats)
+        score_file.close()
+
+        return best_score
+
+
+    def _predict(self, data):
+        """Performs a feedforward pass through the network for the given :data: samples,
+        returns the values for each sample for the regression task.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Samples to use for prediction using the current configuration of the Network.
+
+        Returns
+        -------
+        np.ndarray
+            Regression prediction values for the given :data: samples.
+        """
+
+        return self._feedforward_batch(data)[2]

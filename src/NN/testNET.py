@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 
-from src.NN.NC import NR, NC
+from src.NN.Network import NR, NC
 import src.NN.utils as utils
 
 datasets = {
@@ -15,6 +15,7 @@ datasets = {
 if __name__ == '__main__':
     test = sys.argv[1]
     dataset = sys.argv[2]
+    grid = len(sys.argv) > 3 and sys.argv[3] == 'grid'
 
     if dataset == 'cup':
         X_train, X_test, y_train, y_test = utils.load_CUP(datasets[dataset])
@@ -26,16 +27,16 @@ if __name__ == '__main__':
     input_units = X_train.shape[1]
     output_units = y_train.shape[1] if len(y_train.shape) == 2 else 1
 
-    epochs = [200, 400, 600]
-    hidden1 = [2, 5, 10, 20]
-    hidden2 = [2, 5, 10, 20]
-    batch = [10, 30]
-    eta = [0.00001, 0.0001, 0.001, 0.01, 0.1]
-    lmbda = [0.00001, 0.001]
+    epochs = [500, 1500]
+    hidden1 = [16, 32, 50]
+    hidden2 = [16, 32, 50]
+    batch = [32]
+    eta = [0.0001, 0.001, 0.01, 0.1]
+    lmbda = [0.001, 0.01, 0.1]
     momentum = [0.5, 0.9]
 
     # Performs gridsearch over the specified hyperparameters
-    if test == 'grid':
+    if grid:
         for ep in epochs:
             for h1 in hidden1:
                 for h2 in hidden2:
@@ -49,50 +50,68 @@ if __name__ == '__main__':
                                     else:
                                         net = NC([input_units, h1, output_units], 0, 'Lrelu', lmbda=l, momentum=m, debug=False)
 
-                                    net.SGD((X_train.reshape(X_train.shape[0],1,-1), y_train), epochs=ep, batch_size=b, eta=e, test_data=(X_test.reshape(X_test.shape[0],1,-1), y_test))
-                                    print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score()}")
-                                    net.plot_score(f"test_np/{dataset}")
+                                    net.train(test, (X_train, y_train), epochs=ep, batch_size=b, eta=e, test_data=(X_test, y_test))
+                                    print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score(f'{dataset}_{test}', save=True)}")
+                                    net.plot_score(f"test_np/{dataset}_{test}")
 
     else:
 
+        # TODO: aggiungere json di configurazione
         params = {
             'cup': {
-                'h1': 16,
-                'h2': 32,
-                'activation': 'Lrelu',
-                'lmbda': 0.1,
-                'momentum': 0.7,
-                'epochs': 2000,
-                'batch_size': 64,
-                'eta': 0.001
+                'SGD': {
+                    'h1': 16,
+                    'h2': 32,
+                    'activation': 'Lrelu',
+                    'lmbda': 0.1,
+                    'momentum': 0.7,
+                    'epochs': 1000,
+                    'batch_size': 64,
+                    'eta': 0.001,
+                },
+                'SGM': {
+                    'h1': 71,
+                    'h2': 69,
+                    'activation': 'Lrelu',
+                    'lmbda': 0.1,
+                    'momentum': 0.7,
+                    'epochs': 100000,
+                    'batch_size': None,
+                    'eta': 0.001
+                }
             },
             'monk': {
-                'h1': 3,
-                'activation': 'Lrelu',
-                'lmbda': 0.2,
-                'momentum': 0.9,
-                'epochs': 500,
-                'batch_size': 32,
-                'eta': 0.1
+                'SGD': {
+                    'h1': 3,
+                    'h2': None,
+                    'activation': 'Lrelu',
+                    'lmbda': 0.,
+                    'momentum': 0.9,
+                    'epochs': 10000,
+                    'batch_size': 32,
+                    'eta': 0.1
+                },
+                'SGM': {
+                    'h1': 3,
+                    'h2': None,
+                    'activation': 'Lrelu',
+                    'lmbda': 0.,
+                    'momentum': 0.,
+                    'epochs': 5000,
+                    'batch_size': 32,
+                    'eta': 1
+                }
             }
         }
 
-        if test == 'std':
+        if dataset == 'cup':
+            net = NR([input_units, params[dataset][test]['h1'], params[dataset][test]['h2'], output_units], 0, params[dataset][test]['activation'], lmbda=params[dataset][test]['lmbda'], momentum=params[dataset][test]['momentum'], debug=False)
+        else:
+            dataset = 'monk'
+            net = NC([input_units, params[dataset][test]['h1'], output_units], 0, params[dataset][test]['activation'], lmbda=params[dataset][test]['lmbda'], momentum=params[dataset][test]['momentum'], debug=False)
 
-            if dataset == 'cup':
-                net = NR([input_units, params['cup']['h1'], params['cup']['h2'], output_units], 0, params['cup']['activation'], lmbda=params['cup']['lmbda'], momentum=params['cup']['momentum'], debug=False)
-            else:
-                dataset = 'monk'
-                net = NC([input_units, params['monk']['h1'], output_units], 0, params['monk']['activation'], lmbda=params['monk']['lmbda'], momentum=params['monk']['momentum'], debug=False)
-
-            net.SGD((X_train, y_train), epochs=params[dataset]['epochs'], batch_size=params[dataset]['batch_size'], eta=params[dataset]['eta'], test_data=(X_test, y_test))
-            print(f"The best score for ep:{params[dataset]['epochs']}, h1:{params[dataset]['h1']}, \
-                h2:{params[dataset]['h2']}, b:{params[dataset]['batch_size']}, e:{params[dataset]['eta']},\
-                     l:{params[dataset]['lmbda']}, m:{params[dataset]['momentum']} was: {net.best_score()}")
-            # net.plot_grad('gradient')
-
-        elif test == 'sub':
-            net = NR([input_units, params['cup']['h1'], params['cup']['h2'], output_units], 0, params['cup']['activation'], lmbda=params['cup']['lmbda'], momentum=params['cup']['momentum'], debug=False)
-            net.subgrad((X_train, y_train), epochs=params['cup']['epochs'], batch_size=params['cup']['batch_size'], start=15, test_data=(X_test, y_test))
+        net.train(test, (X_train, y_train), epochs=params[dataset][test]['epochs'], eps=1e-3, batch_size=params[dataset][test]['batch_size'], eta=params[dataset][test]['eta'], test_data=(X_test, y_test))
+        print(f"The best score for ep:{params[dataset][test]['epochs']}, h1:{params[dataset][test]['h1']}, h2:{params[dataset][test]['h2']}, b:{params[dataset][test]['batch_size']}, e:{params[dataset][test]['eta']}, l:{params[dataset][test]['lmbda']}, m:{params[dataset][test]['momentum']} was: {net.best_score(f'{dataset}_{test}', save=True)}")
+        # net.plot_grad('gradient')
 
     

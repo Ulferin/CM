@@ -25,9 +25,9 @@ def load_monk(name):
     test = pd.read_csv(f"{name}.test", sep=' ', header=None, index_col=8)
     
     X_train = train.iloc[:,2:].values
-    y_train = train.iloc[:,1].values
+    y_train = (train.iloc[:,1].values).reshape(-1,1)
     X_test = test.iloc[:,2:].values
-    y_test = test.iloc[:,1].values
+    y_test = (test.iloc[:,1].values).reshape(-1,1)
     
     return X_train, X_test, y_train, y_test
 
