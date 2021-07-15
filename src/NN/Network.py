@@ -240,7 +240,7 @@ class Network(metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
-    def train(self, optimizer, training_data, epochs, eta, batch_size=None, test_data=None):
+    def train(self, optimizer, training_data, epochs, eta, eps=1e-5, batch_size=None, test_data=None):
         """Trains the neural network on :training_data: sample for a given number of :epochs:
         by fine-tuning the weights and biases by using the update rules relative to
         the provided :optimizer:. The way updates are performed is also determined by the
@@ -275,7 +275,7 @@ class Network(metaclass=ABCMeta):
         self.training_data = training_data
         self.test_data = test_data
 
-        self.optimizer = OPTIMIZERS[optimizer](training_data, epochs, eta, batch_size=batch_size, test_data=test_data)
+        self.optimizer = OPTIMIZERS[optimizer](training_data, epochs, eta, eps=eps, batch_size=batch_size, test_data=test_data)
 
         for e in range(1, self.epochs+1):
             self._update_batches(training_data)

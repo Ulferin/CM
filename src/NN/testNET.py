@@ -70,14 +70,14 @@ if __name__ == '__main__':
                     'eta': 0.001,
                 },
                 'SGM': {
-                    'h1': 16,
-                    'h2': 32,
+                    'h1': 71,
+                    'h2': 69,
                     'activation': 'Lrelu',
                     'lmbda': 0.1,
                     'momentum': 0.7,
-                    'epochs': 100,
-                    'batch_size': 64,
-                    'eta': 1
+                    'epochs': 100000,
+                    'batch_size': None,
+                    'eta': 0.001
                 }
             },
             'monk': {
@@ -85,9 +85,9 @@ if __name__ == '__main__':
                     'h1': 3,
                     'h2': None,
                     'activation': 'Lrelu',
-                    'lmbda': 0.2,
+                    'lmbda': 0.,
                     'momentum': 0.9,
-                    'epochs': 500,
+                    'epochs': 10000,
                     'batch_size': 32,
                     'eta': 0.1
                 },
@@ -97,9 +97,9 @@ if __name__ == '__main__':
                     'activation': 'Lrelu',
                     'lmbda': 0.,
                     'momentum': 0.,
-                    'epochs': 500,
+                    'epochs': 5000,
                     'batch_size': 32,
-                    'eta': 5
+                    'eta': 1
                 }
             }
         }
@@ -110,7 +110,7 @@ if __name__ == '__main__':
             dataset = 'monk'
             net = NC([input_units, params[dataset][test]['h1'], output_units], 0, params[dataset][test]['activation'], lmbda=params[dataset][test]['lmbda'], momentum=params[dataset][test]['momentum'], debug=False)
 
-        net.train(test, (X_train, y_train), epochs=params[dataset][test]['epochs'], batch_size=params[dataset][test]['batch_size'], eta=params[dataset][test]['eta'], test_data=(X_test, y_test))
+        net.train(test, (X_train, y_train), epochs=params[dataset][test]['epochs'], eps=1e-3, batch_size=params[dataset][test]['batch_size'], eta=params[dataset][test]['eta'], test_data=(X_test, y_test))
         print(f"The best score for ep:{params[dataset][test]['epochs']}, h1:{params[dataset][test]['h1']}, h2:{params[dataset][test]['h2']}, b:{params[dataset][test]['batch_size']}, e:{params[dataset][test]['eta']}, l:{params[dataset][test]['lmbda']}, m:{params[dataset][test]['momentum']} was: {net.best_score(f'{dataset}_{test}', save=True)}")
         # net.plot_grad('gradient')
 
