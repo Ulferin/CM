@@ -308,7 +308,7 @@ class Network(metaclass=ABCMeta):
         if self.test_data is not None:
             score, preds_train, preds_test = self._evaluate(self.test_data, self.training_data)
             if self.debug: print(f"pred train: {preds_train[1]} --> target: {self.training_data[1][1]} || pred test: {preds_test[1]} --> target {self.test_data[1][1]}")
-            print(f"Epoch {e}. Gradient norm: {self.grad_est}. Score: {score}")
+            print(f"Epoch {e}. Gradient norm: {self.ngrad}. Score: {score}")
         else:
             print(f"Epoch {e} completed.")
 
