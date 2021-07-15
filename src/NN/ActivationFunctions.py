@@ -148,7 +148,6 @@ class LeakyReLU(ActivationFunction):
         return np.where(x<0, 0.01, 1)
 
 
-    # TODO: controllare subgradient di Leaky Relu
     @staticmethod
     def subgrad(x):
         """Implements the subgradient of the Leaky ReLU activation function.

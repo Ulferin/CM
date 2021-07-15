@@ -17,7 +17,6 @@ class Optimizer(metaclass=ABCMeta):
         self.batches = int(self.training_size/batch_size) if batch_size is not None else 1
         self.grad_est_per_epoch = []
 
-        # TODO: magari questo si può mettere nelle specifiche indicando che sia train che test devono avere vettore obiettivo come 2d vector
         # Reshape vectors to fit needed shape
         self.training_data = (training_data[0], training_data[1].reshape(training_data[1].shape[0], -1))
         self.test_data = test_data

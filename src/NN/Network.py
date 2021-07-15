@@ -42,9 +42,8 @@ class Network(metaclass=ABCMeta):
         """Initializes the network topology based on the given :sizes: which represents the amount
         of units to use for each of the layers of the current network. Builds the weights and bias
         vectors for each layer of the network accordingly. Each layer will be initialized randomly
-        following the normal distribution. Various hyperparameters can be specified, like momentum
-        and regularization coefficients.
-        # TODO: usiamo veramente normal distribution? 
+        following the LeCun uniform initializer formula. Various hyperparameters can be specified,
+        like momentum and regularization coefficients.
 
         Parameters
         ----------
@@ -79,8 +78,8 @@ class Network(metaclass=ABCMeta):
         self.grad_est_per_epoch = []
 
 
-        self.biases = [np.zeros_like(l) for l in sizes[1:]]
-        self.weights = [rng.normal(0, 1, (y,x))/np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
+        self.biases = [rng.normal(0,0.5,l) for l in sizes[1:]]
+        self.weights = [rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)) for x, y in zip(sizes[:-1], sizes[1:])]
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
         self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
         self.val_scores = []
@@ -198,7 +197,7 @@ class Network(metaclass=ABCMeta):
 
         return mini_batches
 
-    # TODO: check shuffle
+
     def _update_batches(self, training_data):
         """Creates batches and updates the Neural Network weights and biases by performing
         updates using the optimizer associated to the current network.
@@ -290,7 +289,6 @@ class Network(metaclass=ABCMeta):
                 break
 
 
-    # TODO: in questo caso i due evaluate si possono unire
     def evaluate(self, e):
         """Returns statistics for the current epoch if test data are provided while training the network.
         It prints the current epoch, gradient norm for convergence analysis and the current score computed
