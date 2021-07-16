@@ -36,7 +36,7 @@ if __name__ == '__main__':
     momentum = [0.5, 0.9]
 
     # Performs gridsearch over the specified hyperparameters
-    if grid:
+    if grid and test == 'SGD':
         for ep in epochs:
             for h1 in hidden1:
                 for h2 in hidden2:
@@ -54,19 +54,32 @@ if __name__ == '__main__':
                                     print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score(f'{dataset}_{test}', save=True)}")
                                     net.plot_score(f"test_np/{dataset}_{test}")
 
+    elif grid and test == 'SGM':
+        h1 = 79
+        h2 = 61
+        l = 0.
+        m = 0.
+        ep = 10000
+        b = 1
+        e = 0.2
+
+        net = NR([input_units, h1, h2, output_units], 0, 'Lrelu', lmbda=l, momentum=m, debug=False)
+        net.train(test, (X_train, y_train), epochs=ep, batch_size=b, eta=e, test_data=(X_test, y_test))
+        print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score(f'{dataset}_{test}', save=True)}")
+    
     else:
 
         # TODO: aggiungere json di configurazione
         params = {
             'cup': {
                 'SGD': {
-                    'h1': 16,
-                    'h2': 32,
+                    'h1': 71,
+                    'h2': 69,
                     'activation': 'Lrelu',
-                    'lmbda': 0.1,
-                    'momentum': 0.7,
-                    'epochs': 1000,
-                    'batch_size': 64,
+                    'lmbda': 0.01,
+                    'momentum': 0.5,
+                    'epochs': 10000,
+                    'batch_size': None,
                     'eta': 0.001,
                 },
                 'SGM': {
@@ -75,7 +88,7 @@ if __name__ == '__main__':
                     'activation': 'Lrelu',
                     'lmbda': 0.1,
                     'momentum': 0.7,
-                    'epochs': 100000,
+                    'epochs': 10000,
                     'batch_size': None,
                     'eta': 0.001
                 }

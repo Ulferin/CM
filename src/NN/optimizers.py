@@ -93,14 +93,20 @@ class SGD(Optimizer):
         return False
 
 
-
+# TODO: implementare Polyak step
+# TODO: implementare deflected
 class SGM(Optimizer):
 
-    def __init__(self, training_data, epochs, eta, eps=1e-5, batch_size=None, test_data=None):
+    def __init__(self, training_data, epochs, eta, eps=1e-5, batch_size=None, test_data=None, deflected=True):
         super().__init__(training_data, epochs, eta, eps=eps, batch_size=batch_size, test_data=test_data)
         self.step = eta
         self.x_ref = []
         self.f_ref = np.inf
+        self.deflected = deflected
+        self.gamma = 1
+        self.offset = 1e-8
+        self.gms_b = []
+        self.gms_w = []
 
 
     def update_mini_batch(self, nn, nabla_b, nabla_w, size):
@@ -120,11 +126,37 @@ class SGM(Optimizer):
             Not used in SGM. Only used in SGD optimizer.
         """        
 
-        # Compute search direction
-        d = self.step/nn.ngrad
+        if self.deflected:
 
-        nn.weights = [w - d*nw for w,nw in zip(nn.weights, nabla_w)]
-        nn.biases = [b - d*nb for b,nb in zip(nn.biases, nabla_b)]
+            # if self.gamma == 1:
+            #     self.nabla_b_prec = nabla_b
+            #     self.nabla_w_prec = nabla_w
+
+            # nabla_b = [self.gamma*nb/nn.ngrad + (1-self.gamma)*nb_prec for nb, nb_prec in zip(nabla_b, self.nabla_b_prec)]
+            # nabla_w = [self.gamma*nw/nn.ngrad + (1-self.gamma)*nw_prec for nw, nw_prec in zip(nabla_w, self.nabla_w_prec)]
+
+            # self.nabla_b_prec = nabla_b
+            # self.nabla_w_prec = nabla_w
+
+            # if self.gamma == 1:
+            #     self.gamma = 0.5
+            if len(self.gms_w) == 0:
+                self.gms_b = [0]*len(nabla_b)
+                self.gms_w = [0]*len(nabla_w)
+
+            self.gms_b = [gb + nb**2 for gb, nb in zip(self.gms_b, nabla_b)]
+            self.gms_w = [gw + nw**2 for gw, nw in zip(self.gms_w, nabla_w)]
+
+            nabla_b = [nb/np.sqrt(gms_b + self.offset) for nb, gms_b in zip(nabla_b, self.gms_b)]
+            nabla_w = [nw/np.sqrt(gms_w + self.offset) for nw, gms_w in zip(nabla_w, self.gms_w)]
+
+        else:
+            # Compute search direction
+            nabla_b = [nb/nn.ngrad for nb in nabla_b]
+            nabla_w = [nw/nn.ngrad for nw in nabla_w]
+
+        nn.weights = [w - self.step*nw for w,nw in zip(nn.weights, nabla_w)]
+        nn.biases = [b - self.step*nb for b,nb in zip(nn.biases, nabla_b)]
 
 
     def iteration_end(self, e, nn):      
