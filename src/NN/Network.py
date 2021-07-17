@@ -79,7 +79,10 @@ class Network(metaclass=ABCMeta):
 
 
         self.biases = [rng.normal(0,0.5,l) for l in sizes[1:]]
+        # self.biases = [np.zeros_like(l) for l in sizes[1:]]
         self.weights = [rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)) for x, y in zip(sizes[:-1], sizes[1:])]
+        # self.weights = [rng.normal(0, 1, (y,x)) for x, y in zip(sizes[:-1], sizes[1:])]
+
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
         self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
         self.val_scores = []

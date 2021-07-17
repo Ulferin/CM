@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
-
+import time
 
 
 class Optimizer(metaclass=ABCMeta):
@@ -103,7 +103,7 @@ class SGM(Optimizer):
         self.x_ref = []
         self.f_ref = np.inf
         self.deflected = deflected
-        self.gamma = 1
+        self.gamma = 0.95
         self.offset = 1e-8
         self.gms_b = []
         self.gms_w = []
@@ -128,18 +128,13 @@ class SGM(Optimizer):
 
         if self.deflected:
 
-            # if self.gamma == 1:
-            #     self.nabla_b_prec = nabla_b
-            #     self.nabla_w_prec = nabla_w
-
-            # nabla_b = [self.gamma*nb/nn.ngrad + (1-self.gamma)*nb_prec for nb, nb_prec in zip(nabla_b, self.nabla_b_prec)]
-            # nabla_w = [self.gamma*nw/nn.ngrad + (1-self.gamma)*nw_prec for nw, nw_prec in zip(nabla_w, self.nabla_w_prec)]
-
-            # self.nabla_b_prec = nabla_b
-            # self.nabla_w_prec = nabla_w
-
-            # if self.gamma == 1:
-            #     self.gamma = 0.5
+            # if len(self.gms_w) == 0:
+            #     self.gms_b = [nb**2 for nb in nabla_b]
+            #     self.gms_w = [nw**2 for nw in nabla_w]
+            # else:
+            #     self.gms_b = [self.gamma*gms_b + (1-self.gamma)*nb**2 for nb, gms_b in zip(nabla_b, self.gms_b)]
+            #     self.gms_w = [self.gamma*gms_w + (1-self.gamma)*nw**2 for nw, gms_w in zip(nabla_w, self.gms_w)]
+            
             if len(self.gms_w) == 0:
                 self.gms_b = [0]*len(nabla_b)
                 self.gms_w = [0]*len(nabla_w)
@@ -147,15 +142,15 @@ class SGM(Optimizer):
             self.gms_b = [gb + nb**2 for gb, nb in zip(self.gms_b, nabla_b)]
             self.gms_w = [gw + nw**2 for gw, nw in zip(self.gms_w, nabla_w)]
 
-            nabla_b = [nb/np.sqrt(gms_b + self.offset) for nb, gms_b in zip(nabla_b, self.gms_b)]
-            nabla_w = [nw/np.sqrt(gms_w + self.offset) for nw, gms_w in zip(nabla_w, self.gms_w)]
+            nabla_b = [nb/(np.sqrt(gms_b)+self.offset) for nb, gms_b in zip(nabla_b, self.gms_b)]
+            nabla_w = [nw/(np.sqrt(gms_w)+self.offset) for nw, gms_w in zip(nabla_w, self.gms_w)]
 
         else:
             # Compute search direction
             nabla_b = [nb/nn.ngrad for nb in nabla_b]
             nabla_w = [nw/nn.ngrad for nw in nabla_w]
 
-        nn.weights = [w - self.step*nw for w,nw in zip(nn.weights, nabla_w)]
+        nn.weights = [w - self.step*nw - (nn.lmbda/size) * w for w,nw in zip(nn.weights, nabla_w)]
         nn.biases = [b - self.step*nb for b,nb in zip(nn.biases, nabla_b)]
 
 
@@ -177,7 +172,7 @@ class SGM(Optimizer):
             Whether the optimizer has reached an optimal state.
         """        
 
-        self.step = self.eta * (1 / e)
+        if not self.deflected: self.step = self.eta * (1 / e)
 
         last_f = nn.score
 

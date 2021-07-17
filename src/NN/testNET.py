@@ -55,13 +55,13 @@ if __name__ == '__main__':
                                     net.plot_score(f"test_np/{dataset}_{test}")
 
     elif grid and test == 'SGM':
-        h1 = 79
-        h2 = 61
-        l = 0.
+        h1 = 71
+        h2 = 69
+        l = 0.5
         m = 0.
         ep = 10000
-        b = 1
-        e = 0.2
+        b = None
+        e = 0.01
 
         net = NR([input_units, h1, h2, output_units], 0, 'Lrelu', lmbda=l, momentum=m, debug=False)
         net.train(test, (X_train, y_train), epochs=ep, batch_size=b, eta=e, test_data=(X_test, y_test))
@@ -108,11 +108,11 @@ if __name__ == '__main__':
                     'h1': 3,
                     'h2': None,
                     'activation': 'Lrelu',
-                    'lmbda': 0.,
+                    'lmbda': 0.01,
                     'momentum': 0.,
                     'epochs': 5000,
                     'batch_size': 32,
-                    'eta': 1
+                    'eta': 0.001
                 }
             }
         }
