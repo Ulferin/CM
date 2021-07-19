@@ -343,13 +343,13 @@ class Network(metaclass=ABCMeta):
             preds_test = self._predict(test_data[0])
             truth_test = test_data[1]
 
-            self.val_loss.append(self.loss(truth_test, self._feedforward_batch(test_data[0])[2]))
+            self.val_loss.append(self.loss(truth_test, self.last_pred))
             self.val_scores.append(self.scoring(truth_test, preds_test))
 
         preds_train = self._predict(train_data[0])
         truth_train = train_data[1]
 
-        self.train_loss.append(self.loss(truth_train, self._feedforward_batch(train_data[0])[2]))
+        self.train_loss.append(self.loss(truth_train, self.last_pred))
         self.train_scores.append(self.scoring(truth_train, preds_train))
 
 
@@ -462,6 +462,7 @@ class NC(Network):
         self.last_act = Sigmoid
         self.loss = mean_squared_error
         self.scoring = accuracy_score
+        self.last_pred = None
 
 
     def _predict(self, data):
@@ -478,8 +479,9 @@ class NC(Network):
         np.ndarray
             Binary classification prediction values for the given :data: samples.
         """       
-         
-        return self._feedforward_batch(data)[2] >= 0.5
+        self.last_pred = self._feedforward_batch(data)[2]
+
+        return  self.last_pred >= 0.5
 
 
 
@@ -515,6 +517,7 @@ class NR(Network):
         self.last_act = Linear
         self.loss = mean_squared_error
         self.scoring = r2_score
+        self.last_pred = None
 
 
     def _predict(self, data):
@@ -531,5 +534,5 @@ class NR(Network):
         np.ndarray
             Regression prediction values for the given :data: samples.
         """
-
-        return self._feedforward_batch(data)[2]
+        self.last_pred = self._feedforward_batch(data)[2]
+        return self.last_pred
