@@ -276,7 +276,7 @@ class Network(metaclass=ABCMeta):
         self.training_data = training_data
         self.test_data = test_data
 
-        self.optimizer = OPTIMIZERS[optimizer](training_data, epochs, eta, eps=eps, batch_size=batch_size, test_data=test_data)
+        self.optimizer = OPTIMIZERS[optimizer](training_data, epochs, eta, eps=eps, test_data=test_data)
 
         for e in range(1, self.epochs+1):
             self._update_batches(training_data)

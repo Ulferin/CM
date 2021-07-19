@@ -7,14 +7,12 @@ import time
 class Optimizer(metaclass=ABCMeta):
 
     @abstractmethod
-    def __init__(self, training_data, epochs, eta, eps=1e-5, batch_size=None, test_data=None):
+    def __init__(self, training_data, epochs, eta, eps=1e-5, test_data=None):
 
         # Store auxiliary informations to pretty-print statistics
-        self.batch_size = batch_size
         self.eta = eta
         self.eps = eps
         self.training_size = len(training_data[0])
-        self.batches = int(self.training_size/batch_size) if batch_size is not None else 1
         self.grad_est_per_epoch = []
 
         # Reshape vectors to fit needed shape
@@ -45,8 +43,8 @@ class Optimizer(metaclass=ABCMeta):
 
 class SGD(Optimizer):
 
-    def __init__(self, training_data, epochs, eta, eps=1e-5, batch_size=None, test_data=None):
-        super().__init__(training_data, epochs, eta, eps=eps, batch_size=batch_size, test_data=test_data)
+    def __init__(self, training_data, epochs, eta, eps=1e-5, test_data=None):
+        super().__init__(training_data, epochs, eta, eps=eps, test_data=test_data)
 
 
     def update_mini_batch(self, nn, nabla_b, nabla_w, size):
@@ -96,8 +94,8 @@ class SGD(Optimizer):
 # TODO: controllare che effettivamente il gradiente possa essere calcolato in questo modo.
 class SGM(Optimizer):
 
-    def __init__(self, training_data, epochs, eta, eps=1e-5, batch_size=None, test_data=None, deflected=True):
-        super().__init__(training_data, epochs, eta, eps=eps, batch_size=batch_size, test_data=test_data)
+    def __init__(self, training_data, epochs, eta, eps=1e-5, test_data=None, deflected=True):
+        super().__init__(training_data, epochs, eta, eps=eps, test_data=test_data)
         self.step = eta
         self.x_ref = []
         self.f_ref = np.inf

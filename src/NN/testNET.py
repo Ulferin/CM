@@ -11,8 +11,6 @@ datasets = {
     'monk3': 'data/monks-3', 
 }
 
-# TODO: aggiungere controllo batch size con dimensione dataset
-
 if __name__ == '__main__':
     test = sys.argv[1]
     dataset = sys.argv[2]
@@ -27,6 +25,9 @@ if __name__ == '__main__':
     # Loads the input and output layers shape
     input_units = X_train.shape[1]
     output_units = y_train.shape[1] if len(y_train.shape) == 2 else 1
+
+    training_size = int(len(X_train))
+    print(training_size)
 
     epochs = [5000, 10000]
     hidden1 = [16, 32, 50]
@@ -89,7 +90,7 @@ if __name__ == '__main__':
                     'lmbda': 0.1,
                     'momentum': 0.7,
                     'epochs': 1000,
-                    'batch_size': None,
+                    'batch_size': training_size,
                     'eta': 0.001
                 }
             },
@@ -111,7 +112,7 @@ if __name__ == '__main__':
                     'lmbda': 0.001,
                     'momentum': 0.,
                     'epochs': 50000,
-                    'batch_size': None,
+                    'batch_size': training_size,
                     'eta': 0.001
                 }
             }
