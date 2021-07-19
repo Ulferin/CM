@@ -284,7 +284,9 @@ class Network(metaclass=ABCMeta):
             # Compute current gradient estimate
             self.grad_est = self.grad_est/self.batches
             self.grad_est_per_epoch.append(self.grad_est)
-            self.score = self.evaluate(e)
+            self.evaluate(e)
+
+            self.score = self.train_loss[-1]
 
             if self.optimizer.iteration_end(e, self):
                 print("Reached desired precision in gradient norm, stopping.")
@@ -351,11 +353,32 @@ class Network(metaclass=ABCMeta):
         self.train_scores.append(self.scoring(truth_train, preds_train))
 
 
-    @abstractmethod
     def best_score(self, name, save=False):
-        """Returns the best score achieved during the training of the current network.
+        """Returns the best score achieved during the training of the
+        current Network.
+
+        Returns
+        -------
+        tuple
+            Couple of values representing the best score for validation and training sets.
         """        
-        pass
+
+        best_score = ()
+        if len(self.val_scores) > 0:
+            idx = np.argmax(self.val_scores)
+            best_score = (self.val_scores[idx], self.train_scores[idx])
+            idx = np.argmin(self.val_loss)
+            best_loss = (self.val_loss[idx], self.train_loss[idx])
+
+        score_file = open(f"src/NN/res/scores/{name}.txt", 'a')
+        
+        stats = f"ep: {self.epochs:<7} | s: {self.sizes[1:-1]} | b: {self.batch_size} | e:{self.eta:5} | lmbda:{self.lmbda:5} | m:{self.momentum:5}\n"\
+                f"Grad: {self.ngrad:7.5e} | Loss: {best_loss[0]:7.5e}, {best_loss[1]:7.5e} | Score: {best_score[0]:5.3g}, {best_score[1]:<5.3g}\n\n"
+
+        score_file.write(stats)
+        score_file.close()
+
+        return (best_score, best_loss)
 
 
     @abstractmethod
@@ -441,28 +464,6 @@ class NC(Network):
         self.scoring = accuracy_score
 
 
-    def best_score(self, name, save=False):
-        """Returns the best score achieved during the training of the
-        current Network.
-
-        Returns
-        -------
-        tuple
-            Couple of values representing the best score for validation and training sets.
-        """        
-
-        best_score = ()
-        if len(self.val_scores) > 0:
-            best_score = (np.max(self.val_scores), np.max(self.train_scores))
-
-        score_file = open(f"src/NN/res/scores/{name}.txt", 'a')
-        stats = f"ep:{self.epochs} s:{self.sizes[1:-1]} b:{self.batch_size} e:{self.eta} lmbda:{self.lmbda} m:{self.momentum} - score:{best_score} - grad:{self.ngrad}\n"
-        score_file.write(stats)
-        score_file.close()
-
-        return best_score
-
-
     def _predict(self, data):
         """Performs a feedforward pass through the network for the given :data: samples,
         returns the classification values for each sample.
@@ -514,28 +515,6 @@ class NR(Network):
         self.last_act = Linear
         self.loss = mean_squared_error
         self.scoring = r2_score
-
-
-    def best_score(self, name, save=False):
-        """Returns the best score achieved during the training of the
-        current Network.
-
-        Returns
-        -------
-        tuple
-            Couple of values representing the best score for validation and training sets.
-        """ 
-
-        best_score = ()
-        if len(self.val_scores) > 0:
-            best_score = (np.min(self.val_scores), np.min(self.train_scores))
-
-        score_file = open(f"src/NN/res/scores/{name}.txt", 'a')
-        stats = f"ep:{self.epochs} s:{self.sizes[1:-1]} b:{self.batch_size} e:{self.eta} lmbda:{self.lmbda} m:{self.momentum} - score:{best_score} - grad:{self.ngrad}\n"
-        score_file.write(stats)
-        score_file.close()
-
-        return best_score
 
 
     def _predict(self, data):

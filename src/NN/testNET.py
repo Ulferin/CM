@@ -73,13 +73,13 @@ if __name__ == '__main__':
         params = {
             'cup': {
                 'SGD': {
-                    'h1': 71,
-                    'h2': 69,
+                    'h1': 50,
+                    'h2': 50,
                     'activation': 'Lrelu',
                     'lmbda': 0.01,
                     'momentum': 0.5,
                     'epochs': 100,
-                    'batch_size': None,
+                    'batch_size': 32,
                     'eta': 0.001,
                 },
                 'SGM': {
