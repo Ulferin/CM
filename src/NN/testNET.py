@@ -26,9 +26,6 @@ if __name__ == '__main__':
     input_units = X_train.shape[1]
     output_units = y_train.shape[1] if len(y_train.shape) == 2 else 1
 
-    training_size = int(len(X_train))
-    print(training_size)
-
     epochs = [5000, 10000]
     hidden1 = [16, 32, 50]
     hidden2 = [16, 32, 50]
@@ -74,8 +71,8 @@ if __name__ == '__main__':
         params = {
             'cup': {
                 'SGD': {
-                    'h1': 71,
-                    'h2': 69,
+                    'h1': 50,
+                    'h2': 50,
                     'activation': 'Lrelu',
                     'lmbda': 0.01,
                     'momentum': 0.5,
@@ -84,14 +81,14 @@ if __name__ == '__main__':
                     'eta': 0.001,
                 },
                 'SGM': {
-                    'h1': 71,
-                    'h2': 69,
+                    'h1': 50,
+                    'h2': 50,
                     'activation': 'Lrelu',
-                    'lmbda': 0.1,
+                    'lmbda': 0.,
                     'momentum': 0.7,
                     'epochs': 1000,
-                    'batch_size': training_size,
-                    'eta': 0.001
+                    'batch_size': None,
+                    'eta': 0.01
                 }
             },
             'monk': {
@@ -101,19 +98,19 @@ if __name__ == '__main__':
                     'activation': 'Lrelu',
                     'lmbda': 0.001,
                     'momentum': 0.5,
-                    'epochs': 1000,
-                    'batch_size': 32,
+                    'epochs': 50000,
+                    'batch_size': None,
                     'eta': 0.05
                 },
                 'SGM': {
-                    'h1': 10,
-                    'h2': None,
-                    'activation': 'Lrelu',
-                    'lmbda': 0.001,
-                    'momentum': 0.,
-                    'epochs': 50000,
-                    'batch_size': training_size,
-                    'eta': 0.001
+                    "h1": 3,
+                    "h2": 0,
+                    "activation": "Lrelu",
+                    "lmbda": 0.0,
+                    "momentum": 0.0,
+                    "epochs": 50000,
+                    "batch_size": None,
+                    "eta": 0.1
                 }
             }
         }
