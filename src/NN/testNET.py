@@ -11,6 +11,7 @@ datasets = {
     'monk3': 'data/monks-3', 
 }
 
+# TODO: aggiungere controllo batch size con dimensione dataset
 
 if __name__ == '__main__':
     test = sys.argv[1]
@@ -77,7 +78,7 @@ if __name__ == '__main__':
                     'activation': 'Lrelu',
                     'lmbda': 0.01,
                     'momentum': 0.5,
-                    'epochs': 10000,
+                    'epochs': 100,
                     'batch_size': None,
                     'eta': 0.001,
                 },
@@ -97,20 +98,20 @@ if __name__ == '__main__':
                     'h1': 3,
                     'h2': None,
                     'activation': 'Lrelu',
-                    'lmbda': 0.,
-                    'momentum': 0.9,
-                    'epochs': 10000,
+                    'lmbda': 0.001,
+                    'momentum': 0.5,
+                    'epochs': 1000,
                     'batch_size': 32,
-                    'eta': 0.1
+                    'eta': 0.05
                 },
                 'SGM': {
-                    'h1': 3,
+                    'h1': 10,
                     'h2': None,
                     'activation': 'Lrelu',
-                    'lmbda': 0.01,
+                    'lmbda': 0.001,
                     'momentum': 0.,
-                    'epochs': 5000,
-                    'batch_size': 32,
+                    'epochs': 50000,
+                    'batch_size': None,
                     'eta': 0.001
                 }
             }

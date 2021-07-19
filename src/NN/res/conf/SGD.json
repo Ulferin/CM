@@ -1,0 +1,23 @@
+{
+    "monk1": {
+        "h1": 3,
+        "h2": 0,
+        "activation": "Lrelu",
+        "lmbda": 0.0,
+        "momentum": 0.0,
+        "epochs": 50000,
+        "batch_size": 0,
+        "eta": 0.2
+    },
+
+    "monk2": {
+        "h1": 3,
+        "h2": 0,
+        "activation": "Lrelu",
+        "lmbda": 0.0,
+        "momentum": 0.0,
+        "epochs": 50000,
+        "batch_size": 0,
+        "eta": 0.1
+    }
+}

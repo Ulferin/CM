@@ -10,11 +10,12 @@ import numpy as np
 from numpy.random import default_rng
 
 from sklearn.utils import shuffle
+from sklearn.metrics import r2_score
 
 from matplotlib import pyplot as plt
 
 from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU, Linear
-from src.NN.LossFunctions import MeanSquaredError, AccuracyScore
+from src.NN.metrics import mean_squared_error, accuracy_score
 from src.NN.optimizers import SGD, SGM
 
 
@@ -66,27 +67,25 @@ class Network(metaclass=ABCMeta):
         """        
         
         rng = default_rng(seed)     # needed for reproducibility
-        self.training_size = None
         self.num_layers = len(sizes)
         self.sizes = sizes
         self.act = ACTIVATIONS[activation]
         self.momentum = momentum
         self.lmbda = lmbda
+
         self.last_act = None            # Must be defined by subclassing the Network
-        self.g = None
         self.grad_est = None
         self.grad_est_per_epoch = []
 
-
         self.biases = [rng.normal(0,0.5,l) for l in sizes[1:]]
-        # self.biases = [np.zeros_like(l) for l in sizes[1:]]
         self.weights = [rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)) for x, y in zip(sizes[:-1], sizes[1:])]
-        # self.weights = [rng.normal(0, 1, (y,x)) for x, y in zip(sizes[:-1], sizes[1:])]
-
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
         self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
+
         self.val_scores = []
         self.train_scores = []
+        self.val_loss = []
+        self.train_loss = []
 
         self.debug = debug
 
@@ -309,20 +308,18 @@ class Network(metaclass=ABCMeta):
         """              
 
         if self.test_data is not None:
-            score, preds_train, preds_test = self._evaluate(self.test_data, self.training_data)
-            if self.debug: print(f"pred train: {preds_train[1]} --> target: {self.training_data[1][1]} || pred test: {preds_test[1]} --> target {self.test_data[1][1]}")
-            print(f"Epoch {e}. Gradient norm: {self.ngrad}. Score: {score}")
+            self._evaluate(self.training_data, self.test_data)
+            print(f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || Loss: {self.val_loss[-1]:7.5e}, {self.train_loss[-1]:7.5e} || Score: {self.val_scores[-1]:5.3g}, {self.train_scores[-1]:<5.3g}")
         else:
-            print(f"Epoch {e} completed.")
+            self._evaluate(self.training_data)
+            print(f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || Loss: {self.train_loss[-1]:7.5e} || Score: {self.train_scores[-1]:<5.3g}")
 
-        return score[1]
 
-
-    def _evaluate(self, test_data, train_data):
+    def _evaluate(self, train_data, test_data=None):
         """Evaluates the performances of the Network in the current state,
         propagating the test and training examples through the network via a complete feedforward
         step. It evaluates the performance using the associated loss for this Network.
-        Typical scores are MeanSquaredError and AccuracyScore.
+        Typical scores are mean_squared_error and accuracy_score.
 
         Parameters
         ----------
@@ -340,17 +337,18 @@ class Network(metaclass=ABCMeta):
             preds_train list of predictions for the training samples :train_data:;
             preds_test list of predictions for the test samples :test_data:
         """        
-            
-        preds_test = self._predict(test_data[0])
-        truth_test = test_data[1]
+        if test_data:            
+            preds_test = self._predict(test_data[0])
+            truth_test = test_data[1]
+
+            self.val_loss.append(self.loss(truth_test, self._feedforward_batch(test_data[0])[2]))
+            self.val_scores.append(self.scoring(truth_test, preds_test))
 
         preds_train = self._predict(train_data[0])
         truth_train = train_data[1]
 
-        self.val_scores.append(self.loss.loss(truth_test, preds_test))
-        self.train_scores.append(self.loss.loss(truth_train, preds_train))
-
-        return (self.val_scores[-1], self.train_scores[-1]), preds_train, preds_test
+        self.train_loss.append(self.loss(truth_train, self._feedforward_batch(train_data[0])[2]))
+        self.train_scores.append(self.scoring(truth_train, preds_train))
 
 
     @abstractmethod
@@ -439,7 +437,8 @@ class NC(Network):
 
         # Defines the behavior of the last layer of the network
         self.last_act = Sigmoid
-        self.loss = AccuracyScore
+        self.loss = mean_squared_error
+        self.scoring = accuracy_score
 
 
     def best_score(self, name, save=False):
@@ -477,7 +476,8 @@ class NC(Network):
         -------
         np.ndarray
             Binary classification prediction values for the given :data: samples.
-        """        
+        """       
+         
         return self._feedforward_batch(data)[2] >= 0.5
 
 
@@ -512,7 +512,8 @@ class NR(Network):
 
         # Defines the behavior of the last layer of the network
         self.last_act = Linear
-        self.loss = MeanSquaredError
+        self.loss = mean_squared_error
+        self.scoring = r2_score
 
 
     def best_score(self, name, save=False):
