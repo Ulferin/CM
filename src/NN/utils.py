@@ -5,6 +5,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 
+from datetime import datetime as dt
+
 
 def load_CUP(name):
     ml_cup = np.delete(np.genfromtxt(name, delimiter=','), obj=0, axis=1)
@@ -46,3 +48,7 @@ def prepare_data(X_train, X_test):
     X_test = enc.transform(X_test).toarray()
 
     return X_train, X_test
+
+
+def end_time(start):
+    return (dt.now() - start)

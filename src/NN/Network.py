@@ -17,6 +17,10 @@ from matplotlib import pyplot as plt
 from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU, Linear
 from src.NN.metrics import mean_squared_error, accuracy_score
 from src.NN.optimizers import SGD, SGM
+from src.NN.utils import end_time
+
+from datetime import datetime as dt
+from time import sleep
 
 
 ACTIVATIONS = {
@@ -65,6 +69,13 @@ class Network(metaclass=ABCMeta):
         debug : bool, optional
             debugging flag, by default True
         """        
+
+        # Execution Statistics
+        self.evaluate_avg = [0, 0]
+        self.backprop_avg = [0, 0]
+        self.feedforward_avg = [0, 0]
+        self.total = 0
+
         
         rng = default_rng(seed)     # needed for reproducibility
         self.num_layers = len(sizes)
@@ -105,7 +116,8 @@ class Network(metaclass=ABCMeta):
             An np.ndarray representing the output related the the current input
             :inp: and two lists representing respectively the list of inputs and outputs
             for each unit in the network.
-        """        
+        """  
+        start = dt.now()      
 
         out = inp
         units_out = [out]
@@ -120,6 +132,10 @@ class Network(metaclass=ABCMeta):
         out = self.last_act.function(np.matmul(out, self.weights[-1].T) + self.biases[-1])
         nets.append(out)
         units_out.append(out)
+
+        end = end_time(start)
+        self.feedforward_avg[0] += 1
+        self.feedforward_avg[1] += end.seconds*1000 + end.microseconds/1000
 
         return units_out, nets, out
 
@@ -144,12 +160,15 @@ class Network(metaclass=ABCMeta):
             weight and bias in the network.
         """        
 
+
         nabla_b = [0]*(len(self.sizes)-1)
         nabla_w = [0]*(len(self.sizes)-1)
 
         # Forward computation
         units_out, nets, out = self._feedforward_batch(x)
         delta = 0
+
+        start = dt.now()
 
         # Backward pass
         for l in range(1, self.num_layers):
@@ -164,6 +183,10 @@ class Network(metaclass=ABCMeta):
 
             nabla_b[-l] = delta.sum(axis=0)
             nabla_w[-l] = np.matmul(delta.T, units_out[-l-1])
+
+        end = end_time(start)
+        self.backprop_avg[0] += 1
+        self.backprop_avg[1] += end.seconds*1000 + end.microseconds/1000
 
         return nabla_b, nabla_w
 
@@ -185,7 +208,7 @@ class Network(metaclass=ABCMeta):
         """                      
         mini_batches = []
 
-        if self.batch_size is not None:
+        if self.batch_size < self.training_size:
             for b in range(batches):
                 start = b * self.batch_size
                 end = (b+1) * self.batch_size
@@ -193,7 +216,7 @@ class Network(metaclass=ABCMeta):
             
             # Add remaining data as last batch
             # (it may have different size than previous batches, up to |batch|-1 more elements)
-            mini_batches.append((training_data[0][b*self.batch_size:], training_data[1][b*self.batch_size:]))
+            mini_batches.append((training_data[0][batches*self.batch_size:], training_data[1][batches*self.batch_size:]))
         else:
             mini_batches.append((training_data[0], training_data[1]))
 
@@ -267,19 +290,26 @@ class Network(metaclass=ABCMeta):
         
         self.der = self.act.derivative if optimizer == 'SGD' else self.act.subgrad
 
-        self.batch_size = batch_size
+        self.training_size = len(training_data[0])
+        self.batch_size = batch_size if batch_size is not None else self.training_size
         self.eta = eta
         self.epochs = epochs
-        self.training_size = len(training_data[0])
-        self.batches = int(self.training_size/batch_size) if batch_size is not None else 1
+        self.batches = int(self.training_size/self.batch_size)
 
         self.training_data = training_data
         self.test_data = test_data
 
         self.optimizer = OPTIMIZERS[optimizer](training_data, epochs, eta, eps=eps, test_data=test_data)
 
+        self.update_avg = 0
+
+        start = dt.now()
+
         for e in range(1, self.epochs+1):
+            s = dt.now()
             self._update_batches(training_data)
+            en = end_time(start)
+            self.update_avg = en.seconds*1000 + en.microseconds/1000
 
             # Compute current gradient estimate
             self.grad_est = self.grad_est/self.batches
@@ -291,7 +321,13 @@ class Network(metaclass=ABCMeta):
             if self.optimizer.iteration_end(e, self):
                 print("Reached desired precision in gradient norm, stopping.")
                 break
-
+            
+        end = end_time(start)
+        print(f"ended in: {end.seconds*1000 + end.microseconds/1000}, avg per ep: {(end.seconds*1000 + end.microseconds/1000)/self.epochs}")
+        print(f"total update: {self.update_avg}, avg updt: {self.update_avg/self.epochs}")
+        print(f"total ff: {self.feedforward_avg[0]}, total ff time: {self.feedforward_avg[1]}, avg ff: {self.feedforward_avg[1]/self.feedforward_avg[0]}")
+        print(f"total bp: {self.backprop_avg[0]}, total bp time: {self.backprop_avg[1]}, avg bp: {self.backprop_avg[1]/self.backprop_avg[0]}")
+        print(f"total ev: {self.evaluate_avg[0]}, total ev time: {self.evaluate_avg[1]}, avg ev: {self.evaluate_avg[1]/self.evaluate_avg[0]}")
 
     def evaluate(self, e):
         """Returns statistics for the current epoch if test data are provided while training the network.
@@ -309,12 +345,18 @@ class Network(metaclass=ABCMeta):
             latest score achieved during evaluation over training data.
         """              
 
+        start = dt.now()
+
         if self.test_data is not None:
             self._evaluate(self.training_data, self.test_data)
             print(f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || Loss: {self.val_loss[-1]:7.5e}, {self.train_loss[-1]:7.5e} || Score: {self.val_scores[-1]:5.3g}, {self.train_scores[-1]:<5.3g}")
         else:
             self._evaluate(self.training_data)
             print(f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || Loss: {self.train_loss[-1]:7.5e} || Score: {self.train_scores[-1]:<5.3g}")
+
+        end = end_time(start)
+        self.evaluate_avg[1] += end.seconds*1000 + end.microseconds/1000
+        self.evaluate_avg[0] +=1
 
 
     def _evaluate(self, train_data, test_data=None):
