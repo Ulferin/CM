@@ -93,8 +93,7 @@ class SGD(Optimizer):
         return False
 
 
-# TODO: implementare Polyak step
-# TODO: implementare deflected
+# TODO: controllare che effettivamente il gradiente possa essere calcolato in questo modo.
 class SGM(Optimizer):
 
     def __init__(self, training_data, epochs, eta, eps=1e-5, batch_size=None, test_data=None, deflected=True):
