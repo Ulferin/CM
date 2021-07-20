@@ -27,43 +27,49 @@ if __name__ == '__main__':
     output_units = y_train.shape[1] if len(y_train.shape) == 2 else 1
 
     epochs = [5000, 10000]
-    hidden1 = [16, 32, 50]
-    hidden2 = [16, 32, 50]
+    # hidden1 = [16, 32, 50]
+    hidden1 = [2, 3, 5]
+    hidden2 = [2, 3, 5]
     batch = [32, None]
     eta = [0.0001, 0.001, 0.01, 0.1]
-    lmbda = [0.001, 0.01, 0.1]
-    momentum = [0.5, 0.9]
+    lmbda = [0, 0.001, 0.01, 0.1]
+    momentum = [0, 0.5, 0.9]
 
     # Performs gridsearch over the specified hyperparameters
     if grid and test == 'SGD':
         for ep in epochs:
             for h1 in hidden1:
-                for h2 in hidden2:
+                # for h2 in hidden2:
                     for b in batch:
                         for e in eta:
                             for l in lmbda:
                                 for m in momentum:
                                     
                                     if dataset == 'cup':
-                                        net = NR([input_units, h1, h2, output_units], 0, 'Lrelu', lmbda=l, momentum=m, debug=False)
+                                        net = NR([input_units, h1, output_units], 0, 'Lrelu', lmbda=l, momentum=m, debug=False)
                                     else:
                                         net = NC([input_units, h1, output_units], 0, 'Lrelu', lmbda=l, momentum=m, debug=False)
 
                                     net.train(test, (X_train, y_train), epochs=ep, batch_size=b, eta=e, test_data=(X_test, y_test))
-                                    print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score(f'{dataset}_{test}', save=True)}")
-                                    net.plot_score(f"test_np/{dataset}_{test}")
+                                    print(f"The best score for ep:{ep}, h1:{h1}, h2:{0}, b:{b}, e:{e}, l:{l}, m:{m} was: {net.best_score(f'{dataset}_{test}', save=True)}")
+                                    # net.plot_score(f"test_np/{dataset}_{test}")
 
     elif grid and test == 'SGM':
 
         for ep in epochs:
             for h1 in hidden1:
-                for h2 in hidden2:
+                # for h2 in hidden2:
                     for b in batch:
                         for e in eta:
                             for l in lmbda:
-                                net = NR([input_units, h1, h2, output_units], 0, 'Lrelu', lmbda=l, momentum=0, debug=False)
+                                
+                                if dataset == 'cup':
+                                    net = NR([input_units, h1, output_units], 0, 'Lrelu', lmbda=l, momentum=0, debug=False)
+                                else:
+                                    net = NC([input_units, h1, output_units], 0, 'Lrelu', lmbda=l, momentum=0, debug=False)
+                                
                                 net.train(test, (X_train, y_train), epochs=ep, batch_size=b, eta=e, test_data=(X_test, y_test))
-                                print(f"The best score for ep:{ep}, h1:{h1}, h2:{h2}, b:{b}, e:{e}, l:{l}, m:{0} was: {net.best_score(f'{dataset}_{test}', save=True)}")
+                                print(f"The best score for ep:{ep}, h1:{h1}, h2:{0}, b:{b}, e:{e}, l:{l}, m:{0} was: {net.best_score(f'{dataset}_{test}', save=True)}")
     
     else:
 
