@@ -42,10 +42,11 @@ if __name__ == '__main__':
                 'lmbda': [0, 0.001, 0.01, 0.1],
                 'momentum': [0, 0.5, 0.9],
                 'debug': [False],
-                'epochs': [500, 1000],
+                'epochs': [500],
                 'batch_size': [None],
-                'eta':[0.0001, 0.001, 0.01, 0.1],
+                'eta':[0.0001, 0.001, 0.01],
                 'optimizer': [test],
+                'eps': [1e-3]
             },
             'train_pars': {
                 'training_data': (X_train, y_train),
@@ -67,75 +68,67 @@ if __name__ == '__main__':
         params = {
             'cup': {
                 'SGD': {
-                    'h1': 79,
-                    'h2': 61,
+                    'sizes': [input_units, 16, 32, output_units],
                     'activation': 'Lrelu',
-                    'lmbda': 0.01,
-                    'momentum': 0.5,
-                    'epochs': 1000,
+                    'seed': 0,
+                    'lmbda': 0.,
+                    'momentum': 0.,
+                    'epochs': 5000,
                     'batch_size': None,
-                    'eta': 0.001,
+                    'eta': 0.0001,
+                    'optimizer': test,
+                    'debug': True,
+                    'eps':1e-3
                 },
                 'SGM': {
-                    'h1': 79,
-                    'h2': 61,
+                    'sizes': [input_units, 16, 32, output_units],
                     'activation': 'Lrelu',
+                    'seed': 0,
                     'lmbda': 0.,
-                    'momentum': 0.7,
-                    'epochs': 1000,
+                    'momentum': 0.,
+                    'epochs': 500,
                     'batch_size': None,
-                    'eta': 0.01
+                    'eta': 0.0001,
+                    'optimizer': test,
+                    'debug': True,
+                    'eps':1e-3
                 }
             },
             'monk': {
                 'SGD': {
-                    'h1': 3,
-                    'h2': None,
+                    'sizes': [input_units, 3, output_units],
                     'activation': 'Lrelu',
+                    'seed': 0,
                     'lmbda': 0.001,
                     'momentum': 0.5,
                     'epochs': 50000,
                     'batch_size': None,
-                    'eta': 0.05
+                    'eta': 0.05,
+                    'optimizer': test,
+                    'debug': True,
+                    'eps':1e-3
                 },
                 'SGM': {
-                    "h1": 3,
-                    "h2": 0,
-                    "activation": "Lrelu",
-                    "lmbda": 0.0,
-                    "momentum": 0.0,
-                    "epochs": 50000,
-                    "batch_size": None,
-                    "eta": 0.1
+                    'sizes': [input_units, 3, output_units],
+                    'activation': 'Lrelu',
+                    'seed': 0,
+                    'lmbda': 0.001,
+                    'momentum': 0.0,
+                    'epochs': 50000,
+                    'batch_size': None,
+                    'eta': 0.1,
+                    'optimizer': test,
+                    'debug': True,
+                    'eps':1e-3
                 }
             }
         }
 
         if dataset == 'cup':
-            net = NR([input_units, params[dataset][test]['h1'], params[dataset][test]['h2'], output_units],
-                        test,
-                        0,
-                        params[dataset][test]['epochs'],
-                        params[dataset][test]['eta'],
-                        params[dataset][test]['activation'],
-                        lmbda=params[dataset][test]['lmbda'],
-                        momentum=params[dataset][test]['momentum'],
-                        debug=True,
-                        eps=1e-3,
-                        batch_size=params[dataset][test]['batch_size'])
+            net = NR(**params[dataset][test])
         else:
             dataset = 'monk'
-            net = NC([input_units, params[dataset][test]['h1'], output_units], 0, params[dataset][test]['activation'],
-                        test,
-                        0,
-                        params[dataset][test]['epochs'],
-                        params[dataset][test]['eta'],
-                        params[dataset][test]['activation'],
-                        lmbda=params[dataset][test]['lmbda'],
-                        momentum=params[dataset][test]['momentum'],
-                        debug=True,
-                        eps=1e-3,
-                        batch_size=params[dataset][test]['batch_size'])
+            net = NC(**params[dataset][test])
 
         net.train((X_train, y_train), test_data=(X_test, y_test))
         print(net.best_score())

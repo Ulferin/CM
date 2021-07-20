@@ -306,26 +306,31 @@ class Network(metaclass=ABCMeta):
         self.update_avg = 0
 
         start = dt.now()
+        self.fitted = True
 
-        for e in range(1, self.epochs+1):
-            s = dt.now()
-            self._update_batches(training_data)
-            en = end_time(start)
-            self.update_avg = en.seconds*1000 + en.microseconds/1000
+        try:
+            for e in range(1, self.epochs+1):
+                s = dt.now()
+                self._update_batches(training_data)
+                en = end_time(start)
+                self.update_avg = en.seconds*1000 + en.microseconds/1000
 
-            # Compute current gradient estimate
-            self.grad_est = self.grad_est/self.batches
-            self.grad_est_per_epoch.append(self.grad_est)
-            self.evaluate(e)
+                # Compute current gradient estimate
+                self.grad_est = self.grad_est/self.batches
+                self.grad_est_per_epoch.append(self.grad_est)
+                self.evaluate(e)
 
-            self.score = self.train_loss[-1]
+                self.score = self.train_loss[-1]
 
-            if self.optimizer.iteration_end(e, self):
-                print("Reached desired precision in gradient norm, stopping.")
-                break
-            
-        end = end_time(start)
-        self.total_time = end.seconds*1000 + end.microseconds/1000
+                if self.optimizer.iteration_end(e, self):
+                    print("Reached desired precision in gradient norm, stopping.")
+                    break
+        except ValueError:
+            print("Computation did not finish due to NaN.")
+            self.fitted = False
+        finally:
+            end = end_time(start)
+            self.total_time = end.seconds*1000 + end.microseconds/1000
 
     def evaluate(self, e):
         """Returns statistics for the current epoch if test data are provided while training the network.
@@ -402,6 +407,9 @@ class Network(metaclass=ABCMeta):
         tuple
             Couple of values representing the best score for validation and training sets.
         """        
+
+        if not self.fitted:
+            return 'This model is not fitted yet.\n\n'
 
         best_score = ()
         if len(self.val_scores) > 0:
