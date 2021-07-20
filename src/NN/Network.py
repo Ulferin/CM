@@ -43,7 +43,7 @@ class Network(metaclass=ABCMeta):
     """    
     
     @abstractmethod
-    def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.0, debug=True):
+    def __init__(self, sizes, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='sigmoid', lmbda=0.0, momentum=0.0, debug=True, eps=1e-5, batch_size=None):
         """Initializes the network topology based on the given :sizes: which represents the amount
         of units to use for each of the layers of the current network. Builds the weights and bias
         vectors for each layer of the network accordingly. Each layer will be initialized randomly
@@ -70,6 +70,15 @@ class Network(metaclass=ABCMeta):
             debugging flag, by default True
         """        
 
+        self.batch_size = batch_size
+        self.eta = eta
+        self.eps = eps
+        self.epochs = epochs
+
+
+        self.optimizer = OPTIMIZERS[optimizer]
+
+
         # Execution Statistics
         self.evaluate_avg = [0, 0]
         self.backprop_avg = [0, 0]
@@ -81,6 +90,7 @@ class Network(metaclass=ABCMeta):
         self.num_layers = len(sizes)
         self.sizes = sizes
         self.act = ACTIVATIONS[activation]
+        self.der = self.act.derivative if optimizer == 'SGD' else self.act.subgrad
         self.momentum = momentum
         self.lmbda = lmbda
 
@@ -264,7 +274,7 @@ class Network(metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
-    def train(self, optimizer, training_data, epochs, eta, eps=1e-5, batch_size=None, test_data=None):
+    def train(self, training_data, test_data=None):
         """Trains the neural network on :training_data: sample for a given number of :epochs:
         by fine-tuning the weights and biases by using the update rules relative to
         the provided :optimizer:. The way updates are performed is also determined by the
@@ -286,21 +296,13 @@ class Network(metaclass=ABCMeta):
         test_data : tuple, optional
             If provided, test samples and expected outputs are used to evaluate the performance
             of the current network at each epoch of training, by default None
-        """        
-        
-        self.der = self.act.derivative if optimizer == 'SGD' else self.act.subgrad
-
-        self.training_size = len(training_data[0])
-        self.batch_size = batch_size if batch_size is not None else self.training_size
-        self.eta = eta
-        self.epochs = epochs
-        self.batches = int(self.training_size/self.batch_size)
-
+        """     
         self.training_data = training_data
-        self.test_data = test_data
-
-        self.optimizer = OPTIMIZERS[optimizer](training_data, epochs, eta, eps=eps, test_data=test_data)
-
+        self.test_data = test_data   
+        self.optimizer = self.optimizer(training_data, self.epochs, self.eta, eps=self.eps, test_data=test_data)
+        self.training_size = len(training_data[0])
+        self.batch_size = self.batch_size if self.batch_size is not None and self.batch_size > 0 else self.training_size
+        self.batches = int(self.training_size/self.batch_size)
         self.update_avg = 0
 
         start = dt.now()
@@ -323,11 +325,7 @@ class Network(metaclass=ABCMeta):
                 break
             
         end = end_time(start)
-        print(f"ended in: {end.seconds*1000 + end.microseconds/1000}, avg per ep: {(end.seconds*1000 + end.microseconds/1000)/self.epochs}")
-        print(f"total update: {self.update_avg}, avg updt: {self.update_avg/self.epochs}")
-        print(f"total ff: {self.feedforward_avg[0]}, total ff time: {self.feedforward_avg[1]}, avg ff: {self.feedforward_avg[1]/self.feedforward_avg[0]}")
-        print(f"total bp: {self.backprop_avg[0]}, total bp time: {self.backprop_avg[1]}, avg bp: {self.backprop_avg[1]/self.backprop_avg[0]}")
-        print(f"total ev: {self.evaluate_avg[0]}, total ev time: {self.evaluate_avg[1]}, avg ev: {self.evaluate_avg[1]/self.evaluate_avg[0]}")
+        self.total_time = end.seconds*1000 + end.microseconds/1000
 
     def evaluate(self, e):
         """Returns statistics for the current epoch if test data are provided while training the network.
@@ -349,10 +347,10 @@ class Network(metaclass=ABCMeta):
 
         if self.test_data is not None:
             self._evaluate(self.training_data, self.test_data)
-            print(f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || Loss: {self.val_loss[-1]:7.5e}, {self.train_loss[-1]:7.5e} || Score: {self.val_scores[-1]:5.3g}, {self.train_scores[-1]:<5.3g}")
+            if self.debug: print(f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || Loss: {self.val_loss[-1]:7.5e}, {self.train_loss[-1]:7.5e} || Score: {self.val_scores[-1]:5.3g}, {self.train_scores[-1]:<5.3g}")
         else:
             self._evaluate(self.training_data)
-            print(f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || Loss: {self.train_loss[-1]:7.5e} || Score: {self.train_scores[-1]:<5.3g}")
+            if self.debug: print(f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || Loss: {self.train_loss[-1]:7.5e} || Score: {self.train_scores[-1]:<5.3g}")
 
         end = end_time(start)
         self.evaluate_avg[1] += end.seconds*1000 + end.microseconds/1000
@@ -395,7 +393,7 @@ class Network(metaclass=ABCMeta):
         self.train_scores.append(self.scoring(truth_train, preds_train))
 
 
-    def best_score(self, name, save=False):
+    def best_score(self):
         """Returns the best score achieved during the training of the
         current Network.
 
@@ -412,15 +410,16 @@ class Network(metaclass=ABCMeta):
             idx = np.argmin(self.val_loss)
             best_loss = (self.val_loss[idx], self.train_loss[idx])
 
-        score_file = open(f"src/NN/res/scores/{name}.txt", 'a')
-        
+
         stats = f"ep: {self.epochs:<7} | s: {self.sizes[1:-1]} | b: {self.batch_size} | e:{self.eta:5} | lmbda:{self.lmbda:5} | m:{self.momentum:5}\n"\
-                f"Grad: {self.ngrad:7.5e} | Loss: {best_loss[0]:7.5e}, {best_loss[1]:7.5e} | Score: {best_score[0]:5.3g}, {best_score[1]:<5.3g}\n\n"
+                f"Grad: {self.ngrad:7.5e} | Loss: {best_loss[0]:7.5e}, {best_loss[1]:7.5e} | Score: {best_score[0]:5.3g}, {best_score[1]:<5.3g}\n"\
+                f"ended in: {self.total_time}, avg per ep: {self.total_time/self.epochs}\n"\
+                f"total update: {self.update_avg}, avg updt: {self.update_avg/self.epochs}\n"\
+                f"total ff: {self.feedforward_avg[0]}, total ff time: {self.feedforward_avg[1]}, avg ff: {self.feedforward_avg[1]/self.feedforward_avg[0]}\n"\
+                f"total bp: {self.backprop_avg[0]}, total bp time: {self.backprop_avg[1]}, avg bp: {self.backprop_avg[1]/self.backprop_avg[0]}\n"\
+                f"total ev: {self.evaluate_avg[0]}, total ev time: {self.evaluate_avg[1]}, avg ev: {self.evaluate_avg[1]/self.evaluate_avg[0]}\n\n"
 
-        score_file.write(stats)
-        score_file.close()
-
-        return (best_score, best_loss)
+        return stats
 
 
     @abstractmethod
@@ -473,8 +472,7 @@ class Network(metaclass=ABCMeta):
 
 
 class NC(Network): 
-
-    def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.5, debug=True):
+    def __init__(self, sizes, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='sigmoid', lmbda=0.0, momentum=0.0, debug=True, eps=1e-5, batch_size=None):
         """Neural Network implementation for classification tasks with sigmoid activation function
         in the output layer. 
 
@@ -498,7 +496,7 @@ class NC(Network):
             debugging flag, by default True
         """        
 
-        super().__init__(sizes, seed, activation, lmbda, momentum, debug)
+        super().__init__(sizes, optimizer, seed, epochs, eta, activation, lmbda, momentum, debug, eps, batch_size)
 
         # Defines the behavior of the last layer of the network
         self.last_act = Sigmoid
@@ -528,8 +526,7 @@ class NC(Network):
 
 
 class NR(Network):
-
-    def __init__(self, sizes, seed, activation='sigmoid', lmbda=0.0, momentum=0.5, debug=True):
+    def __init__(self, sizes, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='sigmoid', lmbda=0.0, momentum=0.0, debug=True, eps=1e-5, batch_size=None):
         """Neural Network implementation for regression tasks with linear activation function
         in the output layer. 
 
@@ -552,8 +549,7 @@ class NR(Network):
         debug : bool, optional
             debugging flag, by default True
         """ 
-
-        super().__init__(sizes, seed, activation, lmbda, momentum, debug)
+        super().__init__(sizes, optimizer, seed, epochs, eta, activation, lmbda, momentum, debug, eps, batch_size)
 
         # Defines the behavior of the last layer of the network
         self.last_act = Linear
