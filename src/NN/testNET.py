@@ -1,14 +1,9 @@
-import numpy as np
 import sys
 
 from src.NN.Network import NR, NC
 import src.NN.utils as utils
-from src.NN.optimizers import SGM
-from src.NN.GridSearch import GridSearch
 
-from multiprocessing import Process, Pool
-
-from sklearn.model_selection import GridSearchCV, train_test_split, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 
 datasets = {
     'cup': 'data/ML-CUP20-TR.csv',
@@ -68,8 +63,7 @@ if __name__ == '__main__':
 
             'monk': {
                 'SGM': {    
-                    'sizes': [[16, 32], [30, 50], [50, 50]],
-                    'sizes': [[16, 32]],
+                    'sizes': [[2], [3], [5]],
                     'lmbda': [0, 0.001, 0.01],
                     'activation': ['Lrelu'],
                     'debug': [False],

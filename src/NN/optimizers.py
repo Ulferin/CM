@@ -7,17 +7,12 @@ import time
 class Optimizer(metaclass=ABCMeta):
 
     @abstractmethod
-    def __init__(self, training_data, epochs, eta, eps=1e-5, test_data=None):
+    def __init__(self, eta, eps=1e-5):
 
         # Store auxiliary informations to pretty-print statistics
         self.eta = eta
         self.eps = eps
-        self.training_size = len(training_data[0])
         self.grad_est_per_epoch = []
-
-        # Reshape vectors to fit needed shape
-        self.training_data = (training_data[0], training_data[1].reshape(training_data[1].shape[0], -1))
-        self.test_data = test_data
 
 
     @abstractmethod
@@ -43,8 +38,8 @@ class Optimizer(metaclass=ABCMeta):
 
 class SGD(Optimizer):
 
-    def __init__(self, training_data, epochs, eta, eps=1e-5, test_data=None):
-        super().__init__(training_data, epochs, eta, eps=eps, test_data=test_data)
+    def __init__(self, eta, eps=1e-5):
+        super().__init__(eta, eps=eps)
 
 
     def update_mini_batch(self, nn, nabla_b, nabla_w, size):
@@ -94,12 +89,11 @@ class SGD(Optimizer):
 # TODO: controllare che effettivamente il gradiente possa essere calcolato in questo modo.
 class SGM(Optimizer):
 
-    def __init__(self, training_data, epochs, eta, eps=1e-5, test_data=None, deflected=True):
-        super().__init__(training_data, epochs, eta, eps=eps, test_data=test_data)
+    def __init__(self, eta, eps=1e-5):
+        super().__init__(eta, eps=eps)
         self.step = eta
         self.x_ref = []
         self.f_ref = np.inf
-        self.deflected = deflected
         self.gamma = 0.95
         self.offset = 1e-8
         self.gms_b = []
@@ -123,29 +117,22 @@ class SGM(Optimizer):
             Not used in SGM. Only used in SGD optimizer.
         """        
 
-        if self.deflected:
+        # if len(self.gms_w) == 0:
+        #     self.gms_b = [nb**2 for nb in nabla_b]
+        #     self.gms_w = [nw**2 for nw in nabla_w]
+        # else:
+        #     self.gms_b = [self.gamma*gms_b + (1-self.gamma)*nb**2 for nb, gms_b in zip(nabla_b, self.gms_b)]
+        #     self.gms_w = [self.gamma*gms_w + (1-self.gamma)*nw**2 for nw, gms_w in zip(nabla_w, self.gms_w)]
+        
+        if len(self.gms_w) == 0:
+            self.gms_b = [0]*len(nabla_b)
+            self.gms_w = [0]*len(nabla_w)
 
-            # if len(self.gms_w) == 0:
-            #     self.gms_b = [nb**2 for nb in nabla_b]
-            #     self.gms_w = [nw**2 for nw in nabla_w]
-            # else:
-            #     self.gms_b = [self.gamma*gms_b + (1-self.gamma)*nb**2 for nb, gms_b in zip(nabla_b, self.gms_b)]
-            #     self.gms_w = [self.gamma*gms_w + (1-self.gamma)*nw**2 for nw, gms_w in zip(nabla_w, self.gms_w)]
-            
-            if len(self.gms_w) == 0:
-                self.gms_b = [0]*len(nabla_b)
-                self.gms_w = [0]*len(nabla_w)
+        self.gms_b = [gb + nb**2 for gb, nb in zip(self.gms_b, nabla_b)]
+        self.gms_w = [gw + nw**2 for gw, nw in zip(self.gms_w, nabla_w)]
 
-            self.gms_b = [gb + nb**2 for gb, nb in zip(self.gms_b, nabla_b)]
-            self.gms_w = [gw + nw**2 for gw, nw in zip(self.gms_w, nabla_w)]
-
-            nabla_b = [nb/(np.sqrt(gms_b)+self.offset) for nb, gms_b in zip(nabla_b, self.gms_b)]
-            nabla_w = [nw/(np.sqrt(gms_w)+self.offset) for nw, gms_w in zip(nabla_w, self.gms_w)]
-
-        else:
-            # Compute search direction
-            nabla_b = [nb/nn.ngrad for nb in nabla_b]
-            nabla_w = [nw/nn.ngrad for nw in nabla_w]
+        nabla_b = [nb/(np.sqrt(gms_b)+self.offset) for nb, gms_b in zip(nabla_b, self.gms_b)]
+        nabla_w = [nw/(np.sqrt(gms_w)+self.offset) for nw, gms_w in zip(nabla_w, self.gms_w)]
 
         nn.weights = [w - self.step*nw - (nn.lmbda/size) * w for w,nw in zip(nn.weights, nabla_w)]
         nn.biases = [b - self.step*nb for b,nb in zip(nn.biases, nabla_b)]
@@ -168,8 +155,6 @@ class SGM(Optimizer):
         bool
             Whether the optimizer has reached an optimal state.
         """        
-
-        if not self.deflected: self.step = self.eta * (1 / e)
 
         last_f = nn.score
 

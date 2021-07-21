@@ -71,6 +71,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             debugging flag, by default True
         """        
 
+        self.rng = default_rng(seed)     # needed for reproducibility
+
         # Network hyperparameters
         self.batch_size = batch_size
         self.eta = eta
@@ -85,9 +87,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.activation = activation
         self.last_act = None            # Must be defined by subclassing the Network
 
-
-        self.rng = default_rng(self.seed)     # needed for reproducibility
-
         # Performance attributes
         self.grad_est = None
         self.grad_est_per_epoch = []
@@ -96,12 +95,12 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.val_loss = []
         self.train_loss = []
 
-
         # Execution Statistics
         self.evaluate_avg = [0, 0]
         self.backprop_avg = [0, 0]
         self.feedforward_avg = [0, 0]
         self.total = 0
+        self.update_avg = 0
 
 
     def _feedforward_batch(self, inp):
@@ -293,24 +292,26 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         """     
 
 
+        # Initialize batch size w.r.t. training data
         self.X = X
         self.y = y
         self.test_data = test_data   
         self.training_size = len(self.X)
         self.batch_size = self.batch_size if self.batch_size is not None and self.batch_size > 0\
                                             else self.training_size
-
-        self.act = ACTIVATIONS[self.activation]
-        self.opti = OPTIMIZERS[self.optimizer]((self.X, self.y), self.epochs, self.eta, eps=self.eps, test_data=test_data)
         self.batches = int(self.training_size/self.batch_size)
-        self.update_avg = 0
 
+        # Set up activation function and optimizer
+        self.act = ACTIVATIONS[self.activation]
+        self.opti = OPTIMIZERS[self.optimizer](self.eta, eps=self.eps)
         self.der = self.act.derivative if self.optimizer == 'SGD' else self.act.subgrad
 
+        # Set up input/output units
         self.sizes.insert(0, self.X.shape[1])
         self.sizes.append(1 if len(self.y.shape) == 1 else self.y.shape[1])
         self.num_layers = len(self.sizes)
 
+        # Initialize network parameters
         self.biases = [self.rng.normal(0,0.5,l) for l in self.sizes[1:]]
         self.weights = [self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)) for x, y in zip(self.sizes[:-1], self.sizes[1:])]
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
@@ -343,6 +344,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             end = end_time(start)
             self.total_time = end.seconds*1000 + end.microseconds/1000
             return self
+
 
     def evaluate(self, e):
         """Returns statistics for the current epoch if test data are provided while training the network.
