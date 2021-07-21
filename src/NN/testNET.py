@@ -3,9 +3,12 @@ import sys
 
 from src.NN.Network import NR, NC
 import src.NN.utils as utils
+from src.NN.optimizers import SGM
 from src.NN.GridSearch import GridSearch
 
 from multiprocessing import Process, Pool
+
+from sklearn.model_selection import GridSearchCV, train_test_split, StratifiedKFold
 
 datasets = {
     'cup': 'data/ML-CUP20-TR.csv',
@@ -33,34 +36,87 @@ if __name__ == '__main__':
 
     # Performs gridsearch over the specified hyperparameters
     if grid:
-
+        
+        # TODO: mettere in file di conf
         grids = {
-            'est_pars': {
-                'sizes': [[16, 32], [50, 50], [71, 69]],
-                'seed': [0],
-                'activation': ['Lrelu'],
-                'lmbda': [0, 0.001, 0.01, 0.1],
-                'momentum': [0, 0.5, 0.9],
-                'debug': [False],
-                'epochs': [500],
-                'batch_size': [None],
-                'eta':[0.0001, 0.001, 0.01],
-                'optimizer': [test],
-                'eps': [1e-3]
+            'cup': {
+                'SGM': {    
+                    'sizes': [[16, 32], [30, 50], [50, 50]],
+                    'lmbda': [0, 0.001, 0.01],
+                    'activation': ['Lrelu'],
+                    'debug': [False],
+                    'epochs': [500, 1000],
+                    'batch_size': [32, None],
+                    'eta':[0.001, 0.01, 0.1],
+                    'eps': [1e-4],
+                    'optimizer': ['SGM']
+                },
+            
+                'SGD': {
+                    'sizes': [[16, 32], [30, 50], [50, 50]],
+                    'lmbda': [0, 0.001, 0.01],
+                    'momentum': [0, 0.2, 0.5, 0.9],
+                    'activation': ['Lrelu'],
+                    'debug': [False],
+                    'epochs': [500, 1000],
+                    'batch_size': [32, None],
+                    'eta':[0.0001, 0.001],
+                    'eps': [1e-4],
+                    'optimizer': ['SGD']
+                }
             },
-            'train_pars': {
-                'training_data': (X_train, y_train),
-                'test_data': (X_test, y_test)
+
+            'monk': {
+                'SGM': {    
+                    'sizes': [[16, 32], [30, 50], [50, 50]],
+                    'sizes': [[16, 32]],
+                    'lmbda': [0, 0.001, 0.01],
+                    'activation': ['Lrelu'],
+                    'debug': [False],
+                    'epochs': [500],
+                    'batch_size': [32, None],
+                    'eta':[0.001, 0.01, 0.1],
+                    'eps': [1e-4],
+                    'optimizer': ['SGM']
+                },
+            
+                'SGD': {
+                    'sizes': [[16, 32], [30, 50], [50, 50]],
+                    'lmbda': [0, 0.001, 0.01],
+                    'momentum': [0, 0.2, 0.5, 0.9],
+                    'activation': ['Lrelu'],
+                    'debug': [False],
+                    'epochs': [500, 1000],
+                    'batch_size': [32, None],
+                    'eta':[0.0001, 0.001],
+                    'eps': [1e-4],
+                    'optimizer': ['SGD']
+                }
             }
-    }
+        }
 
         if dataset == 'cup':
-            grids['est_pars']['estimator'] = [NR]
+            net = NR
+            cv = 5
+            scoring = 'neg_mean_squared_error'
         else:
-            grids['est_pars']['estimator'] = [NC]
+            # Removes the monk number
+            dataset = 'monk'
+            net = NC
+            cv = StratifiedKFold(n_splits=5, random_state=42, shuffle=True)
+            scoring = 'accuracy'
         
-        gs = GridSearch()
-        gs.fit(grids, dataset, test)
+        grid = grids[dataset][test]
+
+        gs = GridSearchCV(net(), cv=5, param_grid=grid, n_jobs=-1, verbose=10, scoring=scoring)
+        gs.fit(X_train, y_train)
+        print(f"Best score over VL: {gs.best_score_}, best params: {gs.best_params_}\n")
+
+        # Retraining w/ best parameters
+        print("Retraining network with best parameters:")
+        net = net(**gs.best_params_)
+        net.fit(X_train, y_train, test_data=(X_test, y_test))
+        print(net.best_score())
     
     else:
 
@@ -68,27 +124,25 @@ if __name__ == '__main__':
         params = {
             'cup': {
                 'SGD': {
-                    'sizes': [input_units, 16, 32, output_units],
                     'activation': 'Lrelu',
-                    'seed': 0,
-                    'lmbda': 0.,
+                    'sizes': [30, 50],
+                    'lmbda': 0.001,
                     'momentum': 0.,
-                    'epochs': 5000,
-                    'batch_size': None,
-                    'eta': 0.0001,
+                    'epochs': 1000,
+                    'batch_size': 32,
+                    'eta': 0.001,
                     'optimizer': test,
                     'debug': True,
-                    'eps':1e-3
+                    'eps': 1e-4,
                 },
                 'SGM': {
-                    'sizes': [input_units, 16, 32, output_units],
                     'activation': 'Lrelu',
-                    'seed': 0,
-                    'lmbda': 0.,
+                    'sizes': [30, 50],
+                    'lmbda': 0.001,
                     'momentum': 0.,
-                    'epochs': 500,
-                    'batch_size': None,
-                    'eta': 0.0001,
+                    'epochs': 1000,
+                    'batch_size': 32,
+                    'eta': 0.1,
                     'optimizer': test,
                     'debug': True,
                     'eps':1e-3
@@ -96,22 +150,20 @@ if __name__ == '__main__':
             },
             'monk': {
                 'SGD': {
-                    'sizes': [input_units, 3, output_units],
                     'activation': 'Lrelu',
-                    'seed': 0,
-                    'lmbda': 0.001,
-                    'momentum': 0.5,
-                    'epochs': 50000,
-                    'batch_size': None,
-                    'eta': 0.05,
-                    'optimizer': test,
+                    'batch_size': 10,
                     'debug': True,
-                    'eps':1e-3
+                    'epochs': 1000,
+                    'eps': 1e-4,
+                    'eta': 0.1,
+                    'lmbda': 0.05,
+                    'momentum': 0.9,
+                    'optimizer': test,
+                    'sizes': [5],
+                    'debug': True
                 },
                 'SGM': {
-                    'sizes': [input_units, 3, output_units],
-                    'activation': 'Lrelu',
-                    'seed': 0,
+                    'sizes': [3],
                     'lmbda': 0.001,
                     'momentum': 0.0,
                     'epochs': 50000,
@@ -130,7 +182,8 @@ if __name__ == '__main__':
             dataset = 'monk'
             net = NC(**params[dataset][test])
 
-        net.train((X_train, y_train), test_data=(X_test, y_test))
+
+        net.fit(X_train, y_train, test_data=(X_test, y_test))
         print(net.best_score())
         # net.plot_grad('gradient')
 

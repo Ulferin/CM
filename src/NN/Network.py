@@ -8,6 +8,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 from numpy.random import default_rng
+from sklearn.base import BaseEstimator
 
 from sklearn.utils import shuffle
 from sklearn.metrics import r2_score
@@ -35,7 +36,7 @@ OPTIMIZERS = {
 }
 
 
-class Network(metaclass=ABCMeta):
+class Network(BaseEstimator, metaclass=ABCMeta):
     """Abstract class representing a standard Neural Network, also known as Multilayer Perceptron.
     It allows to build a network for both classification and regression tasks by using the
     preferred optimization technique between sub-gradient method and stochastic gradient descent.
@@ -43,7 +44,7 @@ class Network(metaclass=ABCMeta):
     """    
     
     @abstractmethod
-    def __init__(self, sizes, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='sigmoid', lmbda=0.0, momentum=0.0, debug=True, eps=1e-5, batch_size=None):
+    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='relu', lmbda=0.0, momentum=0.0, debug=True, eps=1e-5, batch_size=None):
         """Initializes the network topology based on the given :sizes: which represents the amount
         of units to use for each of the layers of the current network. Builds the weights and bias
         vectors for each layer of the network accordingly. Each layer will be initialized randomly
@@ -70,13 +71,30 @@ class Network(metaclass=ABCMeta):
             debugging flag, by default True
         """        
 
+        # Network hyperparameters
         self.batch_size = batch_size
         self.eta = eta
         self.eps = eps
         self.epochs = epochs
+        self.optimizer = optimizer
+        self.seed = seed
+        self.debug = debug
+        self.momentum = momentum
+        self.lmbda = lmbda
+        self.sizes = sizes
+        self.activation = activation
+        self.last_act = None            # Must be defined by subclassing the Network
 
 
-        self.optimizer = OPTIMIZERS[optimizer]
+        self.rng = default_rng(self.seed)     # needed for reproducibility
+
+        # Performance attributes
+        self.grad_est = None
+        self.grad_est_per_epoch = []
+        self.val_scores = []
+        self.train_scores = []
+        self.val_loss = []
+        self.train_loss = []
 
 
         # Execution Statistics
@@ -84,31 +102,6 @@ class Network(metaclass=ABCMeta):
         self.backprop_avg = [0, 0]
         self.feedforward_avg = [0, 0]
         self.total = 0
-
-        
-        rng = default_rng(seed)     # needed for reproducibility
-        self.num_layers = len(sizes)
-        self.sizes = sizes
-        self.act = ACTIVATIONS[activation]
-        self.der = self.act.derivative if optimizer == 'SGD' else self.act.subgrad
-        self.momentum = momentum
-        self.lmbda = lmbda
-
-        self.last_act = None            # Must be defined by subclassing the Network
-        self.grad_est = None
-        self.grad_est_per_epoch = []
-
-        self.biases = [rng.normal(0,0.5,l) for l in sizes[1:]]
-        self.weights = [rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)) for x, y in zip(sizes[:-1], sizes[1:])]
-        self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
-        self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
-
-        self.val_scores = []
-        self.train_scores = []
-        self.val_loss = []
-        self.train_loss = []
-
-        self.debug = debug
 
 
     def _feedforward_batch(self, inp):
@@ -201,7 +194,7 @@ class Network(metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
-    def _create_batches(self, batches, training_data):
+    def _create_batches(self):
         """Creates a list of mini-batches that will be used during optimization.
 
         Parameters
@@ -219,21 +212,22 @@ class Network(metaclass=ABCMeta):
         mini_batches = []
 
         if self.batch_size < self.training_size:
-            for b in range(batches):
+            for b in range(self.batches):
                 start = b * self.batch_size
                 end = (b+1) * self.batch_size
-                mini_batches.append((training_data[0][start:end], training_data[1][start:end]))
+                mini_batches.append((self.X[start:end], self.y[start:end]))
             
             # Add remaining data as last batch
             # (it may have different size than previous batches, up to |batch|-1 more elements)
-            mini_batches.append((training_data[0][batches*self.batch_size:], training_data[1][batches*self.batch_size:]))
+            last = (self.X[self.batches*self.batch_size:], self.y[self.batches*self.batch_size:])
+            if len(last[0]) > 0: mini_batches.append(last)
         else:
-            mini_batches.append((training_data[0], training_data[1]))
+            mini_batches.append((self.X, self.y))
 
         return mini_batches
 
 
-    def _update_batches(self, training_data):
+    def _update_batches(self):
         """Creates batches and updates the Neural Network weights and biases by performing
         updates using the optimizer associated to the current network.
 
@@ -243,12 +237,12 @@ class Network(metaclass=ABCMeta):
             tuple of np.ndarray containing the training samples and the associated expected outputs.
         """               
         # training_data = shuffle(training_data[0], training_data[1], random_state=42)
-        mini_batches = self._create_batches(self.batches, training_data)
+        mini_batches = self._create_batches()
         self.grad_est = 0
 
         for mini_batch in mini_batches:
             nabla_b, nabla_w = self._compute_grad(mini_batch)
-            self.optimizer.update_mini_batch(self, nabla_b, nabla_w, len(mini_batch[0]))
+            self.opti.update_mini_batch(self, nabla_b, nabla_w, len(mini_batch[0]))
             self.grad_est += self.ngrad
 
 
@@ -274,7 +268,7 @@ class Network(metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
-    def train(self, training_data, test_data=None):
+    def fit(self, X, y, test_data=None):
         """Trains the neural network on :training_data: sample for a given number of :epochs:
         by fine-tuning the weights and biases by using the update rules relative to
         the provided :optimizer:. The way updates are performed is also determined by the
@@ -292,18 +286,35 @@ class Network(metaclass=ABCMeta):
         eta : float
             Learning rate parameter if SGD optimizer is used, starting step for SGM.
         batch_size : int, optional
-            If specified determines the size of the batches used to train the network, by default None
+            Determines the size of the batches used to train the network, by default None
         test_data : tuple, optional
             If provided, test samples and expected outputs are used to evaluate the performance
             of the current network at each epoch of training, by default None
         """     
-        self.training_data = training_data
+
+
+        self.X = X
+        self.y = y
         self.test_data = test_data   
-        self.optimizer = self.optimizer(training_data, self.epochs, self.eta, eps=self.eps, test_data=test_data)
-        self.training_size = len(training_data[0])
-        self.batch_size = self.batch_size if self.batch_size is not None and self.batch_size > 0 else self.training_size
+        self.training_size = len(self.X)
+        self.batch_size = self.batch_size if self.batch_size is not None and self.batch_size > 0\
+                                            else self.training_size
+
+        self.act = ACTIVATIONS[self.activation]
+        self.opti = OPTIMIZERS[self.optimizer]((self.X, self.y), self.epochs, self.eta, eps=self.eps, test_data=test_data)
         self.batches = int(self.training_size/self.batch_size)
         self.update_avg = 0
+
+        self.der = self.act.derivative if self.optimizer == 'SGD' else self.act.subgrad
+
+        self.sizes.insert(0, self.X.shape[1])
+        self.sizes.append(1 if len(self.y.shape) == 1 else self.y.shape[1])
+        self.num_layers = len(self.sizes)
+
+        self.biases = [self.rng.normal(0,0.5,l) for l in self.sizes[1:]]
+        self.weights = [self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)) for x, y in zip(self.sizes[:-1], self.sizes[1:])]
+        self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
+        self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
 
         start = dt.now()
         self.fitted = True
@@ -311,8 +322,8 @@ class Network(metaclass=ABCMeta):
         try:
             for e in range(1, self.epochs+1):
                 s = dt.now()
-                self._update_batches(training_data)
-                en = end_time(start)
+                self._update_batches()
+                en = end_time(s)
                 self.update_avg = en.seconds*1000 + en.microseconds/1000
 
                 # Compute current gradient estimate
@@ -322,7 +333,7 @@ class Network(metaclass=ABCMeta):
 
                 self.score = self.train_loss[-1]
 
-                if self.optimizer.iteration_end(e, self):
+                if self.opti.iteration_end(e, self):
                     print("Reached desired precision in gradient norm, stopping.")
                     break
         except ValueError:
@@ -331,6 +342,7 @@ class Network(metaclass=ABCMeta):
         finally:
             end = end_time(start)
             self.total_time = end.seconds*1000 + end.microseconds/1000
+            return self
 
     def evaluate(self, e):
         """Returns statistics for the current epoch if test data are provided while training the network.
@@ -351,10 +363,10 @@ class Network(metaclass=ABCMeta):
         start = dt.now()
 
         if self.test_data is not None:
-            self._evaluate(self.training_data, self.test_data)
+            self._evaluate((self.X, self.y), self.test_data)
             if self.debug: print(f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || Loss: {self.val_loss[-1]:7.5e}, {self.train_loss[-1]:7.5e} || Score: {self.val_scores[-1]:5.3g}, {self.train_scores[-1]:<5.3g}")
         else:
-            self._evaluate(self.training_data)
+            self._evaluate((self.X, self.y))
             if self.debug: print(f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || Loss: {self.train_loss[-1]:7.5e} || Score: {self.train_scores[-1]:<5.3g}")
 
         end = end_time(start)
@@ -385,13 +397,13 @@ class Network(metaclass=ABCMeta):
             preds_test list of predictions for the test samples :test_data:
         """        
         if test_data:            
-            preds_test = self._predict(test_data[0])
+            preds_test = self.predict(test_data[0])
             truth_test = test_data[1]
 
             self.val_loss.append(self.loss(truth_test, self.last_pred))
             self.val_scores.append(self.scoring(truth_test, preds_test))
 
-        preds_train = self._predict(train_data[0])
+        preds_train = self.predict(train_data[0])
         truth_train = train_data[1]
 
         self.train_loss.append(self.loss(truth_train, self.last_pred))
@@ -431,7 +443,7 @@ class Network(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def _predict(self, data):
+    def predict(self, data):
         pass
 
 
@@ -479,8 +491,8 @@ class Network(metaclass=ABCMeta):
 
 
 
-class NC(Network): 
-    def __init__(self, sizes, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='sigmoid', lmbda=0.0, momentum=0.0, debug=True, eps=1e-5, batch_size=None):
+class NC(Network, BaseEstimator): 
+    def __init__(self, sizes=[3], optimizer='SGD', seed=0, epochs=300, eta=0.1, activation='Lrelu', lmbda=0.0001, momentum=0.5, debug=True, eps=1e-5, batch_size=10):
         """Neural Network implementation for classification tasks with sigmoid activation function
         in the output layer. 
 
@@ -504,7 +516,17 @@ class NC(Network):
             debugging flag, by default True
         """        
 
-        super().__init__(sizes, optimizer, seed, epochs, eta, activation, lmbda, momentum, debug, eps, batch_size)
+        super().__init__(sizes=sizes,
+                        optimizer=optimizer,
+                        seed=seed,
+                        epochs=epochs,
+                        eta=eta,
+                        activation=activation,
+                        lmbda=lmbda,
+                        momentum=momentum,
+                        debug=debug,
+                        eps=eps,
+                        batch_size=batch_size)
 
         # Defines the behavior of the last layer of the network
         self.last_act = Sigmoid
@@ -513,7 +535,7 @@ class NC(Network):
         self.last_pred = None
 
 
-    def _predict(self, data):
+    def predict(self, data):
         """Performs a feedforward pass through the network for the given :data: samples,
         returns the classification values for each sample.
 
@@ -533,8 +555,8 @@ class NC(Network):
 
 
 
-class NR(Network):
-    def __init__(self, sizes, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='sigmoid', lmbda=0.0, momentum=0.0, debug=True, eps=1e-5, batch_size=None):
+class NR(Network, BaseEstimator):
+    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='relu', lmbda=0.0, momentum=0.0, debug=True, eps=1e-5, batch_size=None):
         """Neural Network implementation for regression tasks with linear activation function
         in the output layer. 
 
@@ -557,7 +579,18 @@ class NR(Network):
         debug : bool, optional
             debugging flag, by default True
         """ 
-        super().__init__(sizes, optimizer, seed, epochs, eta, activation, lmbda, momentum, debug, eps, batch_size)
+        super().__init__(sizes=sizes,
+                        optimizer=optimizer,
+                        seed=seed,
+                        epochs=epochs,
+                        eta=eta,
+                        activation=activation,
+                        lmbda=lmbda,
+                        momentum=momentum,
+                        debug=debug,
+                        eps=eps,
+                        batch_size=batch_size)
+
 
         # Defines the behavior of the last layer of the network
         self.last_act = Linear
@@ -566,7 +599,7 @@ class NR(Network):
         self.last_pred = None
 
 
-    def _predict(self, data):
+    def predict(self, data):
         """Performs a feedforward pass through the network for the given :data: samples,
         returns the values for each sample for the regression task.
 
