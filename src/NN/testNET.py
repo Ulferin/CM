@@ -115,53 +115,99 @@ if __name__ == '__main__':
         params = {
             'cup': {
                 'SGD': {
-                    'activation': 'Lrelu',
-                    'sizes': [30, 50],
+                    'batch_size': 32,
+                    'epochs': 1000,
+                    'eps': 1e-4,
+                    'eta': 0.001,
                     'lmbda': 0.001,
                     'momentum': 0.,
-                    'epochs': 1000,
-                    'batch_size': 32,
-                    'eta': 0.001,
                     'optimizer': test,
+                    'sizes': [30, 50],
+                    'activation': 'Lrelu',
                     'debug': True,
-                    'eps': 1e-4,
                 },
                 'SGM': {
-                    'activation': 'Lrelu',
-                    'sizes': [30, 50],
-                    'lmbda': 0.001,
-                    'momentum': 0.,
-                    'epochs': 1000,
                     'batch_size': 32,
+                    'epochs': 1000,
+                    'eps':1e-3,
                     'eta': 0.1,
+                    'lmbda': 0.001,
                     'optimizer': test,
+                    'sizes': [30, 50],
+                    'activation': 'Lrelu',
                     'debug': True,
-                    'eps':1e-3
                 }
             },
-            'monk': {
+            'monk1': {
                 'SGD': {
                     'activation': 'Lrelu',
                     'batch_size': 10,
                     'epochs': 500,
                     'eps': 1e-4,
                     'eta': 0.1,
-                    'lmbda': 0.,
+                    'lmbda': 0.0001,
+                    'momentum': 0.9,
+                    'optimizer': test,
+                    'sizes': [5],
+                    'debug': True
+                },
+                'SGM': {
+                    'batch_size': 10,
+                    'epochs': 1000,
+                    'eps':1e-3,
+                    'eta': 0.1,
+                    'lmbda': 0.001,
+                    'optimizer': test,
+                    'sizes': [5],
+                    'debug': True,
+                }
+            },
+            'monk2': {
+                'SGD': {
+                    'activation': 'Lrelu',
+                    'batch_size': 10,
+                    'epochs': 500,
+                    'eps': 1e-4,
+                    'eta': 0.1,
+                    'lmbda': 0.0001,
                     'momentum': 0.9,
                     'optimizer': test,
                     'sizes': [3],
                     'debug': True
                 },
                 'SGM': {
-                    'sizes': [3],
-                    'lmbda': 0.001,
-                    'momentum': 0.0,
-                    'epochs': 50000,
-                    'batch_size': None,
+                    'batch_size': 10,
+                    'epochs': 500,
+                    'eps':1e-3,
                     'eta': 0.1,
+                    'lmbda': 0.,
                     'optimizer': test,
+                    'sizes': [3],
                     'debug': True,
-                    'eps':1e-3
+                }
+            },
+            'monk3': {
+                'SGD': {
+                    'activation': 'Lrelu',
+                    'batch_size': 10,
+                    'epochs': 500,
+                    'eps': 1e-4,
+                    'eta': 0.01,
+                    'lmbda': 0.0001,
+                    'momentum': 0.5,
+                    'optimizer': test,
+                    'sizes': [5],
+                    'debug': True
+                },
+                'SGM': {
+                    'batch_size': 32,
+                    'epochs': 500,
+                    'eps':1e-3,
+                    'eta': 0.1,
+                    'lmbda': 0.01,
+                    'optimizer': test,
+                    'sizes': [2],
+                    'debug': True,
                 }
             }
         }
@@ -169,12 +215,11 @@ if __name__ == '__main__':
         if dataset == 'cup':
             net = NR(**params[dataset][test])
         else:
-            dataset = 'monk'
             net = NC(**params[dataset][test])
 
         X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
         net.fit(X_train, y_train, test_data=(X_test, y_test))
+        net.plot_results(f"{dataset}_{test}", score=False)
+        net.plot_grad(f"{dataset}_{test}")
         print(net.best_score())
-        # net.plot_grad('gradient')
-
     

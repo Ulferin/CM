@@ -238,6 +238,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         # training_data = shuffle(training_data[0], training_data[1], random_state=42)
         mini_batches = self._create_batches()
         self.grad_est = 0
+        self.num_batches = len(mini_batches)
 
         for mini_batch in mini_batches:
             nabla_b, nabla_w = self._compute_grad(mini_batch)
@@ -328,7 +329,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 self.update_avg = en.seconds*1000 + en.microseconds/1000
 
                 # Compute current gradient estimate
-                self.grad_est = self.grad_est/self.batches
+                self.grad_est = self.grad_est/self.num_batches
                 self.grad_est_per_epoch.append(self.grad_est)
                 self.evaluate(e)
 
@@ -449,7 +450,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         pass
 
 
-    def plot_score(self, name):
+    def plot_results(self, name, score=False):
         """Utility function, allows to build a plot of the scores achieved during training
         for the validation set and the training set.
 
@@ -459,15 +460,18 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             Prefix name for the plot file.
         """        
 
-        plt.plot(self.val_scores, '--', label='Validation loss')
-        plt.plot(self.train_scores, '--', label='Training loss')
+        val_res = self.val_scores if score else self.val_loss
+        train_res = self.train_scores if score else self.train_loss
+
+        plt.plot(val_res, '--', label='Validation loss')
+        plt.plot(train_res, '--', label='Training loss')
         plt.legend(loc='best')
         plt.xlabel ('Epochs')
         plt.ylabel ('Loss')
         plt.title ('Loss NN CUP dataset')
         plt.draw()
 
-        plt.savefig(f"src/NN/res/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
+        plt.savefig(f"src/NN/res/losses/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
         plt.clf()
 
     
