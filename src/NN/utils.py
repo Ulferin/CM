@@ -50,5 +50,23 @@ def prepare_data(X_train, X_test):
     return X_train, X_test
 
 
+def crossValToDf(res, scoring='Accuracy'):
+        """
+        Utility function that transforms the results obtained from the grid-search approach into a DataFrame.
+
+        Params:
+            - res: results coming from the grid-search approach.
+            - scoring: string representing the scoring function used in the grid-search approach. Defaults to 'Accuracy'.
+
+        Returns:
+            - df_sorted: DataFrame with grid-search results.
+        """        
+
+        df1 = pd.concat([pd.DataFrame(res["params"]), pd.DataFrame(res["mean_test_score"], columns=[f"Validation {scoring}"])],axis=1)
+        df_sorted = df1.sort_values([f"Validation {scoring}"], ascending=False)
+        df_sorted = df_sorted.reset_index(drop=True)
+        return df_sorted
+        
+
 def end_time(start):
     return (dt.now() - start)

@@ -44,7 +44,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
     """    
     
     @abstractmethod
-    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='relu', lmbda=0.0, momentum=0.0, debug=True, eps=1e-5, batch_size=None):
+    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='Lrelu', lmbda=0.0, momentum=0.0, debug=False, eps=1e-5, batch_size=None):
         """Initializes the network topology based on the given :sizes: which represents the amount
         of units to use for each of the layers of the current network. Builds the weights and bias
         vectors for each layer of the network accordingly. Each layer will be initialized randomly
@@ -494,7 +494,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
 class NC(Network, BaseEstimator): 
-    def __init__(self, sizes=[3], optimizer='SGD', seed=0, epochs=300, eta=0.1, activation='Lrelu', lmbda=0.0001, momentum=0.5, debug=True, eps=1e-5, batch_size=10):
+    def __init__(self, sizes=[3], optimizer='SGD', seed=0, epochs=300, eta=0.1, activation='Lrelu', lmbda=0.0001, momentum=0.5, debug=False, eps=1e-5, batch_size=10):
         """Neural Network implementation for classification tasks with sigmoid activation function
         in the output layer. 
 
@@ -558,7 +558,7 @@ class NC(Network, BaseEstimator):
 
 
 class NR(Network, BaseEstimator):
-    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='relu', lmbda=0.0, momentum=0.0, debug=True, eps=1e-5, batch_size=None):
+    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='Lrelu', lmbda=0.0, momentum=0.0, debug=False, eps=1e-5, batch_size=None):
         """Neural Network implementation for regression tasks with linear activation function
         in the output layer. 
 
