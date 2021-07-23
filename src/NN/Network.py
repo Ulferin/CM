@@ -463,11 +463,12 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         val_res = self.val_scores if score else self.val_loss
         train_res = self.train_scores if score else self.train_loss
 
-        plt.plot(val_res, '--', label='Validation loss')
-        plt.plot(train_res, '--', label='Training loss')
+        plt.semilogy(val_res, '--', label='Validation loss')
+        plt.semilogy(train_res, '--', label='Training loss')
         plt.legend(loc='best')
         plt.xlabel ('Epochs')
         plt.ylabel ('Loss')
+        # plt.yscale('log')
         plt.title ('Loss NN CUP dataset')
         plt.draw()
 
@@ -490,6 +491,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         plt.xlabel ('Epochs')
         plt.ylabel ('Gradient\'s norm')
         plt.title ('Gradient norm estimate')
+        plt.yscale('log')
         plt.draw()
 
         plt.savefig(f"src/NN/res/grads/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
