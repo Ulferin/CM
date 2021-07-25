@@ -83,7 +83,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.debug = debug
         self.momentum = momentum
         self.lmbda = lmbda
-        self.sizes = sizes
+        self.sizes = sizes.copy()
         self.activation = activation
         self.last_act = None            # Must be defined by subclassing the Network
 
@@ -99,7 +99,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.evaluate_avg = [0, 0]
         self.backprop_avg = [0, 0]
         self.feedforward_avg = [0, 0]
-        self.total = 0
+        self.epochs_time = []
+        self.total_time = 0
         self.update_avg = 0
 
 
@@ -334,6 +335,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 self.evaluate(e)
 
                 self.score = self.train_loss[-1]
+                epoch_time = end_time(start)
+                self.epochs_time.append(epoch_time.seconds*1000 + epoch_time.microseconds/1000)
 
                 if self.opti.iteration_end(e, self):
                     print("Reached desired precision in gradient norm, stopping.")
@@ -450,7 +453,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         pass
 
 
-    def plot_results(self, name, score=False):
+    def plot_results(self, name, score=False, save=True, time=False):
         """Utility function, allows to build a plot of the scores achieved during training
         for the validation set and the training set.
 
@@ -463,20 +466,29 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         val_res = self.val_scores if score else self.val_loss
         train_res = self.train_scores if score else self.train_loss
 
-        plt.semilogy(val_res, '--', label='Validation loss')
-        plt.semilogy(train_res, '--', label='Training loss')
+        if not time:
+            plt.semilogy(val_res, '--', label='Validation loss')
+            plt.semilogy(train_res, '--', label='Training loss')
+        else:
+            plt.semilogy(self.epochs_time, val_res, '--', label='Validation loss')
+            plt.semilogy(self.epochs_time, train_res, '--', label='Training loss')
+        
+        if not time:
+            plt.xlabel ('Epochs')
+        else:
+            plt.xlabel('Execution Time')
+        
         plt.legend(loc='best')
-        plt.xlabel ('Epochs')
         plt.ylabel ('Loss')
-        # plt.yscale('log')
         plt.title ('Loss NN CUP dataset')
         plt.draw()
 
-        plt.savefig(f"src/NN/res/losses/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
+        if save: plt.savefig(f"src/NN/res/losses/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
+        else: plt.show()
         plt.clf()
 
     
-    def plot_grad(self, name):
+    def plot_grad(self, name, save=True):
         """Utility function, allows to build a plot of the gradient values achieved during
         training of the current Network.
 
@@ -494,7 +506,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         plt.yscale('log')
         plt.draw()
 
-        plt.savefig(f"src/NN/res/grads/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
+        if save: plt.savefig(f"src/NN/res/grads/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
+        else: plt.show()
         plt.clf()
 
 
