@@ -13,7 +13,7 @@ import time
 CUP_TEST = 'CUP'
 MONK_TEST = 'MONK'
 RANDOM_TEST = 'RANDOM'
-QR_SCALING = 'scaling'
+QR_SCALING = 'SCALING'
 
 
 def generate(m, n):
@@ -82,7 +82,7 @@ def QR_scaling (starting_m, m, n, step, t) :
     """
 
     print(f"n={n}, m={m}, t={t}")
-    print("m\ttime\tdelta")
+    print(f"m{'':7} time{'':<4s} delta{'':<3s} time_np{'':<1s} delta_np{'':<5s}")
     time_list = []
     time_np = []
     mrange = range(starting_m,m,step)
@@ -111,14 +111,14 @@ def QR_scaling (starting_m, m, n, step, t) :
         mean_np = (mean_np / t) / 1000
         delta = mean - prev_a
         delta_np = mean_np - prev
-        print(m,"\t",mean,"\t", delta, "\t", mean_np, "\t", delta_np)
+        print(f"{m:<6} || {mean:6.4f} | {delta:6.4f} | {mean_np:6.4f} | {delta_np:6.4f}")
         time_list.append(mean)
         time_np.append(mean_np)
         prev_a = mean
         prev = mean_np
 
     plt.plot (mrange, time_list, "bo-", label="mio")
-    # plt.plot(mrange, time_np, "r^-", label="np")
+    plt.plot(mrange, time_np, "r^-", label="np")
     plt.legend()
 
     plt.xlabel ("m")
@@ -127,8 +127,9 @@ def QR_scaling (starting_m, m, n, step, t) :
 
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
-    plt.savefig(f"../results/QRscaling_n{n}m{m}_d{time.time()}.png")
+    plt.savefig(f"results/QRscaling_n{n}m{m}_d{time.time()}.png")
     plt.clf()
+
 
 def automatized_test(M, b, test_type):
     ls = LS()
