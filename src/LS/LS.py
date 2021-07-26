@@ -74,7 +74,7 @@ class LS():
                 s = 0
                 u = np.zeros(len(u))
 
-            u_list[j] = u
+            u_list[j] = u.reshape(-1,1)
             R[j, j] = s
             R[j+1:, j] = 0
             R[j:, j+1:] -= np.outer(u, np.matmul(2*u.T, R[j:, j+1:]))
@@ -97,7 +97,7 @@ class LS():
             b = b.astype(np.single)
             
         for k, u in enumerate(self.u_list):
-            b[k:m] -= 2*np.dot(u, np.dot(u, b[k:m]))
+            b[k:m] -= 2*np.matmul(u, np.matmul(u.T, b[k:m]))
 
         return b
 
@@ -107,7 +107,7 @@ class LS():
         n = len(self.u_list)
 
         for k in range(n-1, -1, -1):
-                e_i[k:m] -= np.dot( self.u_list[k], np.dot(self.u_list[k], 2*e_i[k:m]) )
+                e_i[k:m] -= np.matmul( self.u_list[k], np.matmul(self.u_list[k].T, 2*e_i[k:m]) )
 
         return e_i
 

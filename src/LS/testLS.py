@@ -1,5 +1,7 @@
-from LS import LS
+from src.LS.LS import LS
 import numpy as np
+import pandas as pd
+from sklearn.preprocessing import OneHotEncoder
 import random
 import sys
 import time
@@ -9,6 +11,7 @@ from datetime import datetime as dt
 import time
 
 CUP_TEST = 'CUP'
+MONK_TEST = 'MONK'
 RANDOM_TEST = 'RANDOM'
 QR_SCALING = 'scaling'
 
@@ -23,7 +26,7 @@ def generate(m, n):
 
     M = np.array([ [random.gauss(0,1) for r in range(n)] for c in range(m) ], dtype=np.single)
     b = np.array([random.gauss(0,1) for r in range(m)], dtype=np.single)
-    return M, b
+    return M, b.reshape(-1,1)
 
 
 def end_time(start):
@@ -44,20 +47,28 @@ def load_ML_CUP_dataset ( filename ):
     :param filename: Dataset file path (relative or absolute).
     :return: The coefficient matrix M and the dependend variables vector b.
     """
-	
-    M = []
-    b = []
 
-    with open (filename) as fin:
-        for line in fin:
-            if not line=="\n" and not line.startswith ("#"): 
-                line_split = line.split(",")
-                row = [ float(x) for x in line_split[1:-2] ]
-                b_el = np.array([float(line_split[-2]), float(line_split[-1])])
-                M.append (row)
-                b.append (b_el)
+    ml_cup = np.delete(np.genfromtxt(filename, delimiter=','), obj=0, axis=1)
+    M, b = ml_cup[:, :-2], ml_cup[:, -2:]
 
-    return np.matrix(M), np.matrix(b)
+    return M, b
+
+
+def load_monk(name):
+    """ Loads from the provided dataset name both the training set and the test set.
+
+    :return: Training and test set examples with the associated dependend variables.
+    """
+    train = pd.read_csv(f"{name}", sep=' ', header=None, index_col=8)
+
+    M = train.iloc[:,2:].values
+    b = (train.iloc[:,1].values).reshape(-1,1)
+
+    enc = OneHotEncoder()
+    enc.fit(M)
+    M = enc.transform(M).toarray()
+
+    return M, b
 
 
 def QR_scaling (starting_m, m, n, step, t) :
@@ -133,14 +144,14 @@ def automatized_test(M, b, test_type):
     startQR = dt.now()
     R = ls.qr(M)
     Q = ls.revertQ()
-    QR = np.dot(Q, R)
+    QR = np.matmul(Q, R)
     endQR = end_time(startQR)
 
 
     # Computes QR factorization using numpy
     startQRnp = dt.now()
     Qnp, Rnp = np.linalg.qr(M)
-    QRnp = np.dot(Qnp, Rnp)
+    QRnp = np.matmul(Qnp, Rnp)
     endQRnp = end_time(startQRnp)
 
     # Computes time for LS solver using numpy
@@ -148,13 +159,14 @@ def automatized_test(M, b, test_type):
     resnp, _, _, _ = np.linalg.lstsq(M,b,rcond=-1)
     endLSnp = end_time(startLSnp)
 
+
     print(f"---------- {test_type} DATASET ----------")
     print(f"Solved (m x n): ({m},{n}) in {endLS} msec, w/ np in {endLSnp} msec \
     - Reverting and reconstruction: {endQR} msec, w/ np took: {endQRnp} msec")
-    print(f"res error: {np.linalg.norm( b - np.dot(M, res) )/np.linalg.norm(b)} \
-    - np_res error: {np.linalg.norm( b - np.dot(M, resnp) )/np.linalg.norm(b)}")
-    print(f"QR error: {np.linalg.norm( M - QR )/np.linalg.norm(QR)} \
-    - QR error w/ np: {np.linalg.norm( M - QRnp )/np.linalg.norm(QRnp)}\n")
+    print(f"res error: {np.linalg.norm( b - np.dot(M, res) )/np.linalg.norm(b)} "\
+    f"- np_res error: {np.linalg.norm( b - np.dot(M, resnp) )/np.linalg.norm(b)}")
+    print(f"QR error: {np.linalg.norm( M - QR )/np.linalg.norm(M)} "\
+    f"- QR error w/ np: {np.linalg.norm( M - QRnp )/np.linalg.norm(M)}\n")
 
 
 if __name__ == "__main__":
@@ -187,6 +199,10 @@ if __name__ == "__main__":
     if test == CUP_TEST:
         assert len(sys.argv) == 3, "This kind of test requires dataset path to be defined."
         M, b = load_ML_CUP_dataset(sys.argv[2])
+        automatized_test(M, b, test)
+    elif test == MONK_TEST:
+        assert len(sys.argv) == 3, "This kind of test requires dataset path to be defined."
+        M, b = load_monk(sys.argv[2])
         automatized_test(M, b, test)
     elif test == RANDOM_TEST:
         assert len(sys.argv) == 4, "This kind of test requires 'm' and 'n' dimensions to be defined."
