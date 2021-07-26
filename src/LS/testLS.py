@@ -82,7 +82,8 @@ def QR_scaling (starting_m, m, n, step, t) :
     """
 
     print(f"n={n}, m={m}, t={t}")
-    print(f"m{'':7} time{'':<4s} delta{'':<3s} time_np{'':<1s} delta_np{'':<5s}")
+    print(f"m{'':10} time{'':<6s} delta{'':<5s} time_np{'':<3s} delta_np{'':<7s}")
+    print("----------------------------------------------------")
     time_list = []
     time_np = []
     mrange = range(starting_m,m,step)
@@ -111,7 +112,7 @@ def QR_scaling (starting_m, m, n, step, t) :
         mean_np = (mean_np / t) / 1000
         delta = mean - prev_a
         delta_np = mean_np - prev
-        print(f"{m:<6} || {mean:6.4f} | {delta:6.4f} | {mean_np:6.4f} | {delta_np:6.4f}")
+        print(f"{m:<6} || {mean:8.4f} | {delta:8.4f} | {mean_np:8.4f} | {delta_np:8.4f}")
         time_list.append(mean)
         time_np.append(mean_np)
         prev_a = mean

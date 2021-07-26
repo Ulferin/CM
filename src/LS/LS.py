@@ -63,7 +63,7 @@ class LS():
 
         m, n = A.shape
         R = A.astype(np.single)
-        u_list = np.empty(np.min((m,n)), dtype=np.ndarray)
+        u_list = []
 
         for j in range(np.min((m,n))):   # note that this is always equal to n in our case
             s, u = self.householder_vector(R[j:,j])
@@ -74,7 +74,8 @@ class LS():
                 s = 0
                 u = np.zeros(len(u))
 
-            u_list[j] = u.reshape(-1,1)
+            u_list.append(u.reshape(-1,1))
+
             R[j, j] = s
             R[j+1:, j] = 0
             R[j:, j+1:] -= np.outer(u, np.matmul(2*u.T, R[j:, j+1:]))
