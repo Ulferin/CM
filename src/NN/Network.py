@@ -83,7 +83,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.debug = debug
         self.momentum = momentum
         self.lmbda = lmbda
-        self.sizes = sizes if sizes is None else sizes.copy()
+        self.sizes = sizes
         self.activation = activation
         self.last_act = None            # Must be defined by subclassing the Network
 
@@ -164,8 +164,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         """        
 
 
-        nabla_b = [0]*(len(self.sizes)-1)
-        nabla_w = [0]*(len(self.sizes)-1)
+        nabla_b = [0]*(len(self._sizes)-1)
+        nabla_w = [0]*(len(self._sizes)-1)
 
         # Forward computation
         units_out, nets, out = self._feedforward_batch(x)
@@ -308,13 +308,14 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.der = self.act.derivative if self.optimizer == 'SGD' else self.act.subgrad
 
         # Set up input/output units
-        self.sizes.insert(0, self.X.shape[1])
-        self.sizes.append(1 if len(self.y.shape) == 1 else self.y.shape[1])
-        self.num_layers = len(self.sizes)
+        self._sizes = self.sizes.copy()
+        self._sizes.insert(0, self.X.shape[1])
+        self._sizes.append(1 if len(self.y.shape) == 1 else self.y.shape[1])
+        self.num_layers = len(self._sizes)
 
         # Initialize network parameters
-        self.biases = [self.rng.normal(0,0.5,l) for l in self.sizes[1:]]
-        self.weights = [self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)) for x, y in zip(self.sizes[:-1], self.sizes[1:])]
+        self.biases = [self.rng.normal(0,0.5,l) for l in self._sizes[1:]]
+        self.weights = [self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)) for x, y in zip(self._sizes[:-1], self._sizes[1:])]
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
         self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
 
