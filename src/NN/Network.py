@@ -416,7 +416,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.train_scores.append(self.scoring(truth_train, preds_train))
 
 
-    def best_score(self):
+    def best_score(self, name="", save=False):
         """Returns the best score achieved during the training of the
         current Network.
 
@@ -445,6 +445,12 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 f"total bp: {self.backprop_avg[0]}, total bp time: {self.backprop_avg[1]}, avg bp: {self.backprop_avg[1]/self.backprop_avg[0]}\n"\
                 f"total ev: {self.evaluate_avg[0]}, total ev time: {self.evaluate_avg[1]}, avg ev: {self.evaluate_avg[1]/self.evaluate_avg[0]}\n\n"
 
+        if save:
+            file_path = f"src/NN/res/best_scores/stats.txt"
+            with open(file_path, 'a') as f:
+                f.write(f"{name}\n")
+                f.write(stats)
+
         return stats
 
 
@@ -463,27 +469,27 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             Prefix name for the plot file.
         """        
 
+        # Conditional configuration
+        x_label = 'Execution Time' if time else 'Epochs'
+        folder = 'scores' if score else 'losses'
+        sub_folder = 'time' if time else 'epochs'
+
         val_res = self.val_scores if score else self.val_loss
         train_res = self.train_scores if score else self.train_loss
+        x = self.epochs_time if time else list(range(len(val_res)))
 
-        if not time:
-            plt.semilogy(val_res, '--', label='Validation loss')
-            plt.semilogy(train_res, '--', label='Training loss')
-        else:
-            plt.semilogy(self.epochs_time, val_res, '--', label='Validation loss')
-            plt.semilogy(self.epochs_time, train_res, '--', label='Training loss')
+        plt.plot(x, val_res, '--', label='Validation loss')
+        plt.plot(x, train_res, '--', label='Training loss')
         
-        if not time:
-            plt.xlabel ('Epochs')
-        else:
-            plt.xlabel('Execution Time')
+        plt.xlabel(x_label)
+        plt.ylabel ('Loss')
         
         plt.legend(loc='best')
-        plt.ylabel ('Loss')
         plt.title ('Loss NN CUP dataset')
         plt.draw()
 
-        if save: plt.savefig(f"src/NN/res/losses/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
+
+        if save: plt.savefig(f"src/NN/res/{folder}/{sub_folder}/{name}ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}lmbda{self.lmbda}m{self.momentum}.png")
         else: plt.show()
         plt.clf()
 

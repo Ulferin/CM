@@ -219,7 +219,12 @@ if __name__ == '__main__':
 
         X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
         net.fit(X_train, y_train, test_data=(X_test, y_test))
-        net.plot_results(f"{dataset}_{test}", score=False)
+
+        net.plot_results(f"{dataset}_{test}", score=False, time=True)
+        net.plot_results(f"{dataset}_{test}", score=False, time=False)
+        net.plot_results(f"{dataset}_{test}", score=True, time=True)
+        net.plot_results(f"{dataset}_{test}", score=True, time=False)
         net.plot_grad(f"{dataset}_{test}")
-        print(net.best_score())
+        
+        print(net.best_score(name=f"{dataset}_{test}", save=True))
     
