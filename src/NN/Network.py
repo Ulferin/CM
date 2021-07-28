@@ -242,8 +242,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.num_batches = len(mini_batches)
 
         for mini_batch in mini_batches:
-            nabla_b, nabla_w = self._compute_grad(mini_batch)
-            self.opti.update_mini_batch(self, nabla_b, nabla_w, len(mini_batch[0]))
+            self.opti.update_mini_batch(self, mini_batch)
             self.grad_est += self.ngrad
 
 
