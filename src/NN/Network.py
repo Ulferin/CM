@@ -83,7 +83,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.debug = debug
         self.momentum = momentum
         self.lmbda = lmbda
-        self.sizes = sizes.copy()
+        self.sizes = sizes if sizes is None else sizes.copy()
         self.activation = activation
         self.last_act = None            # Must be defined by subclassing the Network
 
@@ -518,7 +518,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
 class NC(Network, BaseEstimator): 
-    def __init__(self, sizes=[3], optimizer='SGD', seed=0, epochs=300, eta=0.1, activation='Lrelu', lmbda=0.0001, momentum=0.5, debug=False, eps=1e-5, batch_size=10):
+    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=300, eta=0.1, activation='Lrelu', lmbda=0.0001, momentum=0.5, debug=False, eps=1e-5, batch_size=10):
         """Neural Network implementation for classification tasks with sigmoid activation function
         in the output layer. 
 
