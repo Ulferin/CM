@@ -98,13 +98,13 @@ def QR_scaling (starting_m, m, n, step, t) :
             startQR = dt.now()
             R = ls.qr(A)
             Q = ls.revertQ()
-            QR = np.dot(Q, R)
+            QR = np.matmul(Q, R)
             endQR = end_time(startQR)
             mean += endQR
 
             startQRnp = dt.now()
             Qnp, Rnp = np.linalg.qr(A)
-            QRnp = np.dot(Qnp, Rnp)
+            QRnp = np.matmul(Qnp, Rnp)
             endQRnp = end_time(startQRnp)
             mean_np += endQRnp
         
@@ -119,11 +119,11 @@ def QR_scaling (starting_m, m, n, step, t) :
         prev = mean_np
 
     plt.plot (mrange, time_list, "bo-", label="mio")
-    plt.plot(mrange, time_np, "r^-", label="np")
+    # plt.plot(mrange, time_np, "r^-", label="np")
     plt.legend()
 
     plt.xlabel ("m")
-    plt.ylabel ("time (sec)")
+    plt.ylabel ("time (msec)")
     plt.title (f"QR factorizzation of a matrix {m}x{n}")
 
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
