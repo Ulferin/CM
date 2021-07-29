@@ -61,7 +61,7 @@ if __name__ == '__main__':
                     'epochs': [500, 1000],
                     'batch_size': [10, 32, None],
                     'eta':[0.001, 0.01, 0.1],
-                    'eps': [1e-4],
+                    'eps': [1e-6],
                     'optimizer': ['SGM']
                 },
             
@@ -71,9 +71,9 @@ if __name__ == '__main__':
                     'lmbda': [0, 0.0001, 0.001, 0.01],
                     'momentum': [0, 0.5, 0.9],
                     'epochs': [500],
-                    'batch_size': [10],
+                    'batch_size': [10, 32, None],
                     'eta':[0.01, 0.1],
-                    'eps': [1e-4],
+                    'eps': [1e-6],
                     'optimizer': ['SGD']
                 }
             }
@@ -88,7 +88,7 @@ if __name__ == '__main__':
             # Removes the monk number
             dataset = 'monk'
             net = NC
-            cv = StratifiedShuffleSplit(n_splits=5, test_size=0.20, random_state=42)
+            cv = StratifiedShuffleSplit(n_splits=5, test_size=0.10, random_state=42)
             scoring = 'accuracy'
         
         grid = grids[dataset][test]
