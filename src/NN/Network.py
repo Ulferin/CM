@@ -88,7 +88,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.last_act = None            # Must be defined by subclassing the Network
 
         # Performance attributes
-        self.grad_est = None
+        self.grad_est = []
         self.grad_est_per_epoch = []
         self.val_scores = []
         self.train_scores = []
@@ -238,12 +238,12 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         """               
         # training_data = shuffle(training_data[0], training_data[1], random_state=42)
         mini_batches = self._create_batches()
-        self.grad_est = 0
+        self.grad_est = []
         self.num_batches = len(mini_batches)
 
         for mini_batch in mini_batches:
             self.opti.update_mini_batch(self, mini_batch)
-            self.grad_est += self.ngrad
+            self.grad_est.append(self.ngrad)
 
 
     def _compute_grad(self, mini_batch):
@@ -330,8 +330,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 self.update_avg = en.seconds*1000 + en.microseconds/1000
 
                 # Compute current gradient estimate
-                self.grad_est = self.grad_est/self.num_batches
-                self.grad_est_per_epoch.append(self.grad_est)
+                self.grad_est_per_epoch.append(np.average(self.grad_est))
                 self.evaluate(e)
 
                 self.score = self.train_loss[-1]
@@ -435,7 +434,9 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             best_score = (self.val_scores[idx], self.train_scores[idx])
             idx = np.argmin(self.val_loss)
             best_loss = (self.val_loss[idx], self.train_loss[idx])
-
+        else:
+            best_score = (-1, np.max(self.train_scores))
+            best_loss = (-1, np.min(self.train_loss))
 
         stats = f"ep: {self.epochs:<7} | s: {self.sizes[1:-1]} | b: {self.batch_size} | e:{self.eta:5} | lmbda:{self.lmbda:5} | m:{self.momentum:5}\n"\
                 f"Grad: {self.ngrad:7.5e} | Loss: {best_loss[0]:7.5e}, {best_loss[1]:7.5e} | Score: {best_score[0]:5.3g}, {best_score[1]:<5.3g}\n"\
@@ -459,7 +460,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         pass
 
 
-    def plot_results(self, name, score=False, save=True, time=False):
+    def plot_results(self, name, score=False, save=False, time=False):
         """Utility function, allows to build a plot of the scores achieved during training
         for the validation set and the training set.
 
@@ -474,11 +475,13 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         folder = 'scores' if score else 'losses'
         sub_folder = 'time' if time else 'epochs'
 
-        val_res = self.val_scores if score else self.val_loss
+        if self.test_data is not None:
+            val_res = self.val_scores if score else self.val_loss
         train_res = self.train_scores if score else self.train_loss
-        x = self.epochs_time if time else list(range(len(val_res)))
+        x = self.epochs_time if time else list(range(len(train_res)))
 
-        plt.plot(x, val_res, '--', label='Validation loss')
+        if self.test_data is not None:
+            plt.plot(x, val_res, '--', label='Validation loss')
         plt.plot(x, train_res, '--', label='Training loss')
         
         plt.xlabel(x_label)
@@ -494,7 +497,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         plt.clf()
 
     
-    def plot_grad(self, name, save=True):
+    def plot_grad(self, name, save=False):
         """Utility function, allows to build a plot of the gradient values achieved during
         training of the current Network.
 

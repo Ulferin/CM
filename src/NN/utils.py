@@ -8,12 +8,18 @@ from sklearn.preprocessing import OneHotEncoder
 from datetime import datetime as dt
 
 
-def load_CUP(name):
+def load_CUP(name, split=0.3):
     ml_cup = np.delete(np.genfromtxt(name, delimiter=','), obj=0, axis=1)
     M, b = ml_cup[:, :-2], ml_cup[:, -2:]
 
-    X_train, X_test, y_train, y_test = train_test_split(
-            M, b, test_size=0.3, random_state=0)
+    if split > 0:
+        X_train, X_test, y_train, y_test = train_test_split(
+                M, b, test_size=split, random_state=0)
+    else:
+        X_train = M
+        y_train = b
+        X_test = None
+        y_test= None
 
     return X_train, X_test, y_train, y_test
 
@@ -31,6 +37,8 @@ def load_monk(name):
     X_test = test.iloc[:,2:].values
     y_test = (test.iloc[:,1].values).reshape(-1,1)
     
+    X_train, X_test = prepare_data(X_train, X_test)
+
     return X_train, X_test, y_train, y_test
 
 

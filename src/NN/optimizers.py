@@ -87,6 +87,7 @@ class SGD(Optimizer):
         """        
 
         if nn.ngrad < self.eps:
+            print(nn.ngrad, self.eps)
             return True
 
         return False
@@ -173,6 +174,7 @@ class SGM(Optimizer):
             self.x_ref = (nn.weights.copy(), nn.biases.copy())
 
         if nn.ngrad < self.eps:
+            print(f"SGM - grad:{nn.ngrad}, eps: {self.eps}")
             return True
 
         return False
