@@ -61,7 +61,7 @@ if __name__ == '__main__':
                     'epochs': [500, 1000],
                     'batch_size': [10, 32, None],
                     'eta':[0.001, 0.01, 0.1],
-                    'eps': [1e-4],
+                    'eps': [1e-6],
                     'optimizer': ['SGM']
                 },
             
@@ -71,9 +71,9 @@ if __name__ == '__main__':
                     'lmbda': [0, 0.0001, 0.001, 0.01],
                     'momentum': [0, 0.5, 0.9],
                     'epochs': [500],
-                    'batch_size': [10],
+                    'batch_size': [10, 32, None],
                     'eta':[0.01, 0.1],
-                    'eps': [1e-4],
+                    'eps': [1e-6],
                     'optimizer': ['SGD']
                 }
             }
@@ -88,7 +88,7 @@ if __name__ == '__main__':
             # Removes the monk number
             dataset = 'monk'
             net = NC
-            cv = StratifiedShuffleSplit(n_splits=5, test_size=0.20, random_state=42)
+            cv = StratifiedShuffleSplit(n_splits=5, test_size=0.10, random_state=42)
             scoring = 'accuracy'
         
         grid = grids[dataset][test]
@@ -114,7 +114,7 @@ if __name__ == '__main__':
                 'SGD': {
                     'batch_size': 32,
                     'epochs': 1000,
-                    'eps': 1e-4,
+                    'eps': 1e-6,
                     'eta': 0.001,
                     'lmbda': 0.001,
                     'momentum': 0.,
@@ -126,7 +126,7 @@ if __name__ == '__main__':
                 'SGM': {
                     'batch_size': 32,
                     'epochs': 1000,
-                    'eps':1e-4,
+                    'eps':1e-6,
                     'eta': 0.1,
                     'lmbda': 0.001,
                     'optimizer': "SGM",
@@ -138,22 +138,22 @@ if __name__ == '__main__':
             'monk1': {
                 'SGD': {
                     'activation': 'Lrelu',
-                    'batch_size': 10,
-                    'epochs': 1000,
-                    'eps': 1e-4,
+                    'batch_size': 32,
+                    'epochs': 500,
+                    'eps': 1e-6,
                     'eta': 0.1,
-                    'lmbda': 0.0001,
+                    'lmbda': 0.01,
                     'momentum': 0.9,
                     'optimizer': "SGD",
                     'sizes': [5],
                     'debug': True
                 },
                 'SGM': {
-                    'batch_size': 10,
+                    'batch_size': None,
                     'epochs': 1000,
-                    'eps':1e-3,
+                    'eps':1e-6,
                     'eta': 0.1,
-                    'lmbda': 0.001,
+                    'lmbda': 0.01,
                     'optimizer': "SGM",
                     'sizes': [5],
                     'debug': True
@@ -162,12 +162,12 @@ if __name__ == '__main__':
             'monk2': {
                 'SGD': {
                     'activation': 'Lrelu',
-                    'batch_size': 10,
+                    'batch_size': 32,
                     'epochs': 500,
-                    'eps': 1e-4,
+                    'eps': 1e-6,
                     'eta': 0.1,
-                    'lmbda': 0.0001,
-                    'momentum': 0.9,
+                    'lmbda': 0.01,
+                    'momentum': 0.5,
                     'optimizer': "SGD",
                     'sizes': [3],
                     'debug': True
@@ -175,9 +175,9 @@ if __name__ == '__main__':
                 'SGM': {
                     'batch_size': 10,
                     'epochs': 500,
-                    'eps':1e-3,
+                    'eps':1e-6,
                     'eta': 0.1,
-                    'lmbda': 0.,
+                    'lmbda': 0.001,
                     'optimizer': "SGM",
                     'sizes': [3],
                     'debug': True,
@@ -188,33 +188,31 @@ if __name__ == '__main__':
                     'activation': 'Lrelu',
                     'batch_size': 10,
                     'epochs': 500,
-                    'eps': 1e-4,
-                    'eta': 0.01,
-                    'lmbda': 0.0001,
-                    'momentum': 0.5,
+                    'eps': 1e-6,
+                    'eta': 0.1,
+                    'lmbda': 0.01,
+                    'momentum': 0.9,
                     'optimizer': "SGD",
                     'sizes': [5],
                     'debug': True
                 },
                 'SGM': {
-                    'batch_size': 32,
-                    'epochs': 500,
-                    'eps':1e-3,
+                    'batch_size': None,
+                    'epochs': 1000,
+                    'eps':1e-6,
                     'eta': 0.1,
                     'lmbda': 0.01,
                     'optimizer': "SGM",
-                    'sizes': [2],
+                    'sizes': [5],
                     'debug': True,
                 }
             }
         }
-
         if dataset == 'cup':
             net = NR(**params[dataset][test])
         else:
             net = NC(**params[dataset][test])
 
-        # X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
         net.fit(X_train, y_train, test_data=(X_test, y_test))
 
         # net.plot_results(f"{dataset}_{test}", score=False, time=True)
