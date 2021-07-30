@@ -19,10 +19,9 @@ if __name__ == '__main__':
     grid = len(sys.argv) > 3 and sys.argv[3] == 'grid'
 
     if dataset == 'cup':
-        X_train, X_test, y_train, y_test = utils.load_CUP(datasets[dataset], split=0.2)
+        X_train, X_test, y_train, y_test = utils.load_CUP(datasets[dataset])
     else:
         X_train, X_test, y_train, y_test = utils.load_monk(datasets[dataset])
-        # X_train, X_test = utils.prepare_data(X_train, X_test)
 
 
 
@@ -57,9 +56,9 @@ if __name__ == '__main__':
             'monk': {
                 'SGM': {    
                     'sizes': [[2], [3], [5]],
-                    'lmbda': [0, 0.001, 0.01],
-                    'epochs': [500, 1000],
-                    'batch_size': [10, 32, None],
+                    'lmbda': [0, 0.0001, 0.001, 0.01],
+                    'epochs': [1000],
+                    'batch_size': [32, None],
                     'eta':[0.001, 0.01, 0.1],
                     'eps': [1e-6],
                     'optimizer': ['SGM']
@@ -70,9 +69,9 @@ if __name__ == '__main__':
                     'sizes': [[2], [3], [5]],
                     'lmbda': [0, 0.0001, 0.001, 0.01],
                     'momentum': [0, 0.5, 0.9],
-                    'epochs': [500],
-                    'batch_size': [10, 32, None],
-                    'eta':[0.01, 0.1],
+                    'epochs': [1000],
+                    'batch_size': [32, None],
+                    'eta':[0.001, 0.01, 0.1],
                     'eps': [1e-6],
                     'optimizer': ['SGD']
                 }
@@ -88,7 +87,7 @@ if __name__ == '__main__':
             # Removes the monk number
             dataset = 'monk'
             net = NC
-            cv = StratifiedShuffleSplit(n_splits=5, test_size=0.10, random_state=42)
+            cv = StratifiedShuffleSplit(n_splits=10, test_size=0.20, random_state=42)
             scoring = 'accuracy'
         
         grid = grids[dataset][test]
