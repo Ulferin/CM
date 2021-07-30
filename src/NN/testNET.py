@@ -19,7 +19,7 @@ if __name__ == '__main__':
     grid = len(sys.argv) > 3 and sys.argv[3] == 'grid'
 
     if dataset == 'cup':
-        X_train, X_test, y_train, y_test = utils.load_CUP(datasets[dataset])
+        X_train, X_test, y_train, y_test = utils.load_CUP(datasets[dataset], split=0.2)
     else:
         X_train, X_test, y_train, y_test = utils.load_monk(datasets[dataset])
         # X_train, X_test = utils.prepare_data(X_train, X_test)
