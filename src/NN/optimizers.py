@@ -57,9 +57,10 @@ class SGD(Optimizer):
         """
         size = len(mini_batch[0])
 
-        # Nesterov update
-        nn.weights = [w + nn.momentum*wv for w, wv in zip(nn.weights, nn.wvelocities)]
-        nn.biases = [b + nn.momentum*bv for b, bv in zip(nn.biases, nn.bvelocities)]
+        if nn.nesterov:
+            # Nesterov update
+            nn.weights = [w + nn.momentum*wv for w, wv in zip(nn.weights, nn.wvelocities)]
+            nn.biases = [b + nn.momentum*bv for b, bv in zip(nn.biases, nn.bvelocities)]
 
         nabla_b, nabla_w = nn._compute_grad(mini_batch)
 
