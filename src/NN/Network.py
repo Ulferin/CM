@@ -44,7 +44,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
     """    
     
     @abstractmethod
-    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='Lrelu', lmbda=0.0, momentum=0.0, debug=False, eps=1e-5, batch_size=None):
+    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='Lrelu', lmbda=0.0, momentum=0.0, nesterov=False, eps=1e-5, batch_size=None, debug=False,):
         """Initializes the network topology based on the given :sizes: which represents the amount
         of units to use for each of the layers of the current network. Builds the weights and bias
         vectors for each layer of the network accordingly. Each layer will be initialized randomly
@@ -82,6 +82,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.seed = seed
         self.debug = debug
         self.momentum = momentum
+        self.nesterov = nesterov
         self.lmbda = lmbda
         self.sizes = sizes
         self.activation = activation
@@ -438,7 +439,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             best_score = (-1, np.max(self.train_scores))
             best_loss = (-1, np.min(self.train_loss))
 
-        stats = f"ep: {self.epochs:<7} | s: {self.sizes[1:-1]} | b: {self.batch_size} | e:{self.eta:5} | lmbda:{self.lmbda:5} | m:{self.momentum:5}\n"\
+        stats = f"ep: {self.epochs:<7} | s: {self.sizes} | b: {self.batch_size} | e:{self.eta:5} | lmbda:{self.lmbda:5} | m:{self.momentum:5} | nesterov: {self.nesterov}\n"\
                 f"Grad: {self.ngrad:7.5e} | Loss: {best_loss[0]:7.5e}, {best_loss[1]:7.5e} | Score: {best_score[0]:5.3g}, {best_score[1]:<5.3g}\n"\
                 f"ended in: {self.total_time}, avg per ep: {self.total_time/self.epochs}\n"\
                 f"total update: {self.update_avg}, avg updt: {self.update_avg/self.epochs}\n"\
@@ -522,7 +523,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
 class NC(Network, BaseEstimator): 
-    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=300, eta=0.1, activation='Lrelu', lmbda=0.0001, momentum=0.5, debug=False, eps=1e-5, batch_size=10):
+    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=300, eta=0.1, activation='Lrelu', lmbda=0.0001, momentum=0.5, nesterov=False, eps=1e-5, batch_size=10, debug=False):
         """Neural Network implementation for classification tasks with sigmoid activation function
         in the output layer. 
 
@@ -554,6 +555,7 @@ class NC(Network, BaseEstimator):
                         activation=activation,
                         lmbda=lmbda,
                         momentum=momentum,
+                        nesterov=nesterov,
                         debug=debug,
                         eps=eps,
                         batch_size=batch_size)
@@ -586,7 +588,7 @@ class NC(Network, BaseEstimator):
 
 
 class NR(Network, BaseEstimator):
-    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='Lrelu', lmbda=0.0, momentum=0.0, debug=False, eps=1e-5, batch_size=None):
+    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='Lrelu', lmbda=0.0, momentum=0.0, nesterov=False, eps=1e-5, batch_size=None, debug=False):
         """Neural Network implementation for regression tasks with linear activation function
         in the output layer. 
 
@@ -617,6 +619,7 @@ class NR(Network, BaseEstimator):
                         activation=activation,
                         lmbda=lmbda,
                         momentum=momentum,
+                        nesterov=nesterov,
                         debug=debug,
                         eps=eps,
                         batch_size=batch_size)

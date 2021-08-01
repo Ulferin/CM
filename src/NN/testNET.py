@@ -45,6 +45,7 @@ if __name__ == '__main__':
                     'sizes': [[16, 32], [30, 50], [50, 50]],
                     'lmbda': [0, 0.001, 0.01],
                     'momentum': [0, 0.2, 0.5, 0.9],
+                    'nesterov': [True, False],
                     'epochs': [500, 1000],
                     'batch_size': [32, None],
                     'eta':[0.0001, 0.001],
@@ -69,7 +70,8 @@ if __name__ == '__main__':
                     'sizes': [[2], [3], [5]],
                     'lmbda': [0, 0.0001, 0.001, 0.01],
                     'momentum': [0, 0.5, 0.9],
-                    'epochs': [1000],
+                    'nesterov': [True, False],
+                    'epochs': [500],
                     'batch_size': [32, None],
                     'eta':[0.001, 0.01, 0.1],
                     'eps': [1e-6],
@@ -87,7 +89,7 @@ if __name__ == '__main__':
             # Removes the monk number
             dataset = 'monk'
             net = NC
-            cv = StratifiedShuffleSplit(n_splits=10, test_size=0.20, random_state=42)
+            cv = StratifiedShuffleSplit(n_splits=5, test_size=0.20, random_state=42)
             scoring = 'accuracy'
         
         grid = grids[dataset][test]
@@ -138,13 +140,14 @@ if __name__ == '__main__':
                 'SGD': {
                     'activation': 'Lrelu',
                     'batch_size': 32,
-                    'epochs': 500,
+                    'epochs': 1000,
                     'eps': 1e-6,
                     'eta': 0.1,
                     'lmbda': 0.01,
                     'momentum': 0.9,
                     'optimizer': "SGD",
                     'sizes': [5],
+                    'nesterov': True,
                     'debug': True
                 },
                 'SGM': {
@@ -162,18 +165,19 @@ if __name__ == '__main__':
                 'SGD': {
                     'activation': 'Lrelu',
                     'batch_size': 32,
-                    'epochs': 500,
+                    'epochs': 1000,
                     'eps': 1e-6,
                     'eta': 0.1,
                     'lmbda': 0.01,
                     'momentum': 0.5,
                     'optimizer': "SGD",
                     'sizes': [3],
+                    'nesterov': True,
                     'debug': True
                 },
                 'SGM': {
                     'batch_size': 10,
-                    'epochs': 500,
+                    'epochs': 1000,
                     'eps':1e-6,
                     'eta': 0.1,
                     'lmbda': 0.001,
@@ -186,11 +190,12 @@ if __name__ == '__main__':
                 'SGD': {
                     'activation': 'Lrelu',
                     'batch_size': 10,
-                    'epochs': 500,
+                    'epochs': 1000,
                     'eps': 1e-6,
                     'eta': 0.1,
                     'lmbda': 0.01,
                     'momentum': 0.9,
+                    'nesterov': True,
                     'optimizer': "SGD",
                     'sizes': [5],
                     'debug': True
@@ -214,11 +219,11 @@ if __name__ == '__main__':
 
         net.fit(X_train, y_train, test_data=(X_test, y_test))
 
-        # net.plot_results(f"{dataset}_{test}", score=False, time=True)
+#         net.plot_results(f"{dataset}_{test}", score=False, time=True)
         # net.plot_results(f"{dataset}_{test}", score=False, time=False)
         # net.plot_results(f"{dataset}_{test}", score=True, time=True)
         # net.plot_results(f"{dataset}_{test}", score=True, time=False)
         # net.plot_grad(f"{dataset}_{test}")
         
-        print(net.best_score(name=f"{dataset}_{test}", save=False))
+        print(net.best_score(name=f"{dataset}_{test}", save=True))
     
