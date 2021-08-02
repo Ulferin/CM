@@ -62,7 +62,7 @@ class LS():
         eps = np.linalg.norm(A)/10**16
 
         m, n = A.shape
-        R = A.astype(np.single)
+        R = A.astype(np.float)
         u_list = []
 
         for j in range(np.min((m,n))):   # note that this is always equal to n in our case
@@ -94,8 +94,8 @@ class LS():
         """
 
         m = len(b)
-        if b.dtype != np.single:
-            b = b.astype(np.single)
+        if b.dtype != np.float:
+            b = b.astype(np.float)
             
         for k, u in enumerate(self.u_list):
             b[k:m] -= 2*np.matmul(u, np.matmul(u.T, b[k:m]))
@@ -131,7 +131,7 @@ class LS():
         Q = []
         # we have to form the first n columns of Q
         for i in range(n):
-            e_i = np.zeros(m, dtype=np.single)
+            e_i = np.zeros(m, dtype=np.float)
             e_i[i] = 1.0
             e_i = self.implicit_Qx(e_i)
             Q.append(e_i)
