@@ -44,7 +44,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
     """    
     
     @abstractmethod
-    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='Lrelu', lmbda=0.0, momentum=0.0, debug=False, eps=1e-5, batch_size=None):
+    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='Lrelu', lmbda=0.0, momentum=0.0, nesterov=False, eps=1e-5, batch_size=None, debug=False,):
         """Initializes the network topology based on the given :sizes: which represents the amount
         of units to use for each of the layers of the current network. Builds the weights and bias
         vectors for each layer of the network accordingly. Each layer will be initialized randomly
@@ -82,13 +82,14 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.seed = seed
         self.debug = debug
         self.momentum = momentum
+        self.nesterov = nesterov
         self.lmbda = lmbda
-        self.sizes = sizes.copy()
+        self.sizes = sizes
         self.activation = activation
         self.last_act = None            # Must be defined by subclassing the Network
 
         # Performance attributes
-        self.grad_est = None
+        self.grad_est = []
         self.grad_est_per_epoch = []
         self.val_scores = []
         self.train_scores = []
@@ -164,8 +165,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         """        
 
 
-        nabla_b = [0]*(len(self.sizes)-1)
-        nabla_w = [0]*(len(self.sizes)-1)
+        nabla_b = [0]*(len(self._sizes)-1)
+        nabla_w = [0]*(len(self._sizes)-1)
 
         # Forward computation
         units_out, nets, out = self._feedforward_batch(x)
@@ -238,13 +239,12 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         """               
         # training_data = shuffle(training_data[0], training_data[1], random_state=42)
         mini_batches = self._create_batches()
-        self.grad_est = 0
+        self.grad_est = []
         self.num_batches = len(mini_batches)
 
         for mini_batch in mini_batches:
-            nabla_b, nabla_w = self._compute_grad(mini_batch)
-            self.opti.update_mini_batch(self, nabla_b, nabla_w, len(mini_batch[0]))
-            self.grad_est += self.ngrad
+            self.opti.update_mini_batch(self, mini_batch)
+            self.grad_est.append(self.ngrad)
 
 
     def _compute_grad(self, mini_batch):
@@ -309,13 +309,14 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.der = self.act.derivative if self.optimizer == 'SGD' else self.act.subgrad
 
         # Set up input/output units
-        self.sizes.insert(0, self.X.shape[1])
-        self.sizes.append(1 if len(self.y.shape) == 1 else self.y.shape[1])
-        self.num_layers = len(self.sizes)
+        self._sizes = self.sizes.copy()
+        self._sizes.insert(0, self.X.shape[1])
+        self._sizes.append(1 if len(self.y.shape) == 1 else self.y.shape[1])
+        self.num_layers = len(self._sizes)
 
         # Initialize network parameters
-        self.biases = [self.rng.normal(0,0.5,l) for l in self.sizes[1:]]
-        self.weights = [self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)) for x, y in zip(self.sizes[:-1], self.sizes[1:])]
+        self.biases = [self.rng.normal(0,0.5,l) for l in self._sizes[1:]]
+        self.weights = [self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)) for x, y in zip(self._sizes[:-1], self._sizes[1:])]
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
         self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
 
@@ -330,8 +331,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 self.update_avg = en.seconds*1000 + en.microseconds/1000
 
                 # Compute current gradient estimate
-                self.grad_est = self.grad_est/self.num_batches
-                self.grad_est_per_epoch.append(self.grad_est)
+                self.grad_est_per_epoch.append(np.average(self.grad_est))
                 self.evaluate(e)
 
                 self.score = self.train_loss[-1]
@@ -435,9 +435,11 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             best_score = (self.val_scores[idx], self.train_scores[idx])
             idx = np.argmin(self.val_loss)
             best_loss = (self.val_loss[idx], self.train_loss[idx])
+        else:
+            best_score = (-1, np.max(self.train_scores))
+            best_loss = (-1, np.min(self.train_loss))
 
-
-        stats = f"ep: {self.epochs:<7} | s: {self.sizes[1:-1]} | b: {self.batch_size} | e:{self.eta:5} | lmbda:{self.lmbda:5} | m:{self.momentum:5}\n"\
+        stats = f"ep: {self.epochs:<7} | s: {self.sizes} | b: {self.batch_size} | e:{self.eta:5} | lmbda:{self.lmbda:5} | m:{self.momentum:5} | nesterov: {self.nesterov}\n"\
                 f"Grad: {self.ngrad:7.5e} | Loss: {best_loss[0]:7.5e}, {best_loss[1]:7.5e} | Score: {best_score[0]:5.3g}, {best_score[1]:<5.3g}\n"\
                 f"ended in: {self.total_time}, avg per ep: {self.total_time/self.epochs}\n"\
                 f"total update: {self.update_avg}, avg updt: {self.update_avg/self.epochs}\n"\
@@ -459,7 +461,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         pass
 
 
-    def plot_results(self, name, score=False, save=True, time=False):
+    def plot_results(self, name, score=False, save=False, time=False):
         """Utility function, allows to build a plot of the scores achieved during training
         for the validation set and the training set.
 
@@ -474,11 +476,13 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         folder = 'scores' if score else 'losses'
         sub_folder = 'time' if time else 'epochs'
 
-        val_res = self.val_scores if score else self.val_loss
+        if self.test_data is not None:
+            val_res = self.val_scores if score else self.val_loss
         train_res = self.train_scores if score else self.train_loss
-        x = self.epochs_time if time else list(range(len(val_res)))
+        x = self.epochs_time if time else list(range(len(train_res)))
 
-        plt.plot(x, val_res, '--', label='Validation loss')
+        if self.test_data is not None:
+            plt.plot(x, val_res, '--', label='Validation loss')
         plt.plot(x, train_res, '--', label='Training loss')
         
         plt.xlabel(x_label)
@@ -494,7 +498,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         plt.clf()
 
     
-    def plot_grad(self, name, save=True):
+    def plot_grad(self, name, save=False):
         """Utility function, allows to build a plot of the gradient values achieved during
         training of the current Network.
 
@@ -519,7 +523,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
 class NC(Network, BaseEstimator): 
-    def __init__(self, sizes=[3], optimizer='SGD', seed=0, epochs=300, eta=0.1, activation='Lrelu', lmbda=0.0001, momentum=0.5, debug=False, eps=1e-5, batch_size=10):
+    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=300, eta=0.1, activation='Lrelu', lmbda=0.0001, momentum=0.5, nesterov=False, eps=1e-5, batch_size=10, debug=False):
         """Neural Network implementation for classification tasks with sigmoid activation function
         in the output layer. 
 
@@ -551,6 +555,7 @@ class NC(Network, BaseEstimator):
                         activation=activation,
                         lmbda=lmbda,
                         momentum=momentum,
+                        nesterov=nesterov,
                         debug=debug,
                         eps=eps,
                         batch_size=batch_size)
@@ -583,7 +588,7 @@ class NC(Network, BaseEstimator):
 
 
 class NR(Network, BaseEstimator):
-    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='Lrelu', lmbda=0.0, momentum=0.0, debug=False, eps=1e-5, batch_size=None):
+    def __init__(self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01, activation='Lrelu', lmbda=0.0, momentum=0.0, nesterov=False, eps=1e-5, batch_size=None, debug=False):
         """Neural Network implementation for regression tasks with linear activation function
         in the output layer. 
 
@@ -614,6 +619,7 @@ class NR(Network, BaseEstimator):
                         activation=activation,
                         lmbda=lmbda,
                         momentum=momentum,
+                        nesterov=nesterov,
                         debug=debug,
                         eps=eps,
                         batch_size=batch_size)
