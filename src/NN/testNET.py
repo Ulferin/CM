@@ -22,11 +22,7 @@ if __name__ == '__main__':
         X_train, X_test, y_train, y_test = utils.load_CUP(datasets[dataset])
     else:
         X_train, X_test, y_train, y_test = utils.load_monk(datasets[dataset])
-        X_train, X_test = utils.prepare_data(X_train, X_test)
 
-    # Loads the input and output layers shape
-    input_units = X_train.shape[1]
-    output_units = y_train.shape[1] if len(y_train.shape) == 2 else 1
 
 
     # Performs gridsearch over the specified hyperparameters
@@ -49,6 +45,7 @@ if __name__ == '__main__':
                     'sizes': [[16, 32], [30, 50], [50, 50]],
                     'lmbda': [0, 0.001, 0.01],
                     'momentum': [0, 0.2, 0.5, 0.9],
+                    'nesterov': [True, False],
                     'epochs': [500, 1000],
                     'batch_size': [32, None],
                     'eta':[0.0001, 0.001],
@@ -60,11 +57,11 @@ if __name__ == '__main__':
             'monk': {
                 'SGM': {    
                     'sizes': [[2], [3], [5]],
-                    'lmbda': [0, 0.001, 0.01],
-                    'epochs': [500, 1000],
-                    'batch_size': [10, 32, None],
+                    'lmbda': [0, 0.0001, 0.001, 0.01],
+                    'epochs': [1000],
+                    'batch_size': [32, None],
                     'eta':[0.001, 0.01, 0.1],
-                    'eps': [1e-4],
+                    'eps': [1e-6],
                     'optimizer': ['SGM']
                 },
             
@@ -73,10 +70,11 @@ if __name__ == '__main__':
                     'sizes': [[2], [3], [5]],
                     'lmbda': [0, 0.0001, 0.001, 0.01],
                     'momentum': [0, 0.5, 0.9],
+                    'nesterov': [True, False],
                     'epochs': [500],
-                    'batch_size': [10],
-                    'eta':[0.01, 0.1],
-                    'eps': [1e-4],
+                    'batch_size': [32, None],
+                    'eta':[0.001, 0.01, 0.1],
+                    'eps': [1e-6],
                     'optimizer': ['SGD']
                 }
             }
@@ -117,11 +115,11 @@ if __name__ == '__main__':
                 'SGD': {
                     'batch_size': 32,
                     'epochs': 1000,
-                    'eps': 1e-4,
+                    'eps': 1e-6,
                     'eta': 0.001,
                     'lmbda': 0.001,
                     'momentum': 0.,
-                    'optimizer': test,
+                    'optimizer': "SGD",
                     'sizes': [30, 50],
                     'activation': 'Lrelu',
                     'debug': True,
@@ -129,10 +127,10 @@ if __name__ == '__main__':
                 'SGM': {
                     'batch_size': 32,
                     'epochs': 1000,
-                    'eps':1e-3,
+                    'eps':1e-6,
                     'eta': 0.1,
                     'lmbda': 0.001,
-                    'optimizer': test,
+                    'optimizer': "SGM",
                     'sizes': [30, 50],
                     'activation': 'Lrelu',
                     'debug': True,
@@ -141,47 +139,49 @@ if __name__ == '__main__':
             'monk1': {
                 'SGD': {
                     'activation': 'Lrelu',
-                    'batch_size': 10,
+                    'batch_size': 32,
                     'epochs': 1000,
-                    'eps': 1e-4,
+                    'eps': 1e-6,
                     'eta': 0.1,
-                    'lmbda': 0.0001,
+                    'lmbda': 0.01,
                     'momentum': 0.9,
-                    'optimizer': test,
+                    'optimizer': "SGD",
                     'sizes': [5],
+                    'nesterov': True,
                     'debug': True
                 },
                 'SGM': {
-                    'batch_size': 10,
+                    'batch_size': None,
                     'epochs': 1000,
-                    'eps':1e-3,
+                    'eps':1e-6,
                     'eta': 0.1,
-                    'lmbda': 0.001,
-                    'optimizer': test,
+                    'lmbda': 0.01,
+                    'optimizer': "SGM",
                     'sizes': [5],
-                    'debug': True,
+                    'debug': True
                 }
             },
             'monk2': {
                 'SGD': {
                     'activation': 'Lrelu',
-                    'batch_size': 10,
-                    'epochs': 500,
-                    'eps': 1e-4,
+                    'batch_size': 32,
+                    'epochs': 1000,
+                    'eps': 1e-6,
                     'eta': 0.1,
-                    'lmbda': 0.0001,
-                    'momentum': 0.9,
-                    'optimizer': test,
+                    'lmbda': 0.01,
+                    'momentum': 0.5,
+                    'optimizer': "SGD",
                     'sizes': [3],
+                    'nesterov': True,
                     'debug': True
                 },
                 'SGM': {
                     'batch_size': 10,
-                    'epochs': 500,
-                    'eps':1e-3,
+                    'epochs': 1000,
+                    'eps':1e-6,
                     'eta': 0.1,
-                    'lmbda': 0.,
-                    'optimizer': test,
+                    'lmbda': 0.001,
+                    'optimizer': "SGM",
                     'sizes': [3],
                     'debug': True,
                 }
@@ -190,41 +190,40 @@ if __name__ == '__main__':
                 'SGD': {
                     'activation': 'Lrelu',
                     'batch_size': 10,
-                    'epochs': 500,
-                    'eps': 1e-4,
-                    'eta': 0.01,
-                    'lmbda': 0.0001,
-                    'momentum': 0.5,
-                    'optimizer': test,
+                    'epochs': 1000,
+                    'eps': 1e-6,
+                    'eta': 0.1,
+                    'lmbda': 0.01,
+                    'momentum': 0.9,
+                    'nesterov': True,
+                    'optimizer': "SGD",
                     'sizes': [5],
                     'debug': True
                 },
                 'SGM': {
-                    'batch_size': 32,
-                    'epochs': 500,
-                    'eps':1e-3,
+                    'batch_size': None,
+                    'epochs': 1000,
+                    'eps':1e-6,
                     'eta': 0.1,
                     'lmbda': 0.01,
-                    'optimizer': test,
-                    'sizes': [2],
+                    'optimizer': "SGM",
+                    'sizes': [5],
                     'debug': True,
                 }
             }
         }
-
         if dataset == 'cup':
             net = NR(**params[dataset][test])
         else:
             net = NC(**params[dataset][test])
 
-        X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
         net.fit(X_train, y_train, test_data=(X_test, y_test))
 
-        net.plot_results(f"{dataset}_{test}", score=False, time=True)
-        net.plot_results(f"{dataset}_{test}", score=False, time=False)
-        net.plot_results(f"{dataset}_{test}", score=True, time=True)
-        net.plot_results(f"{dataset}_{test}", score=True, time=False)
-        net.plot_grad(f"{dataset}_{test}")
+#         net.plot_results(f"{dataset}_{test}", score=False, time=True)
+        # net.plot_results(f"{dataset}_{test}", score=False, time=False)
+        # net.plot_results(f"{dataset}_{test}", score=True, time=True)
+        # net.plot_results(f"{dataset}_{test}", score=True, time=False)
+        # net.plot_grad(f"{dataset}_{test}")
         
         print(net.best_score(name=f"{dataset}_{test}", save=True))
     

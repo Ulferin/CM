@@ -42,7 +42,7 @@ class SGD(Optimizer):
         super().__init__(eta, eps=eps)
 
 
-    def update_mini_batch(self, nn, nabla_b, nabla_w, size):
+    def update_mini_batch(self, nn, mini_batch):
         """Updates weights and biases of the specified Neural Network object :nn: by
         using the current mini-batch samples :mini_batch:. Uses a regularized momentum
         based approach for the weights update. Hyperparameters must be configured directly
@@ -55,6 +55,14 @@ class SGD(Optimizer):
         mini_batch : np.ndarray
             mini-batch samples to use for updates.
         """
+        size = len(mini_batch[0])
+
+        if nn.nesterov:
+            # Nesterov update
+            nn.weights = [w + nn.momentum*wv for w, wv in zip(nn.weights, nn.wvelocities)]
+            nn.biases = [b + nn.momentum*bv for b, bv in zip(nn.biases, nn.bvelocities)]
+
+        nabla_b, nabla_w = nn._compute_grad(mini_batch)
 
         # Momentum updates
         nn.wvelocities = [nn.momentum * velocity - (self.eta/size)*nw for velocity,nw in zip(nn.wvelocities, nabla_w)]
@@ -62,7 +70,6 @@ class SGD(Optimizer):
 
         nn.weights = [w + velocity - (nn.lmbda/size) * w for w,velocity in zip(nn.weights, nn.wvelocities)]
         nn.biases = [b + velocity for b,velocity in zip(nn.biases, nn.bvelocities)]
-
 
     def iteration_end(self, e, nn):
         """Checks at each iteration if the optimizer has reached an optimal state.
@@ -81,6 +88,7 @@ class SGD(Optimizer):
         """        
 
         if nn.ngrad < self.eps:
+            print(nn.ngrad, self.eps)
             return True
 
         return False
@@ -100,7 +108,7 @@ class SGM(Optimizer):
         self.gms_w = []
 
 
-    def update_mini_batch(self, nn, nabla_b, nabla_w, size):
+    def update_mini_batch(self, nn, mini_batch):
         """Updates weights and biases of the specified Neural Network object :nn: by
         using the current gradient values :nabla_b: for biases and :nabla_w: for weights.
         Uses a diminishing step-size rule for updates.
@@ -124,6 +132,9 @@ class SGM(Optimizer):
         #     self.gms_b = [self.gamma*gms_b + (1-self.gamma)*nb**2 for nb, gms_b in zip(nabla_b, self.gms_b)]
         #     self.gms_w = [self.gamma*gms_w + (1-self.gamma)*nw**2 for nw, gms_w in zip(nabla_w, self.gms_w)]
         
+        size = len(mini_batch[0])
+        nabla_b, nabla_w = nn._compute_grad(mini_batch)
+
         if len(self.gms_w) == 0:
             self.gms_b = [0]*len(nabla_b)
             self.gms_w = [0]*len(nabla_w)
@@ -164,6 +175,7 @@ class SGM(Optimizer):
             self.x_ref = (nn.weights.copy(), nn.biases.copy())
 
         if nn.ngrad < self.eps:
+            print(f"SGM - grad:{nn.ngrad}, eps: {self.eps}")
             return True
 
         return False
