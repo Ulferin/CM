@@ -461,7 +461,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         pass
 
 
-    def plot_results(self, name, score=False, save=False, time=False):
+    def plot_results(self, name, score=False, save=False, time=False, log=False):
         """Utility function, allows to build a plot of the scores achieved during training
         for the validation set and the training set.
 
@@ -487,6 +487,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         
         plt.xlabel(x_label)
         plt.ylabel ('Loss')
+        if log: plt.yscale('log')
         
         plt.legend(loc='best')
         plt.title ('Loss NN CUP dataset')
