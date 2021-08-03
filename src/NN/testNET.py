@@ -58,9 +58,9 @@ if __name__ == '__main__':
                 'SGM': {    
                     'sizes': [[2], [3], [5]],
                     'lmbda': [0, 0.0001, 0.001, 0.01],
-                    'epochs': [1000],
+                    'epochs': [2000],
                     'batch_size': [32, None],
-                    'eta':[0.001, 0.01, 0.1],
+                    'eta':[0.01, 0.1, 0.5, 0.7],
                     'eps': [1e-6],
                     'optimizer': ['SGM']
                 },
@@ -71,9 +71,9 @@ if __name__ == '__main__':
                     'lmbda': [0, 0.0001, 0.001, 0.01],
                     'momentum': [0, 0.5, 0.9],
                     'nesterov': [True, False],
-                    'epochs': [500],
+                    'epochs': [2000],
                     'batch_size': [32, None],
-                    'eta':[0.001, 0.01, 0.1],
+                    'eta':[0.01, 0.1, 0.5, 0.7],
                     'eps': [1e-6],
                     'optimizer': ['SGD']
                 }
