@@ -191,7 +191,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         end = end_time(start)
         self.backprop_avg[0] += 1
         self.backprop_avg[1] += end.seconds*1000 + end.microseconds/1000
-
+        self.ngrad = np.linalg.norm(delta)
         return nabla_b, nabla_w
 
 
@@ -264,7 +264,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         """        
 
         nabla_b, nabla_w = self._backpropagation_batch(mini_batch[0], mini_batch[1])
-        self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b])/len(mini_batch[0]))
+#         self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b])/len(mini_batch[0]))
 
         return nabla_b, nabla_w
 
@@ -322,7 +322,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         start = dt.now()
         self.fitted = True
-
         try:
             for e in range(1, self.epochs+1):
                 s = dt.now()
@@ -337,7 +336,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 self.score = self.train_loss[-1]
                 epoch_time = end_time(start)
                 self.epochs_time.append(epoch_time.seconds*1000 + epoch_time.microseconds/1000)
-
+                
                 if self.opti.iteration_end(e, self):
                     print("Reached desired precision in gradient norm, stopping.")
                     break
@@ -499,7 +498,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         plt.clf()
 
     
-    def plot_grad(self, name, save=False):
+    def plot_grad(self, name, save=False, time=False):
         """Utility function, allows to build a plot of the gradient values achieved during
         training of the current Network.
 
@@ -508,10 +507,12 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         name : string
             Prefix name for the plot file.
         """        
+        x = self.epochs_time if time else list(range(len(self.epochs_time)))
+        x_label = 'Execution Time' if time else 'Epochs'
 
-        plt.plot(self.grad_est_per_epoch, '--', label='Validation loss')
+        plt.plot(x, self.grad_est_per_epoch, '--', label='Validation loss')
         plt.legend(loc='best')
-        plt.xlabel ('Epochs')
+        plt.xlabel (x_label)
         plt.ylabel ('Gradient\'s norm')
         plt.title ('Gradient norm estimate')
         plt.yscale('log')

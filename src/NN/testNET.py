@@ -33,20 +33,20 @@ if __name__ == '__main__':
             'cup': {
                 'SGM': {    
                     'sizes': [[16, 32], [30, 50], [50, 50]],
-                    'lmbda': [0, 0.001, 0.01],
-                    'epochs': [500, 1000],
+                    'lmbda': [0, 0.0001, 0.001, 0.01],
+                    'epochs': [5000],
                     'batch_size': [32, None],
-                    'eta':[0.001, 0.01, 0.1],
+                    'eta':[0.0001, 0.001],
                     'eps': [1e-4],
                     'optimizer': ['SGM']
                 },
             
                 'SGD': {
                     'sizes': [[16, 32], [30, 50], [50, 50]],
-                    'lmbda': [0, 0.001, 0.01],
+                    'lmbda': [0, 0.0001, 0.001, 0.01],
                     'momentum': [0, 0.2, 0.5, 0.9],
                     'nesterov': [True, False],
-                    'epochs': [500, 1000],
+                    'epochs': [5000],
                     'batch_size': [32, None],
                     'eta':[0.0001, 0.001],
                     'eps': [1e-4],
@@ -86,6 +86,8 @@ if __name__ == '__main__':
             cv = 5
             scoring = 'neg_mean_squared_error'
         else:
+            if dataset != 'monk3': grids['monk'][test]['lmbda'] = [0.] # Removing regularization for MONK1 and MONK2
+            
             # Removes the monk number
             dataset = 'monk'
             net = NC
