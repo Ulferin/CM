@@ -138,6 +138,8 @@ class SGM(Optimizer):
             self.gms_b = [0]*len(nabla_b)
             self.gms_w = [0]*len(nabla_w)
 
+        # TODO: non dovrebbe fare l'update solo alla fine dell'iterazione?
+            
         self.gms_b = [gb + nb**2 for gb, nb in zip(self.gms_b, nabla_b)]
         self.gms_w = [gw + nw**2 for gw, nw in zip(self.gms_w, nabla_w)]
 

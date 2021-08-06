@@ -191,7 +191,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         end = end_time(start)
         self.backprop_avg[0] += 1
         self.backprop_avg[1] += end.seconds*1000 + end.microseconds/1000
-        self.ngrad = np.linalg.norm(delta)
         return nabla_b, nabla_w
 
 
@@ -264,7 +263,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         """        
 
         nabla_b, nabla_w = self._backpropagation_batch(mini_batch[0], mini_batch[1])
-#         self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b])/len(mini_batch[0]))
+        self.ngrad = np.linalg.norm(np.hstack([el.ravel() for el in nabla_w + nabla_b])/len(mini_batch[0]))
 
         return nabla_b, nabla_w
 
