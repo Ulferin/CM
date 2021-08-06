@@ -10,6 +10,7 @@ class ActivationFunction(metaclass=ABCMeta):
     def function(self, x):
         pass
 
+    # TODO: call it derivative or gradient?
     @abstractmethod
     def derivative(self, x):
         pass
@@ -20,7 +21,7 @@ class ActivationFunction(metaclass=ABCMeta):
 
 
 class ReLU(ActivationFunction):
-    """Class that implements static utility functions related to
+    """Implements static utility functions related to
     the ReLU activation function."""    
     
     @staticmethod
@@ -97,7 +98,7 @@ class ReLU(ActivationFunction):
 
 
 class LeakyReLU(ActivationFunction): 
-    """Class that implements static utility functions related to
+    """Implements static utility functions related to
     the Leaky ReLU activation function.""" 
 
     @staticmethod
@@ -175,7 +176,7 @@ class LeakyReLU(ActivationFunction):
 
 
 class Sigmoid(ActivationFunction):
-    """Class that implements static utility functions related to
+    """Implements static utility functions related to
     the Sigmoid activation function."""
 
     @staticmethod
@@ -234,7 +235,7 @@ class Sigmoid(ActivationFunction):
 
 
 class Linear(ActivationFunction):
-    """Class that implements static utility functions related to
+    """Implements static utility functions related to
     the Linear activation function."""
 
     @staticmethod
