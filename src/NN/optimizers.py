@@ -94,7 +94,6 @@ class SGD(Optimizer):
         return False
 
 
-# TODO: controllare che effettivamente il gradiente possa essere calcolato in questo modo.
 class SGM(Optimizer):
 
     def __init__(self, eta, eps=1e-5):
@@ -139,6 +138,8 @@ class SGM(Optimizer):
             self.gms_b = [0]*len(nabla_b)
             self.gms_w = [0]*len(nabla_w)
 
+        # TODO: non dovrebbe fare l'update solo alla fine dell'iterazione?
+            
         self.gms_b = [gb + nb**2 for gb, nb in zip(self.gms_b, nabla_b)]
         self.gms_w = [gw + nw**2 for gw, nw in zip(self.gms_w, nabla_w)]
 
