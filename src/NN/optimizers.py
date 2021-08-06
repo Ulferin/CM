@@ -94,7 +94,6 @@ class SGD(Optimizer):
         return False
 
 
-# TODO: controllare che effettivamente il gradiente possa essere calcolato in questo modo.
 class SGM(Optimizer):
 
     def __init__(self, eta, eps=1e-5):
