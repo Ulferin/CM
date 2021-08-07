@@ -126,7 +126,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         end = end_time(start)
         self.feedforward_avg[0] += 1
-        self.feedforward_avg[1] += end.seconds*1000 + end.microseconds/1000
+        self.feedforward_avg[1] += end
 
         return units_out, nets, out
 
@@ -180,7 +180,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         # Computes execution statistics
         end = end_time(start)
         self.backprop_avg[0] += 1
-        self.backprop_avg[1] += end.seconds*1000 + end.microseconds/1000
+        self.backprop_avg[1] += end
 
         return nabla_b, nabla_w
 
@@ -323,7 +323,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 s = dt.now()
                 self._update_batches()
                 en = end_time(s)
-                self.update_avg = en.seconds*1000 + en.microseconds/1000
+                self.update_avg = en
 
                 # Compute current gradient estimate
                 self.grad_est_per_epoch.append(np.average(self.grad_est))
@@ -331,8 +331,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
                 self.score = self.train_loss[-1]
                 epoch_time = end_time(start)
-                self.epochs_time.append(epoch_time.seconds*1000 + epoch_time.microseconds/1000)
-                # TODO: did not split this line since it will be shortened by the new version of end_time
+                self.epochs_time.append(epoch_time)
 
                 if self.opti.iteration_end(self):
                     print("Reached desired precision in gradient norm,stopping.")
@@ -342,7 +341,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             self.fitted = False
         finally:
             end = end_time(start)
-            self.total_time = end.seconds*1000 + end.microseconds/1000
+            self.total_time = end
             return self
 
 
@@ -374,8 +373,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 f"Score: {self.train_scores[-1]:<5.3g}")
 
         end = end_time(start)
-        self.evaluate_avg[1] += end.seconds*1000 + end.microseconds/1000
         self.evaluate_avg[0] +=1
+        self.evaluate_avg[1] += end
 
 
     def _evaluate(self, train_data, test_data=None):

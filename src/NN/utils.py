@@ -16,6 +16,7 @@ def load_CUP(file_path, split=0.3):
     ----------
     file_path : string
         Location of the dataset file
+
     split : float, optional
         Amount of data to hold out for the internal
         test set, by default 0.3
@@ -24,10 +25,13 @@ def load_CUP(file_path, split=0.3):
     -------
     X_train: np.ndarray
         Training samples
+
     X_test: np.ndarray
         Test samples
+
     y_train: np.ndarray
         Training samples' ground truth
+
     y_test: np.ndarray
         Test samples' ground truth
     """    
@@ -62,10 +66,13 @@ def load_monk(name):
     -------
     X_train: np.ndarray
         Training samples
+
     X_test: np.ndarray
         Test samples
+
     y_train: np.ndarray
         Training samples' ground truth
+
     y_test: np.ndarray
         Test samples' ground truth
     """
@@ -90,6 +97,7 @@ def prepare_data(X_train, X_test):
     ----------
     X_train : np.ndarray
         Training data samples to one-hot encode
+
     X_test : np.ndarray
         Test data samples to one-hot encode
 
@@ -97,6 +105,7 @@ def prepare_data(X_train, X_test):
     -------
     X_train: np.ndarray
         One-hot encoded training samples
+
     X_test: np.ndarray
         One-hot encoded test samples
     """
@@ -117,7 +126,8 @@ def crossValToDf(res, scoring='Accuracy'):
     res : dictionary
         Results of a grid-search execution
     scoring : string, optional
-        String representing the scoring function used in the grid-search, by default 'Accuracy'
+        String representing the scoring function used in the grid-search,
+        by default 'Accuracy'
 
     Returns
     -------
@@ -125,12 +135,28 @@ def crossValToDf(res, scoring='Accuracy'):
         DataFrame with grid-search results
     """ 
 
-    df1 = pd.concat([pd.DataFrame(res["params"]), pd.DataFrame(res["mean_test_score"], columns=[f"Validation {scoring}"])],axis=1)
+    df1 = pd.concat(
+            [pd.DataFrame(res["params"]), pd.DataFrame(res["mean_test_score"],
+            columns=[f"Validation {scoring}"])],
+            axis=1)
     df_sorted = df1.sort_values([f"Validation {scoring}"], ascending=False)
     df_sorted = df_sorted.reset_index(drop=True)
     return df_sorted
         
 
 def end_time(start):
-    
-    return (dt.now() - start)
+    """Computes elapsed time since the :start: datetime. Returns the time
+    expressed in milliseconds.
+
+    Parameters
+    ----------
+    start : DateTime
+        Starting time.
+
+    Returns
+    -------
+    DateTime
+        Elasped time since :start: in milliseconds.
+    """    
+    end = (dt.now() - start)
+    return end.seconds*1000 + end.microseconds/1000
