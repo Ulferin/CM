@@ -111,7 +111,6 @@ if __name__ == '__main__':
     
     else:
 
-        # TODO: aggiungere json di configurazione
         params = {
             'cup': {
                 'SGD': {

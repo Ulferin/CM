@@ -35,7 +35,7 @@ def accuracy_score(y_true, y_pred):
     Returns
     -------
     float
-        Returns the proportion of correctly classified samples among all.
+        Returns the proportion of correctly classified samples.
     """       
 
     return np.average(y_true == y_pred)
