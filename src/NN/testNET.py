@@ -88,7 +88,7 @@ if __name__ == '__main__':
             scoring = 'neg_mean_squared_error'
         else:
             # Removing regularization for MONK1 and MONK2
-            if dataset != 'monk3': grids['monk'][test]['lmbda'] = [0.]
+            # if dataset != 'monk3': grids['monk'][test]['lmbda'] = [0.]
             
             # Removes the monk number
             dataset = 'monk'
