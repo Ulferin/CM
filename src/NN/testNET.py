@@ -1,9 +1,10 @@
 import sys
 
-from src.NN.Network import NR, NC
-import src.NN.utils as utils
-
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
+
+from src.NN.Network import NR, NC
+import src.utils as utils
+
 
 datasets = {
     'cup': 'data/ML-CUP20-TR.csv',

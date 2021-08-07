@@ -1,26 +1,31 @@
 import numpy as np
 from datetime import datetime as dt
 
-# TODO: controllare il fatto che inversa in calcolo soluzione sia fattibile, altrimenti trovare altro
-# TODO: controllo errori
-# TODO: check rank deficiency
 # TODO: check this for performance improvement: https://shihchinw.github.io/2019/03/performance-tips-of-numpy-ndarray.html
 
 class LS():
-    """This class implements the least square problem solver for the given data. It uses the thin QR
-    factorization, as described in the report file.
+    """This class implements the least square problem solver for the given data.
+    It uses the thin QR factorization, as described in the report file.
     Solves the problem (P) = min || Ax-b ||
     """
 
     def solve(self, A, b):
         """Solves the LS problem (P) given the input matrix A and the vector b.
-        Computes the QR factorization of the coefficient matrix and uses the resulting householder
-        vectors to implicitly compute the product Q1*b.
+        Computes the QR factorization of the coefficient matrix and uses the
+        resulting householder vectors to implicitly compute the product Q1*b.
         Solves the problem as x = R^(-1)*Q1*b
 
-        :param A: Coefficients matrix for the LS problem
-        :param b: Dependend variables vector for the LS problem
-        :return: Result vector that minimizes (P)
+        Parameters
+        ----------
+        A : np.ndarray
+            Coefficients matrix for the LS problem
+        b : np.ndarray
+            Dependend variables vector for the LS problem
+
+        Returns
+        -------
+        res : np.ndarray
+            Result vector that minimizes (P)
         """
 
         R = self.qr(A)
@@ -34,11 +39,21 @@ class LS():
 
 
     def householder_vector(self, x):
-        """Computes the householder vector for the given vector :param x:.
+        """Computes the householder vector for the given vector :x:.
 
-        :param x: Starting vector used to compute the HH vector
-        :returns: Vector representing the computed HH vector and norm of :param x:
-        """
+        Parameters
+        ----------
+        x : np.ndarray
+            Starting vector used to compute the HH vector
+
+        Returns
+        -------
+        s : float
+            Norm of the starting vector :x:
+        
+        v : np.ndarray
+            Vector representing the computed HH vector.
+        """        
         
         s = np.linalg.norm(x)
         if x[0] > 0:
@@ -51,13 +66,21 @@ class LS():
 
 
     def qr(self, A):
-        """Computes the QR factorization for the given input matrix :param A: with dimensions m x n
-        Please not that this method does not return the orthogonal matrix Q resulting for the factorization.
-        It can be recovered by using the revert function of this class. 
+        """Computes the QR factorization for the given input matrix :A: with
+        dimensions m x n. Please note that this method does not return the
+        orthogonal matrix Q resulting from the factorization. It can be
+        recovered by using the revert function of this class. 
 
-        :param A: Input matrix for which to computer the QR factorization
-        :returns: The triangular matrix R for the thin-QR factorization
-        """
+        Parameters
+        ----------
+        A : np.ndarray
+            Input matrix for which to computer the QR factorization
+
+        Returns
+        -------
+        R : np.ndarray
+            The triangular matrix R for the thin-QR factorization
+        """      
 
         eps = np.linalg.norm(A)/10**16
 
@@ -65,7 +88,8 @@ class LS():
         R = A.astype(np.float)
         u_list = []
 
-        for j in range(np.min((m,n))):   # note that this is always equal to n in our case
+        # note that this is always equal to n in our case
+        for j in range(np.min((m,n))):
             s, u = self.householder_vector(R[j:,j])
 
             # zero division in machine precision
@@ -85,12 +109,20 @@ class LS():
         return R[:n, :n]
 
     
-    def implicit_Qb(self, b):
-        """Computes implicitly the product Q1*b used in the LS problem solution, starting from the
-        Householder vectors computed during the QR factorization phase.
+    def implicit_Qb(self, b):        
+        """Computes implicitly the product Q1*b used in the LS problem solution,
+        starting from the Householder vectors computed during the QR
+        factorization phase.
 
-        :param b: Input vector to use in the implicit product.
-        :return: The vector Q1*b
+        Parameters
+        ----------
+        b : np.ndarray
+            Input vector to use in the implicit product.
+
+        Returns
+        -------
+        b : np.ndarray
+            The vector Q1*b
         """
 
         m = len(b)
@@ -103,26 +135,47 @@ class LS():
         return b
 
 
-    def implicit_Qx(self, e_i):
-        m = len(e_i)
+    def implicit_Qx(self, x):
+        """Computes the matrix-vector multiplication Q*x implicitly by using
+        the computed householder vectors during QR factorization.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Vector for the implicit matrix-vector product.
+
+        Returns
+        -------
+        x : np.ndarray
+            Result of Q*x
+        """        
+        m = len(x)
         n = len(self.u_list)
 
         for k in range(n-1, -1, -1):
-                e_i[k:m] -= np.matmul( self.u_list[k], np.matmul(self.u_list[k].T, 2*e_i[k:m]) )
+                x[k:m] -= np.matmul(
+                            self.u_list[k],
+                            np.matmul(self.u_list[k].T, 2*x[k:m]) )
 
-        return e_i
+        return x
 
 
     def revertQ(self):
-        """Computes the matrix Q of the QR decomposition by computing the product with the column
-        of the identity matrix as shown in [Numerical Linear Algebra by Trefethen, Bau - Lecture 10].
+        """Computes the matrix Q of the QR decomposition by computing the
+        product with the column of the identity matrix as shown in
+        [Numerical Linear Algebra by Trefethen, Bau - Lecture 10].
 
-        The construction of the matrix Q starts from the Householder vectors found during the QR factorization,
-        the resulting Q is here reconstructed by using the 'implicit calculation of a product Q*x'.
-        The process is repeated for all the columns of the identity matrix {I in R^(m x m)} and the result is
-        transposed. This due to a better efficiency of numpy in accessing rows rather than columns in a matrix.
-        
-        :return: Orthogonal matrix Q
+        The construction of the matrix Q starts from the Householder vectors
+        found during the QR factorization, the resulting Q is here
+        reconstructed by using the 'implicit calculation of a product Q*x'.
+        The process is repeated for all the columns of the identity matrix
+        {I in R^(m x m)} and the result is transposed. This due to a better
+        efficiency of numpy in accessing rows rather than columns in a matrix.
+    
+        Returns
+        -------
+        Q : np.ndarray
+            Orthogonal matrix Q
         """
 
         n = len(self.u_list)

@@ -1,6 +1,7 @@
 import pandas as pd
 
 import numpy as np
+import random
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
@@ -116,6 +117,33 @@ def prepare_data(X_train, X_test):
     X_test = enc.transform(X_test).toarray()
 
     return X_train, X_test
+
+
+def generate(m, n):
+    """Generates a random dataset starting from the given dimensions.
+
+    Parameters
+    ----------
+    m : int
+        Number of rows for the coefficient matrix (i.e. length of the vector b).
+    
+    n : int
+        Number of columns for the coefficient matrix (i.e. length of the vector
+        x in (P)) for LS problems.
+
+    Returns
+    -------
+    M : np.ndarray
+        The coefficient matrix M.
+
+    b : np.ndarray
+        Dependent variables vector b
+    """    
+
+    M = np.array([ [random.gauss(0,1) for r in range(n)]
+                    for c in range(m) ], dtype=np.single)
+    b = np.array([random.gauss(0,1) for r in range(m)], dtype=np.single)
+    return M, b.reshape(-1,1)
 
 
 def crossValToDf(res, scoring='Accuracy'):

@@ -1,95 +1,60 @@
-from src.LS.LS import LS
-import numpy as np
-import pandas as pd
-from sklearn.preprocessing import OneHotEncoder
-import random
 import sys
 import time
+from datetime import datetime as dt
+
+import numpy as np
 import matplotlib.pyplot as plt
 
-from datetime import datetime as dt
-import time
+from src.LS.LS import LS
+from src.utils import *
+
 
 CUP_TEST = 'CUP'
 MONK_TEST = 'MONK'
 RANDOM_TEST = 'RANDOM'
 QR_SCALING = 'SCALING'
 
+# TODO: Integrare con lo stesso test nel notebook
+def QR_scaling (starting_m, m, n, step, t) :    
+    """Tests the QR factorization for different matrices with scaling m,
+    starting from :starting_m: up to :m:.
+    Executes each example for a given amount of time :t: and averages the times
+    accordingly. For each result prints the size m and the average execution
+    time, together with the time difference from the previous result, expressed
+    as a delta. It compares the execution with the off-the-shelf-solver from
+    Numpy library.
 
-def generate(m, n):
-    """Generates a random dataset starting from the given dimensions.
+    At the end of the process, saves an image showing the evolution of execution
+    times over the increasing dimension m.
 
-    :param m: Number of rows for the coefficient matrix (i.e. length of the vector b).
-    :param n: Number of columns for the coefficient matrix (i.e. length of the vector x in (P)).
-    :return: The coefficient matrix M and the dependent variables vector b.
-    """
-
-    M = np.array([ [random.gauss(0,1) for r in range(n)] for c in range(m) ], dtype=np.single)
-    b = np.array([random.gauss(0,1) for r in range(m)], dtype=np.single)
-    return M, b.reshape(-1,1)
-
-
-def end_time(start):
-    """Auxiliary function used to compute the ending time (in msec) given the starting time.
-
-    :param start: Starting time in a datetime format.
-    :return: Ending time expressed in msec.
-    """
-
-    end = (dt.now() - start)
-    return end.seconds * 1000 + end.microseconds / 1000
-
-
-def load_ML_CUP_dataset ( filename ):
-    """Given the filename for a dataset, loads the dataset into the coefficient matrix M and the dependent
-    variables vector b.
-
-    :param filename: Dataset file path (relative or absolute).
-    :return: The coefficient matrix M and the dependend variables vector b.
-    """
-
-    ml_cup = np.delete(np.genfromtxt(filename, delimiter=','), obj=0, axis=1)
-    M, b = ml_cup[:, :-2], ml_cup[:, -2:]
-
-    return M, b
-
-
-def load_monk(name):
-    """ Loads from the provided dataset name both the training set and the test set.
-
-    :return: Training and test set examples with the associated dependend variables.
-    """
-    train = pd.read_csv(f"{name}", sep=' ', header=None, index_col=8)
-
-    M = train.iloc[:,2:].values
-    b = (train.iloc[:,1].values).reshape(-1,1)
-
-    enc = OneHotEncoder()
-    enc.fit(M)
-    M = enc.transform(M).toarray()
-
-    return M, b
-
-
-def QR_scaling (starting_m, m, n, step, t) :
-    """Tests the QR factorization for different matrices with m in [200, 5000] and n=50.
-    Executes each example for a given amount of time and averages the times accordingly. For each result
-    prints the size m and the average execution time, together with the time difference from the previous
-    result.
-
-    At the end of the process, saves an image showing the evolution of execution times over the increase
-    of dimension m. The resulting image is saved in the resource folder as 'QRscaling_n50.png'.
+    Parameters
+    ----------
+    starting_m : int
+        Starting value for m dimension
+    m : int
+        Last value for m dimension
+    n : int
+        Fixed n dimension
+    step : int
+        Step size to use when scaling the m dimension
+    t : int
+        Amount of time to repeat the same experiment, it determines the
+        averaging factor too.
     """
 
     print(f"n={n}, m={m}, t={t}")
-    print(f"m{'':10} time{'':<6s} delta{'':<5s} time_np{'':<3s} delta_np{'':<7s}")
+    print(f"m{'':10} time{'':<6s} delta{'':<5s} time_np{'':<3s}"
+          f"delta_np{'':<7s}")
     print("----------------------------------------------------")
+    
+    # Execution statistics
     time_list = []
     time_np = []
-    mrange = range(starting_m,m,step)
     prev_a = 0
     prev = 0
+    
     ls = LS()
+    mrange = range(starting_m,m,step)
     for m in mrange:
         A,_ = generate(m,n)
         mean = 0
@@ -112,7 +77,9 @@ def QR_scaling (starting_m, m, n, step, t) :
         mean_np = (mean_np / t)
         delta = mean - prev_a
         delta_np = mean_np - prev
+
         print(f"{m:<6} || {mean:8.4f} | {delta:8.4f} | {mean_np:8.4f} | {delta_np:8.4f}")
+
         time_list.append(mean)
         time_np.append(mean_np)
         prev_a = mean

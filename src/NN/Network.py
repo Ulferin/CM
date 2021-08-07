@@ -2,14 +2,13 @@
 # implemented from scratch following the advices taken during the course
 # of ML
 
-
-
+from datetime import datetime as dt
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
 from numpy.random import default_rng
-from sklearn.base import BaseEstimator
 
+from sklearn.base import BaseEstimator
 from sklearn.utils import shuffle
 from sklearn.metrics import r2_score
 
@@ -18,10 +17,7 @@ from matplotlib import pyplot as plt
 from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU, Linear
 from src.NN.metrics import mean_squared_error, accuracy_score
 from src.NN.optimizers import SGD, SGM
-from src.NN.utils import end_time
-
-from datetime import datetime as dt
-from time import sleep
+from src.utils import end_time
 
 
 ACTIVATIONS = {
