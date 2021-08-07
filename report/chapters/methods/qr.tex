@@ -67,6 +67,7 @@ Assuming $A\in \mathbb{R}^{m\times n}$ the matrices $H_i$ have the following str
 \end{flalign*}
 Thus vectors $\mathbf{u_i}$, obtained with the procedure defined in Algorithm \ref{alg:hh}, become shorter at each step and we embed \textit{Householder transformations} of increasingly smaller dimensions in identity matrices.
 \subsubsection{Solving Least Square via QR factorization}
+\label{sec:ls_scaling}
 In this section we show how \textit{QR factorization}, shown in \S\ref{subsec:qr}, can be used to solve the \textit{linear least square problem} defined in equation (\ref{eq:ls}).\newline
 In the following we use the fact that the Euclidean vector norm is invariant under orthogonal transformations, i.e. $\norm{Qy} = \norm{y}$.
 

@@ -16,10 +16,18 @@
 \usepackage{graphbox}
 \usepackage{amsmath , amssymb , amsthm}
 \usepackage{comment} 
+\usepackage{subcaption}
+\usepackage{siunitx} % used for scientific notation like 1e-10
+\sisetup{output-exponent-marker=\ensuremath{\mathrm{e}}}
 % permette di modificare i margini
 \usepackage[top=2cm, bottom=2cm, left=2.cm, right=2.cm]{geometry}
 \newgeometry{top=3.4cm}
+\usepackage{changepage}
 
+\usepackage{tabularx} % to build flexible tables
+\usepackage{array}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{O}[1]{p{#1}}
 
 \newtheoremstyle{myplain}
   {\topsep}   % ABOVESPACE
@@ -224,9 +232,10 @@ backgroundcolor=\color{lbcolor},
 \input{chapters/ann}
 \input{chapters/ls}
 \input{chapters/methods/methods}
-\input{chapters/experiments}
+\input{chapters/experiments/experiments}
+\input{chapters/conclusions}
 \newpage
 \printbibliography
-% \listoftodos
+\listoftodos
 
 \end{document}

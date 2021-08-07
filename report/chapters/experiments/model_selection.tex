@@ -1,0 +1,35 @@
+\subsection{Model selection}
+All the models used for the performance evaluation and comparison were selected following a gridsearch cross-validation schema, specifically a 5-fold cross validation for the \textbf{CUP} dataset and a \textit{StratifiedKFold} cross validation schema for the \textbf{MONK}s datasets. In this paragraph we show the range of tested hyper-parameters used in order to select the best model for each dataset.
+
+\begin{table}[H]
+    \begin{center}
+    \begin{tabular}{|P{2.cm}||c|c|c|c|c|}
+         \hline
+         \textbf{Task} & \textbf{batch\_size} & $\boldsymbol{\epsilon}$ & $\boldsymbol{\mu}$ & $\boldsymbol{\lambda}$ & \textbf{sizes} \\ [0.5ex] 
+         \hline\hline
+         MONK & \{10, 32, None\} & [0.01, 0.1] & [0, 0.9] & [0, 0.1] & \{2, 3, 5\}\\
+         \hline
+         CUP & \{32, None\} & [0.01, 0.1] & [0, 0.9] & [0, 0.01] & [16, 50]\\
+         \hline
+    \end{tabular}
+    \subcaption{\texttt{SGD} gridsearch ranges.}
+    \label{tab:gridSGD}
+    \end{center}
+    \hspace{2em}
+    \begin{center}
+    \begin{tabular}{|P{2.cm}||c|c|c|c|}
+         \hline
+         \textbf{Task} & \textbf{batch\_size} & $\boldsymbol{\epsilon}$  & $\boldsymbol{\lambda}$ & \textbf{sizes} \\ [0.5ex] 
+         \hline\hline
+         MONK & \{10, 32, None\} & [0.01, 0.1] & [0, 0.1] & \{2, 3, 5\}\\
+         \hline
+         CUP & \{32, None\} & [0.01, 0.1] & [0, 0.01] & [16, 50]\\
+         \hline
+    \end{tabular}
+    \subcaption{\texttt{SGM} gridsearch ranges.}
+    \label{tab:gridSGM}
+    \end{center}
+    \caption{Gridsearch ranges for both SGD (a) and SGM (b) over \textbf{MONK} and \textbf{CUP} datasets. The search was performed imposing as stopping condition, for both optimizers, a number of epochs equal to \textbf{1000} and a precision computed as norm of the gradient of $\mathbf{1\mathrm{\mathbf{e}}{-4}}$. \textit{Note: the sizes specified in both \textbf{(a)} and \textbf{(b)}, for the CUP row, refers to the amount of units used in \textbf{each} of the hidden layers of the tested network.}}
+    \label{tab:grids}
+\end{table}
+The best models resulting from the searches specified in \hyperref[tab:grids]{\textbf{Table \ref{tab:grids}}} where used to perform the comparisons in \textbf{\S\ref{sec:res}}. \texttt{SGD} models are tested also with the \textit{NAG} variant, as described in \textbf{\hyperref[eq:nag]{Eq. \ref{eq:nag}}}.

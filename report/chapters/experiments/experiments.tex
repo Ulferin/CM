@@ -1,0 +1,12 @@
+\section{Experiments}
+This section provides the detailed description of the datasets used to test the implemented methods together with a comparison between the performance achieved by the different models. We provide all the configuration tested and the listing of the values of different parameters in order to allow the reproducibility of the performed tests. We conclude each section showing the achieved results for all the models, comparing them to the expected ones.
+
+In \textbf{\S\ref{sec:data}} we describe the general structure of each dataset, the main characteristics and the pre-processing operations we performed before executing the tests. We used a standardized approach for all the performed test, in particular we implemented the NN in such a way to be compatible with the \texttt{GridSearchCV} model selection class provided by the \texttt{sklearn} library. Following the same approach adopted in the \textit{ML} course, we selected the best model by performing a \textit{k-fold cross validation} by holding out, at each iteration, \textit{20\%} of the data, resulting in a \textit{5-fold cross validation}. The best model selected in this way is the one used in the different tests for comparison. This allowed us to discriminate between different models without the need to manually fine-tune the different hyperparameters of the different models. However, since the main goal of this project is not the one of selecting the best model on the out-of-sample data, we only used the results obtained in the first gridsearch approach to better understand which were the models that better suited our needs. We also notice, as a confirmation of the goodness of the approach and the basic implementation of our models, that the achieved results are in line with the ones we achieved during the \textit{ML} competition.
+
+All the tests were performed on a \texttt{AMD Ryzen 7 Pro 4750u} with 8 physical cores and 16 threads, with a base clock of 1.7GHz.
+
+\input{chapters/experiments/dataset}
+\input{chapters/experiments/model_selection}
+\input{chapters/experiments/results}
+\input{chapters/experiments/direct_solver}
+

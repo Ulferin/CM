@@ -1,0 +1,19 @@
+\subsubsection{MONK}
+The MONKS datasets are described as \textit{"A set of three artificial domains over the same attribute space; Used to test a wide range of induction algorithms."} in the original webpage \cite{monk_link}.
+
+The main characteristics of the datasets are:
+\begin{itemize}
+    \item \textbf{attributes:} categorical, with a total of 7 attributes;
+    \item \textbf{task:} binary classification task;
+    \item \textbf{records:} total of 432 possible examples, the datasets contains:
+        \begin{itemize}
+            \item \textbf{Monk1:} 124 randomly selected records;
+            \item \textbf{Monk2:} 169 randomly selected records where \textbf{exactly} two attributes have their \textit{first} value (in the set of possible values);
+            \item \textbf{Monk3:} 122 randomly selected records, with $5\%$ of misclassifications.
+        \end{itemize}
+    \item \textbf{noise and missing values:} no missing values are present in all the datasets, only the \textbf{Monk3} dataset contains noise.
+\end{itemize}
+
+The only transformation needed to work with the given datasets is the \textit{1-of-k encoding} that transforms each categorical attribute in a vector of $\mathit{0}$s and $\mathit{1}$s with a 1 in the position of the given attribute value. In such a way, the resulting inputs will be $x_i \in \mathbb{R}^{17}$. This pre-processing method is embedded in the loading function \texttt{load\_MONK} in the \texttt{utils.py} file.
+
+The adopted validation schema for these datasets makes use of the \textit{stratification} technique, implemented by the \texttt{StratifiedShuffleSplit} class provided by the \texttt{sklearn} framework, that allows to split data for the \textit{k-fold} schema maintaining the proportion of the different classes in all the splits over the validation phases. This allows better generalization, also considering the low amount of data available for training.

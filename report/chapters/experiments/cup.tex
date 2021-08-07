@@ -1,0 +1,14 @@
+\subsubsection{CUP}
+The CUP dataset is the dataset provided by the \textit{ML} course of the A.Y. 2020/2021 and refers to a multi-output regression task, where each target represents coordinates in a 2D space. 
+
+The characteristics of the training dataset are:
+\begin{itemize}
+    \item \textbf{task}: regression task on two real valued output variables;
+    \item \textbf{attributes}: real valued variables, with a total of 10 attributes; 
+    \item \textbf{records}: total of 1524 training examples;
+    \item \textbf{noise and missing values}: no missing values are present, no prior information is given about noisy data.
+\end{itemize}
+
+Given the type of variables involved in this dataset, no pre-processing of the type \textit{1-hot} is needed. Instead, it may be useful to perform some kind of normalization or standardization of the data, but our prior knowledge coming from the \textit{ML} competition, allows us to state that normalization and standardization approaches did not show improvements in the achieved results. Since the aim of the project was not to test the generalization capability of the selected model, we did not hold out a percentage of data as an internal test set. In this way, after selecting the best model via a \textit{gridsearch} approach, we performed the training over the whole dataset.
+
+In this case, for the validation schema, we used a simple \textit{5-fold} cross validation directly implemented by the \texttt{GridSearchCV} class. No further operations are performed for the fine-tuning of the hyperparameters.
