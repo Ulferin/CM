@@ -3,7 +3,7 @@ import sys
 from src.NN.Network import NR, NC
 import src.NN.utils as utils
 
-from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit, train_test_split
+from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
 
 datasets = {
     'cup': 'data/ML-CUP20-TR.csv',
@@ -86,19 +86,23 @@ if __name__ == '__main__':
             cv = 5
             scoring = 'neg_mean_squared_error'
         else:
-            if dataset != 'monk3': grids['monk'][test]['lmbda'] = [0.] # Removing regularization for MONK1 and MONK2
+            # Removing regularization for MONK1 and MONK2
+            if dataset != 'monk3': grids['monk'][test]['lmbda'] = [0.]
             
             # Removes the monk number
             dataset = 'monk'
             net = NC
-            cv = StratifiedShuffleSplit(n_splits=5, test_size=0.20, random_state=42)
+            cv = StratifiedShuffleSplit(n_splits=5, test_size=0.20,
+                                        random_state=42)
             scoring = 'accuracy'
         
         grid = grids[dataset][test]
 
-        gs = GridSearchCV(net(), cv=cv, param_grid=grid, n_jobs=-1, verbose=10, scoring=scoring)
+        gs = GridSearchCV(net(), cv=cv, param_grid=grid, n_jobs=-1,
+                          verbose=10, scoring=scoring)
         gs.fit(X_train, y_train)
-        print(f"Best score over VL: {gs.best_score_}, best params: {gs.best_params_}\n")
+        print(f"Best score over VL: {gs.best_score_}, "
+              f"best params: {gs.best_params_}\n")
 
         results = utils.crossValToDf(gs.cv_results_, scoring=scoring)
         results.to_csv(f'./src/NN/res/scores/{full_name}_{test}.csv')  
