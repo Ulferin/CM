@@ -190,7 +190,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             a list of mini-batches
         """                      
         mini_batches = []
-        self.X, self.y = shuffle(self.X, self.y, random_state=42)
+#         self.X, self.y = shuffle(self.X, self.y, random_state=42)
 
         if self.batch_size < self.training_size:
             for b in range(self.batches):
