@@ -553,8 +553,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         x = self.epochs_time if time else list(range(len(self.epochs_time)))
         x_label = 'Execution Time' if time else 'Epochs'
 
-        plt.plot(x, self.grad_est_per_epoch, '--', label='Validation loss')
-        plt.legend(loc='best')
+        plt.plot(x, self.grad_est_per_epoch, '--', label='')
+#         plt.legend(loc='best')
         plt.xlabel (x_label)
         plt.ylabel ('Gradient\'s norm')
         plt.title ('Gradient norm estimate')

@@ -33,23 +33,23 @@ if __name__ == '__main__':
         grids = {
             'cup': {
                 'SGM': {    
-                    'sizes': [[16, 32], [30, 50], [50, 50]],
+                    'sizes': [[5, 10], [16, 32], [30, 50]],
                     'lmbda': [0, 0.0001, 0.001, 0.01],
                     'epochs': [1000],
-                    'batch_size': [32, None],
-                    'eta':[0.001, 0.01],
+                    'batch_size': [None],
+                    'eta':[0.001, 0.005,  0.01, 0.05, 0.1],
                     'eps': [1e-4],
                     'optimizer': ['SGM']
                 },
             
                 'SGD': {
-                    'sizes': [[16, 32], [30, 50], [50, 50]],
+                    'sizes': [[5, 10], [16, 32], [30, 50]],
                     'lmbda': [0, 0.0001, 0.001, 0.01],
-                    'momentum': [0, 0.2, 0.5, 0.9],
+                    'momentum': [0, 0.5, 0.9],
                     'nesterov': [True, False],
                     'epochs': [1000],
-                    'batch_size': [32, None],
-                    'eta':[0.001, 0.01],
+                    'batch_size': [None],
+                    'eta':[0.001, 0.01, 0.1],
                     'eps': [1e-4],
                     'optimizer': ['SGD']
                 }
