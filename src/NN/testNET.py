@@ -57,24 +57,23 @@ if __name__ == '__main__':
 
             'monk': {
                 'SGM': {    
-                    'sizes': [[2], [3], [5]],
+                    'sizes': [[5, 10], [16, 32], [30, 50]],
                     'lmbda': [0, 0.0001, 0.001, 0.01],
                     'epochs': [2000],
-                    'batch_size': [32, None],
-                    'eta':[0.01, 0.1, 0.3, 0.5, 0.6, 0.7],
+                    'batch_size': [None],
+                    'eta':[0.0001, 0.001, 0.01, 0.1],
                     'eps': [1e-6],
                     'optimizer': ['SGM']
                 },
             
                 'SGD': {
-                    'activation': ['Lrelu'],
-                    'sizes': [[2], [3], [5]],
+                    'sizes': [[5, 10], [16, 32], [30, 50]],
                     'lmbda': [0, 0.0001, 0.001, 0.01],
                     'momentum': [0, 0.5, 0.9],
                     'nesterov': [True, False],
                     'epochs': [2000],
-                    'batch_size': [32, None],
-                    'eta':[0.01, 0.1, 0.5, 0.7],
+                    'batch_size': [None],
+                    'eta':[0.0001, 0.001, 0.01, 0.1],
                     'eps': [1e-6],
                     'optimizer': ['SGD']
                 }
