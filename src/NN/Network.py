@@ -520,7 +520,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         if log: plt.yscale('log')
         
         plt.legend(loc='best')
-        plt.title ('Loss NN CUP dataset')
+        plt.title (f'Loss {name}')
         plt.draw()
 
 
