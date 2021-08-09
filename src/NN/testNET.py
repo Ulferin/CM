@@ -86,9 +86,6 @@ if __name__ == '__main__':
             cv = 5
             scoring = 'neg_mean_squared_error'
         else:
-            # Removing regularization for MONK1 and MONK2
-            # if dataset != 'monk3': grids['monk'][test]['lmbda'] = [0.]
-            
             # Removes the monk number
             dataset = 'monk'
             net = NC
@@ -115,104 +112,97 @@ if __name__ == '__main__':
     
     else:
 
+        # TODO: aggiungere json di configurazione
         params = {
             'cup': {
                 'SGD': {
-                    'batch_size': 32,
-                    'epochs': 1000,
+                    'batch_size': None,
+                    'epochs': 2000,
                     'eps': 1e-6,
                     'eta': 0.001,
-                    'lmbda': 0.001,
-                    'momentum': 0.,
+                    'lmbda': 0.0001,
+                    'momentum': 0.9,
                     'optimizer': "SGD",
                     'sizes': [30, 50],
-                    'activation': 'Lrelu',
                     'debug': True,
                 },
                 'SGM': {
-                    'batch_size': 32,
-                    'epochs': 1000,
+                    'batch_size': None,
+                    'epochs': 5000,
                     'eps':1e-6,
-                    'eta': 0.1,
-                    'lmbda': 0.001,
+                    'eta': 0.05,
+                    'lmbda': 0.0001,
                     'optimizer': "SGM",
-                    'sizes': [30, 50],
-                    'activation': 'Lrelu',
+                    'sizes': [5, 10],
                     'debug': True,
                 }
             },
             'monk1': {
                 'SGD': {
-                    'activation': 'Lrelu',
-                    'batch_size': 32,
-                    'epochs': 1000,
-                    'eps': 1e-6,
-                    'eta': 0.1,
-                    'lmbda': 0.01,
-                    'momentum': 0.9,
-                    'optimizer': "SGD",
-                    'sizes': [5],
-                    'nesterov': True,
-                    'debug': True
-                },
-                'SGM': {
                     'batch_size': None,
-                    'epochs': 1000,
-                    'eps':1e-6,
-                    'eta': 0.1,
-                    'lmbda': 0.01,
-                    'optimizer': "SGM",
-                    'sizes': [5],
-                    'debug': True
-                }
-            },
-            'monk2': {
-                'SGD': {
-                    'activation': 'Lrelu',
-                    'batch_size': 32,
-                    'epochs': 1000,
+                    'epochs': 2000,
                     'eps': 1e-6,
                     'eta': 0.1,
                     'lmbda': 0.01,
                     'momentum': 0.5,
                     'optimizer': "SGD",
-                    'sizes': [3],
-                    'nesterov': True,
+                    'sizes': [16, 32],
                     'debug': True
                 },
                 'SGM': {
-                    'batch_size': 10,
-                    'epochs': 1000,
+                    'batch_size': None,
+                    'epochs': 2000,
                     'eps':1e-6,
                     'eta': 0.1,
-                    'lmbda': 0.001,
+                    'lmbda': 0.01,
                     'optimizer': "SGM",
-                    'sizes': [3],
+                    'sizes': [16, 32],
+                    'debug': True
+                }
+            },
+            'monk2': {
+                'SGD': {
+                    'batch_size': None,
+                    'epochs': 2000,
+                    'eps': 1e-6,
+                    'eta': 0.1,
+                    'lmbda': 0.,
+                    'momentum': 0.5,
+                    'optimizer': "SGD",
+                    'sizes': [16, 32],
+                    'debug': True
+                },
+                'SGM': {
+                    'batch_size': None,
+                    'epochs': 2000,
+                    'eps':1e-6,
+                    'eta': 0.1,
+                    'lmbda': 0.,
+                    'optimizer': "SGM",
+                    'sizes': [16, 32],
                     'debug': True,
                 }
             },
             'monk3': {
                 'SGD': {
-                    'activation': 'Lrelu',
-                    'batch_size': 10,
-                    'epochs': 1000,
+                    'batch_size': None,
+                    'epochs': 2000,
                     'eps': 1e-6,
-                    'eta': 0.1,
-                    'lmbda': 0.01,
-                    'momentum': 0.9,
-                    'nesterov': True,
+                    'eta': 0.01,
+                    'lmbda': 0.0001,
+                    'momentum': 0.5,
                     'optimizer': "SGD",
-                    'sizes': [5],
+                    'sizes': [5, 10],
                     'debug': True
                 },
                 'SGM': {
                     'batch_size': None,
-                    'epochs': 1000,
+                    'epochs': 2000,
                     'eps':1e-6,
-                    'eta': 0.1,
-                    'lmbda': 0.01,
+                    'eta': 0.01,
+                    'lmbda': 0.0001,
                     'optimizer': "SGM",
-                    'sizes': [5],
+                    'sizes': [5, 10],
                     'debug': True,
                 }
             }
