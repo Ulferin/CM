@@ -124,7 +124,7 @@ if __name__ == '__main__':
                     'momentum': 0.9,
                     'optimizer': "SGD",
                     'sizes': [30, 50],
-                    'debug': True,
+                    'debug': False,
                 },
                 'SGM': {
                     'batch_size': None,
@@ -134,7 +134,7 @@ if __name__ == '__main__':
                     'lmbda': 0.0001,
                     'optimizer': "SGM",
                     'sizes': [5, 10],
-                    'debug': True,
+                    'debug': False,
                 }
             },
             'monk1': {
@@ -147,7 +147,7 @@ if __name__ == '__main__':
                     'momentum': 0.5,
                     'optimizer': "SGD",
                     'sizes': [16, 32],
-                    'debug': True
+                    'debug': False
                 },
                 'SGM': {
                     'batch_size': None,
@@ -157,7 +157,7 @@ if __name__ == '__main__':
                     'lmbda': 0.01,
                     'optimizer': "SGM",
                     'sizes': [16, 32],
-                    'debug': True
+                    'debug': False
                 }
             },
             'monk2': {
@@ -170,7 +170,7 @@ if __name__ == '__main__':
                     'momentum': 0.5,
                     'optimizer': "SGD",
                     'sizes': [16, 32],
-                    'debug': True
+                    'debug': False
                 },
                 'SGM': {
                     'batch_size': None,
@@ -180,7 +180,7 @@ if __name__ == '__main__':
                     'lmbda': 0.,
                     'optimizer': "SGM",
                     'sizes': [16, 32],
-                    'debug': True,
+                    'debug': False,
                 }
             },
             'monk3': {
@@ -193,7 +193,7 @@ if __name__ == '__main__':
                     'momentum': 0.5,
                     'optimizer': "SGD",
                     'sizes': [5, 10],
-                    'debug': True
+                    'debug': False
                 },
                 'SGM': {
                     'batch_size': None,
@@ -203,7 +203,7 @@ if __name__ == '__main__':
                     'lmbda': 0.0001,
                     'optimizer': "SGM",
                     'sizes': [5, 10],
-                    'debug': True,
+                    'debug': False,
                 }
             }
         }
@@ -213,12 +213,6 @@ if __name__ == '__main__':
             net = NC(**params[dataset][test])
 
         net.fit(X_train, y_train, test_data=(X_test, y_test))
-
-#         net.plot_results(f"{dataset}_{test}", score=False, time=True)
-        # net.plot_results(f"{dataset}_{test}", score=False, time=False)
-        # net.plot_results(f"{dataset}_{test}", score=True, time=True)
-        # net.plot_results(f"{dataset}_{test}", score=True, time=False)
-        # net.plot_grad(f"{dataset}_{test}")
         
-        print(net.best_score(name=f"{dataset}_{test}", save=True))
+        print(net.best_score(name=f"{dataset}_{test}", save=False))
     
