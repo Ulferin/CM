@@ -140,8 +140,8 @@ def generate(m, n):
         Dependent variables vector b
     """    
 
-    M = np.array([ [random.gauss(0,1) for r in range(n)]
-                    for c in range(m) ], dtype=np.single)
+    M = np.array([ [random.gauss(0,1) for _ in range(n)]
+                    for _ in range(m) ], dtype=np.single)
     b = np.array([random.gauss(0,1) for r in range(m)], dtype=np.single)
     return M, b.reshape(-1,1)
 

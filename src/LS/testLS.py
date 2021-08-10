@@ -137,8 +137,8 @@ def automatized_test(M, b, test_type):
           f"Solved (m x n): ({m},{n}) in {endLS} msec, w/ np in {endLSnp} msec"
           f"- Reverting and reconstruction: {endQR} msec, "
           f"w/ np took: {endQRnp} msec\n"
-          f"res error: {np.linalg.norm(b-np.dot(M, res))/np.linalg.norm(b)} - "
-          f"np_res error: {np.linalg.norm(b-np.dot(M, resnp))/np.linalg.norm(b)}"
+          f"res error: {np.linalg.norm(b - M@res)/np.linalg.norm(b)} - "
+          f"np_res error: {np.linalg.norm(b - M@resnp)/np.linalg.norm(b)}"
           f"\nQR error: {np.linalg.norm(M - QR)/np.linalg.norm(M)} "
           f"- QR error w/ np: {np.linalg.norm(M - QRnp)/np.linalg.norm(M)}\n")
 
