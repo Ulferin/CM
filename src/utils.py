@@ -114,36 +114,12 @@ def prepare_data(X_train, X_test):
     enc = OneHotEncoder()
     enc.fit(X_train)
     X_train = enc.transform(X_train).toarray()
+
+    enc = OneHotEncoder()
+    enc.fit(X_test)
     X_test = enc.transform(X_test).toarray()
 
     return X_train, X_test
-
-
-def generate(m, n):
-    """Generates a random dataset starting from the given dimensions.
-
-    Parameters
-    ----------
-    m : int
-        Number of rows for the coefficient matrix (i.e. length of the vector b).
-    
-    n : int
-        Number of columns for the coefficient matrix (i.e. length of the vector
-        x in (P)) for LS problems.
-
-    Returns
-    -------
-    M : np.ndarray
-        The coefficient matrix M.
-
-    b : np.ndarray
-        Dependent variables vector b
-    """    
-
-    M = np.array([ [random.gauss(0,1) for _ in range(n)]
-                    for _ in range(m) ], dtype=np.single)
-    b = np.array([random.gauss(0,1) for r in range(m)], dtype=np.single)
-    return M, b.reshape(-1,1)
 
 
 def crossValToDf(res, scoring='Accuracy'):
@@ -184,7 +160,7 @@ def end_time(start):
     Returns
     -------
     DateTime
-        Elasped time since :start: in milliseconds.
+        Elasped time since :start:, in milliseconds.
     """    
     end = (dt.now() - start)
     return end.seconds*1000 + end.microseconds/1000
