@@ -37,8 +37,8 @@ def generate(m, n):
         Dependent variables vector b
     """    
     M = np.array([[random.gauss(0,1) for _ in range(n)]
-                    for _ in range(m) ], dtype=np.single)
-    b = np.array([random.gauss(0,1) for r in range(m)], dtype=np.single)
+                    for _ in range(m) ], dtype=float)
+    b = np.array([random.gauss(0,1) for r in range(m)], dtype=float)
     return M, b.reshape(-1,1)
 
 
