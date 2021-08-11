@@ -10,7 +10,6 @@ class ActivationFunction(metaclass=ABCMeta):
     def function(self, x):
         pass
 
-    # TODO: call it derivative or gradient?
     @abstractmethod
     def derivative(self, x):
         pass

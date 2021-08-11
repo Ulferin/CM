@@ -29,7 +29,6 @@ if __name__ == '__main__':
     # Performs gridsearch over the specified hyperparameters
     if grid:
         
-        # TODO: mettere in file di conf
         grids = {
             'cup': {
                 'SGM': {    
@@ -112,7 +111,6 @@ if __name__ == '__main__':
     
     else:
 
-        # TODO: aggiungere json di configurazione
         params = {
             'cup': {
                 'SGD': {
