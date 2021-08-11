@@ -9,8 +9,8 @@
 # solve the Least Square problem of the form  min ||Ax - b||.
 
 # NOTE: all the results for the tests performed using this script file will be
-#		printed to a specific file with a standard name relative to the performed
-#		test. 
+#		saved on a specific file with a standard name relative to the performed
+#		test and the used configuration. 
 # To perform the test just run:
 # ./testLS.sh 't' ['m' 'n' 'stepm' 'lastm']
 
@@ -37,6 +37,17 @@
 #	· stepm: increment for the m dimension, to be used only for 'SCALING' test;
 #
 #	· lastm: last value for the m dimension, to be used only for 'SCALING' test;
+
+
+# Example
+#
+# $ ./testLS.sh 'SCALING' 1000 100 1000 10000
+#
+# Will perform the 'SCALING' test starting from m=1000 and n=100 up to
+# m=10000 and n=100 incrementing the m dimension by 1000 at each new test.
+# It will write the recorded statistics to a file named test_scaling10000_100.txt
+# including the last m dimension tested and the n dimension in the name, making
+# it easier to gather statistics and scrape results from statistics file.
 
 
 t="$1"		# test type

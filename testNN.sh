@@ -4,9 +4,10 @@
 # email: f.finocchio@studenti.unipi.it
 # AA: 2020/2021
 
-# Script file to test the execution of the QR factorization and LS solver.
-# Refers to the implementation of the LS class in src/LS/LS.py which is used to
-# solve the Least Square problem of the form  min ||Ax - b||.
+# Script file to test the fitting of a Neural Network with the specified optimizer
+# and dataset. It refers to the implementation of the Network class located in
+# src/NN/Network.py. Both normal execution and gridsearch will use the
+# configurations as specified in the file src/NN/testNET.py.
 
 # NOTE: all the results for the tests performed using this script file will be
 #		printed to a specific file with a standard name relative to the performed
@@ -25,6 +26,12 @@
 #	· grid: whether to perform a grid search over the specified dataset/optimizer.
 #           Either true or false.
 
+# Example
+# $ ./testNN.sh 'monk1' 'SGD' false
+# Will perform the test over the monk1 dataset with the Neural Network using the
+# SGD optimizer without performing a grid search. It will produce a file named
+# test_monk1_SGD.txt containing all the recorded statistics for the current
+# execution.
 
 dataset="$1"
 optimizer="$2"
