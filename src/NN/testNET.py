@@ -96,7 +96,7 @@ if __name__ == '__main__':
         grid = grids[dataset][test]
 
         gs = GridSearchCV(net(), cv=cv, param_grid=grid, n_jobs=-1,
-                          verbose=10, scoring=scoring)
+                          verbose=0, scoring=scoring)
         gs.fit(X_train, y_train)
         print(f"Best score over VL: {gs.best_score_}, "
               f"best params: {gs.best_params_}\n")
