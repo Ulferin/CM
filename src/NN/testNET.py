@@ -126,7 +126,7 @@ if __name__ == '__main__':
                 },
                 'SGM': {
                     'batch_size': None,
-                    'epochs': 5000,
+                    'epochs': 2000,
                     'eps':1e-6,
                     'eta': 0.05,
                     'lmbda': 0.0001,
