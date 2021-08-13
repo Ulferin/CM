@@ -319,17 +319,19 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 s = dt.now()
                 self._update_batches()
                 en = end_time(s)
-                self.update_avg = en
+                self.update_avg += en
 
                 # Compute current gradient estimate
                 self.grad_est_per_epoch.append(np.average(self.grad_est))
                 self.evaluate(e)
 
                 self.score = self.train_loss[-1]
+                iteration_end = self.opti.iteration_end(self)
+                
                 epoch_time = end_time(start)
                 self.epochs_time.append(epoch_time)
 
-                if self.opti.iteration_end(self):
+                if iteration_end:
                     print("Reached desired precision in gradient norm,stopping.")
                     break
         except ValueError:
@@ -501,6 +503,9 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             whether to use a logplot or not, by default False
         """     
 
+        if not self.fitted:
+            return 'This model is not fitted yet.\n\n'
+
         # Conditional configuration
         x_label = 'Execution Time' if time else 'Epochs'
         folder = 'scores' if score else 'losses'
@@ -550,7 +555,11 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         time : bool, optional
             whether to plot gradient w.r.t. epochs or execution time,
             by default False
-        """               
+        """  
+
+        if not self.fitted:
+            return 'This model is not fitted yet.\n\n'
+
         x = self.epochs_time if time else list(range(len(self.epochs_time)))
         x_label = 'Execution Time' if time else 'Epochs'
 
