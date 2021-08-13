@@ -114,16 +114,12 @@ class SGD(Optimizer):
 
 class SGM(Optimizer):
 
-    # TODO: controllare a cosa servono in questo caso x_ref e f_ref
     def __init__(self, eta, eps=1e-5):
         super().__init__(eta, eps=eps)
         self.step = eta
-        self.x_ref = []
-        self.f_ref = np.inf
-        self.gamma = 0.95
         self.offset = 1e-8
-        self.gms_b = []
-        self.gms_w = []
+        self.r_b = []
+        self.r_w = []
 
 
     def update_mini_batch(self, nn, mini_batch):
@@ -143,18 +139,20 @@ class SGM(Optimizer):
 
         size = len(mini_batch[0])
         nabla_b, nabla_w = nn._compute_grad(mini_batch)
+        nabla_b = [nb / size for nb in nabla_b]
+        nabla_w = [nw / size for nw in nabla_w]
 
-        if len(self.gms_w) == 0:
-            self.gms_b = [0]*len(nabla_b)
-            self.gms_w = [0]*len(nabla_w)
+        if len(self.r_w) == 0:
+            self.r_b = [0]*len(nabla_b)
+            self.r_w = [0]*len(nabla_w)
 
-        self.gms_b = [gb + nb**2 for gb, nb in zip(self.gms_b, nabla_b)]
-        self.gms_w = [gw + nw**2 for gw, nw in zip(self.gms_w, nabla_w)]
+        self.r_b = [gb + nb**2 for gb, nb in zip(self.r_b, nabla_b)]
+        self.r_w = [gw + nw**2 for gw, nw in zip(self.r_w, nabla_w)]
 
-        nabla_b = [nb / (np.sqrt(gms_b) + self.offset)
-                   for nb, gms_b in zip(nabla_b, self.gms_b)]
-        nabla_w = [nw / (np.sqrt(gms_w) + self.offset)
-                   for nw, gms_w in zip(nabla_w, self.gms_w)]
+        nabla_b = [nb / (np.sqrt(r_b) + self.offset)
+                   for nb, r_b in zip(nabla_b, self.r_b)]
+        nabla_w = [nw / (np.sqrt(r_w) + self.offset)
+                   for nw, r_w in zip(nabla_w, self.r_w)]
 
         nn.weights = [w - self.step*nw - (nn.lmbda/size) * w
                       for w, nw in zip(nn.weights, nabla_w)]
@@ -178,13 +176,6 @@ class SGM(Optimizer):
             Boolean value indicating whether the optimizer has reached an
             optimal state.
         """          
-
-        last_f = nn.score
-
-        # found a better value
-        if last_f < self.f_ref:
-            self.f_ref = last_f
-            self.x_ref = (nn.weights.copy(), nn.biases.copy())
 
         if nn.ngrad < self.eps:
             print(f"SGM - grad:{nn.ngrad}, eps: {self.eps}")

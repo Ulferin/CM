@@ -369,7 +369,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 f"Score: {self.train_scores[-1]:<5.3g}")
 
         end = end_time(start)
-        self.evaluate_avg[0] +=1
+        self.evaluate_avg[0] += 1
         self.evaluate_avg[1] += end
 
 
