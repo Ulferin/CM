@@ -505,6 +505,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         x_label = 'Execution Time' if time else 'Epochs'
         folder = 'scores' if score else 'losses'
         sub_folder = 'time' if time else 'epochs'
+        curve_type = 'Loss' if not score else 'Score'
 
         if self.test_data is not None:
             val_res = self.val_scores if score else self.val_loss
@@ -516,11 +517,11 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         plt.plot(x, train_res, '--', label='Training loss')
         
         plt.xlabel(x_label)
-        plt.ylabel ('Loss')
+        plt.ylabel (curve_type)
         if log: plt.yscale('log')
         
         plt.legend(loc='best')
-        plt.title (f'Loss {self.optimizer}')
+        plt.title (f'{curve_type} {self.optimizer}')
         plt.draw()
 
 

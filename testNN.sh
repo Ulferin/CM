@@ -2,7 +2,8 @@
 
 # Author: Federico Finocchio -- ID: 516818
 # email: f.finocchio@studenti.unipi.it
-# AA: 2020/2021
+# Course: Computational Mathematics for Learning and Data Analysis
+# AY: 2020/2021
 
 # Script file to test the fitting of a Neural Network with the specified optimizer
 # and dataset. It refers to the implementation of the Network class located in

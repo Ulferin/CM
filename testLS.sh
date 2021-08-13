@@ -2,7 +2,8 @@
 
 # Author: Federico Finocchio -- ID: 516818
 # email: f.finocchio@studenti.unipi.it
-# AA: 2020/2021
+# Course: Computational Mathematics for Learning and Data Analysis
+# AY: 2020/2021
 
 # Script file to test the execution of the QR factorization and LS solver.
 # Refers to the implementation of the LS class in src/LS/LS.py which is used to

@@ -122,7 +122,6 @@ if __name__ == '__main__':
                     'momentum': 0.9,
                     'optimizer': "SGD",
                     'sizes': [30, 50],
-                    'debug': False,
                 },
                 'SGM': {
                     'batch_size': None,
@@ -132,7 +131,6 @@ if __name__ == '__main__':
                     'lmbda': 0.0001,
                     'optimizer': "SGM",
                     'sizes': [5, 10],
-                    'debug': False,
                 }
             },
             'monk1': {
@@ -145,7 +143,6 @@ if __name__ == '__main__':
                     'momentum': 0.5,
                     'optimizer': "SGD",
                     'sizes': [16, 32],
-                    'debug': False
                 },
                 'SGM': {
                     'batch_size': None,
@@ -155,7 +152,6 @@ if __name__ == '__main__':
                     'lmbda': 0.01,
                     'optimizer': "SGM",
                     'sizes': [16, 32],
-                    'debug': False
                 }
             },
             'monk2': {
@@ -168,7 +164,6 @@ if __name__ == '__main__':
                     'momentum': 0.5,
                     'optimizer': "SGD",
                     'sizes': [16, 32],
-                    'debug': False
                 },
                 'SGM': {
                     'batch_size': None,
@@ -178,7 +173,6 @@ if __name__ == '__main__':
                     'lmbda': 0.,
                     'optimizer': "SGM",
                     'sizes': [16, 32],
-                    'debug': False,
                 }
             },
             'monk3': {
@@ -191,7 +185,6 @@ if __name__ == '__main__':
                     'momentum': 0.5,
                     'optimizer': "SGD",
                     'sizes': [5, 10],
-                    'debug': False
                 },
                 'SGM': {
                     'batch_size': None,
@@ -201,7 +194,6 @@ if __name__ == '__main__':
                     'lmbda': 0.0001,
                     'optimizer': "SGM",
                     'sizes': [5, 10],
-                    'debug': False,
                 }
             }
         }

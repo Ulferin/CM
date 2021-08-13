@@ -1,8 +1,6 @@
 import numpy as np
 from datetime import datetime as dt
 
-# TODO: check this for performance improvement: https://shihchinw.github.io/2019/03/performance-tips-of-numpy-ndarray.html
-
 class LS():
     """This class implements the least square problem solver for the given data.
     It uses the thin QR factorization, as described in the report file.
