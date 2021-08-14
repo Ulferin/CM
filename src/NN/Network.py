@@ -190,7 +190,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             a list of mini-batches
         """                      
         mini_batches = []
-#         self.X, self.y = shuffle(self.X, self.y, random_state=42)
 
         if self.batch_size < self.training_size:
             for b in range(self.batches):
@@ -253,11 +252,11 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
     def fit(self, X, y, test_data=None):   
-        """Trains the neural network on :training_data: sample for a given
-        number of :epochs: by fine-tuning the weights and biases by using the
-        update rules relative to the provided :optimizer:. The way updates are
+        """Trains the neural network on (:X:, :y:) samples for a given
+        number of epochs by fine-tuning the weights and biases by using the
+        update rules relative to the provided optimizer. The way updates are
         performed is also determined by the configurations relative to 
-        :batch_size: and :eta: parameters.
+        batch size and eta hyperparameters.
 
         Parameters
         ----------
@@ -277,7 +276,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         Object
             returns the fitted network object
         """
-
 
         # Initialize batch size w.r.t. training data
         self.X = X
@@ -465,7 +463,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             f"avg ev: {self.evaluate_avg[1]/self.evaluate_avg[0]}\n\n")
 
         if save:
-            file_path = f"src/NN/res/best_scores/stats.txt"
+            file_path = f"src/NN/res/stats/stats.txt"
             with open(file_path, 'a') as f:
                 f.write(f"{name}\n")
                 f.write(stats)
@@ -507,8 +505,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         # Conditional configuration
         x_label = 'Execution Time' if time else 'Epochs'
-        folder = 'scores' if score else 'losses'
-        sub_folder = 'time' if time else 'epochs'
         curve_type = 'Loss' if not score else 'Score'
 
         if self.test_data is not None:
@@ -531,7 +527,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         if save:
             plt.savefig(
-                f"src/NN/res/{folder}/{sub_folder}/{name}"
+                f"src/NN/res/stats/{name}"
                 f"ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}"
                 f"lmbda{self.lmbda}m{self.momentum}.png")
         else:
@@ -572,7 +568,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         if save:
             plt.savefig(
-                f"src/NN/res/grads/{name}ep{self.epochs}s{self.sizes}"
+                f"src/NN/res/stats/{name}ep{self.epochs}s{self.sizes}"
                 f"b{self.batch_size}e{self.eta}lmbda{self.lmbda}"
                 f"m{self.momentum}.png")
         else:
@@ -585,7 +581,7 @@ class NC(Network, BaseEstimator):
     def __init__(
         self, sizes=None, optimizer='SGD', seed=0, epochs=300, eta=0.1,
         activation='Lrelu', lmbda=0.0001, momentum=0.5, nesterov=False,
-        eps=1e-5, batch_size=10, debug=False):
+        eps=1e-5, batch_size=None, debug=False):
         """Initializes the network with the specified hyperparameters. Network
         weights and biases will be initialized at fitting time following the shape
         of the training data and the specified sizes, which represents the
@@ -615,7 +611,7 @@ class NC(Network, BaseEstimator):
      
         eta : float, optional
             learning rate for 'SGD' optimizer, starting step sizes for 'SGM'
-            optimizer, by default 0.01
+            optimizer, by default 0.1
    
         activation : function, optional
             specifies which activation function to use for the hidden layers
@@ -623,10 +619,10 @@ class NC(Network, BaseEstimator):
             by default 'Lrelu'
     
         lmbda : int, optional
-            l2 regularization coefficient, by default 0.0
+            l2 regularization coefficient, by default 0.0001
     
         momentum : int, optional
-            momentum coefficient, by default 0.0
+            momentum coefficient, by default 0.5
     
         nesterov : bool, optional
             boolean flag indicating wether nesterov momentum must be used
@@ -687,7 +683,7 @@ class NC(Network, BaseEstimator):
 class NR(Network, BaseEstimator):
     def __init__(
         self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01,
-        activation='Lrelu', lmbda=0.0, momentum=0.0, nesterov=False, eps=1e-5,
+        activation='Lrelu', lmbda=0.0001, momentum=0.5, nesterov=False, eps=1e-5,
         batch_size=None, debug=False):
         """Initializes the network with the specified hyperparameters. Network
         weights and biases will be initialized at fitting time following the shape
@@ -726,10 +722,10 @@ class NR(Network, BaseEstimator):
             by default 'Lrelu'
     
         lmbda : int, optional
-            l2 regularization coefficient, by default 0.0
+            l2 regularization coefficient, by default 0.0001
     
         momentum : int, optional
-            momentum coefficient, by default 0.0
+            momentum coefficient, by default 0.5
     
         nesterov : bool, optional
             boolean flag indicating wether nesterov momentum must be used

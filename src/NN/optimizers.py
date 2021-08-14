@@ -7,19 +7,6 @@ class Optimizer(metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, eta, eps=1e-5):
-        """Initialize the optimizer with the specified learning rate :eta:
-        and the desire precision :eps:.
-
-        Parameters
-        ----------
-        eta : float
-            Learning rate for SGD optimizer or starting step size for SGM
-            optimizer
-        
-        eps : float, optional
-            Desired precision for gradient norm, by default 1e-5
-        """        
-
         self.eta = eta
         self.eps = eps
 
@@ -30,14 +17,7 @@ class Optimizer(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def iteration_end(self, nn):
-        """Checks if the optimizer has reached an optimal state.
-
-        Parameters
-        ----------
-        nn : Object
-            Neural Network object being trained by this optimizer
-        """        
+    def iteration_end(self, nn):      
         pass
 
 
@@ -136,11 +116,13 @@ class SGM(Optimizer):
             mini-batch samples to use for updates.
         """       
 
+        # Compute current gradient
         size = len(mini_batch[0])
         nabla_b, nabla_w = nn._compute_grad(mini_batch)
         nabla_b = [nb / size for nb in nabla_b]
         nabla_w = [nw / size for nw in nabla_w]
 
+        # Initialize/update gradient accumulation variable
         if len(self.r_w) == 0:
             self.r_b = [0]*len(nabla_b)
             self.r_w = [0]*len(nabla_w)
@@ -148,11 +130,13 @@ class SGM(Optimizer):
         self.r_b = [gb + nb**2 for gb, nb in zip(self.r_b, nabla_b)]
         self.r_w = [gw + nw**2 for gw, nw in zip(self.r_w, nabla_w)]
 
+        # Compute current update
         nabla_b = [nb / (np.sqrt(r_b) + self.offset)
                    for nb, r_b in zip(nabla_b, self.r_b)]
         nabla_w = [nw / (np.sqrt(r_w) + self.offset)
                    for nw, r_w in zip(nabla_w, self.r_w)]
 
+        # Update weights/biases
         nn.weights = [w - self.step*nw - (nn.lmbda/size) * w
                       for w, nw in zip(nn.weights, nabla_w)]
         nn.biases = [b - self.step*nb

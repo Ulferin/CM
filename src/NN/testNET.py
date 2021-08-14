@@ -13,7 +13,9 @@ datasets = {
     'monk3': 'data/monks-3', 
 }
 
-
+# Hyperparameters configurations for each model/dataset couple
+# the actual configuration comes from the results of the performed gridsearches
+# as described in the report file.
 params = {
     'cup': {
         'SGD': {
@@ -155,10 +157,13 @@ grids = {
 
 
 if __name__ == '__main__':
-    test = sys.argv[1]
-    dataset = sys.argv[2]
-    grid = len(sys.argv) > 3 and sys.argv[3] == 'grid'
+    test = sys.argv[1]      # Test type, either 'CM', 'NAG' or 'SGM' when
+                            # grid==false, otherwise 'SGD' or 'SGM'
+    dataset = sys.argv[2]   # Dataset to use, 'monk#' or 'grid'
+    grid = (len(sys.argv) > 3
+            and sys.argv[3] == 'grid') # Whether to perform grid or not
 
+    # Load specified dataset
     if dataset == 'cup':
         X_train, X_test, y_train, y_test = utils.load_CUP(datasets[dataset])
     else:

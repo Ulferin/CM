@@ -23,6 +23,8 @@ class ReLU(ActivationFunction):
     """Implements static utility functions related to
     the ReLU activation function."""    
     
+    rng = default_rng()
+
     @staticmethod
     def function(x):
         """Implements the ReLU activation function.
@@ -40,8 +42,8 @@ class ReLU(ActivationFunction):
         Returns
         -------
         np.ndarray
-            Vector with the same shape as input :x: with the ReLU function applied
-            elementwise.
+            Vector with the same shape as input :x: with the ReLU function
+            applied elementwise.
         """
 
         return np.maximum(x, 0.)
@@ -91,9 +93,7 @@ class ReLU(ActivationFunction):
             Vector with the same shape as input :x: with the ReLU subgradient
             function applied elementwise.
         """        
-
-        rng = default_rng()
-        return np.where(x>0, 1, np.where(x<0, 0, rng.uniform()))
+        return np.where(x>0, 1, np.where(x<0, 0, ReLU.rng.uniform()))
 
 
 class LeakyReLU(ActivationFunction): 
