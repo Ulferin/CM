@@ -72,7 +72,7 @@ class LS():
         Parameters
         ----------
         A : np.ndarray
-            Input matrix for which to computer the QR factorization
+            Input matrix for which to compute the QR factorization
 
         Returns
         -------

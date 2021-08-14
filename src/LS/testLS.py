@@ -51,9 +51,6 @@ def scaling (starting_m, m, n, step, t) :
     as a delta. It compares the execution with the off-the-shelf-solver from
     Numpy library.
 
-    At the end of the process, saves an image showing the evolution of execution
-    times over the increasing dimension m.
-
     Parameters
     ----------
     starting_m : int
@@ -71,6 +68,21 @@ def scaling (starting_m, m, n, step, t) :
     t : int
         Amount of time to repeat the same experiment, it determines the
         averaging factor too.
+
+
+    Returns
+    -------
+    time_qr_np : list
+        List of time statistics for numpy QR factorization
+    
+    time_qr_a3 : list
+        List of time statistics for implemented QR factorization
+
+    time_ls_np : list
+        List of time statistics for numpy LS solver
+
+    time_ls_a3 : list
+        List of time statistics for implemented LS solver
     """
 
     print(f"n={n}, m={m}, t={t}")
@@ -86,11 +98,13 @@ def scaling (starting_m, m, n, step, t) :
     
     stats = ""
     
+    # Time statistics
     time_qr_a3 = []
     time_qr_np = []
     time_ls_a3 = []
     time_ls_np = []
     
+    # Needed for delta computation
     prev_qr_a3 = 0
     prev_qr_np = 0
     prev_ls_a3 = 0
@@ -107,6 +121,7 @@ def scaling (starting_m, m, n, step, t) :
         mean_ls_np = 0
         
         for i in range(t):
+            # Computes time for QR factorization
             startQR = dt.now()
             R = ls.qr(A)
             Q = ls.revertQ()
@@ -114,6 +129,7 @@ def scaling (starting_m, m, n, step, t) :
             endQR = end_time(startQR)
             mean_qr_a3 += endQR
 
+            # Computes time for QR factorization using numpy
             startQRnp = dt.now()
             Qnp, Rnp = np.linalg.qr(A)
             QRnp = np.matmul(Qnp, Rnp)
@@ -132,27 +148,29 @@ def scaling (starting_m, m, n, step, t) :
             endLSnp = end_time(startLSnp)
             mean_ls_np += endLSnp
         
+        # Computing mean time
         mean_qr_a3 = (mean_qr_a3 / t)
         mean_qr_np = (mean_qr_np / t)
         mean_ls_a3 = (mean_ls_a3 / t)
         mean_ls_np = (mean_ls_np / t)
         
+        time_qr_a3.append(mean_qr_a3)
+        time_qr_np.append(mean_qr_np)
+        time_ls_a3.append(mean_ls_a3)
+        time_ls_np.append(mean_ls_np)
+
+        prev_qr_a3 = mean_qr_a3
+        prev_qr_np = mean_qr_np
+        prev_ls_a3 = mean_ls_a3
+        prev_ls_np = mean_ls_np
+
+        # Computing delta
         delta_qr_a3 = mean_qr_a3 - prev_qr_a3
         delta_qr_np = mean_qr_np - prev_qr_np
         delta_ls_a3 = mean_ls_a3 - prev_ls_a3
         delta_ls_np = mean_ls_np - prev_ls_np
         
-        time_qr_a3.append(mean_qr_a3)
-        time_qr_np.append(mean_qr_np)
-        time_ls_a3.append(mean_ls_a3)
-        time_ls_np.append(mean_ls_np)
-        
-        prev_qr_a3 = mean_qr_a3
-        prev_qr_np = mean_qr_np
-        prev_ls_a3 = mean_ls_a3
-        prev_ls_np = mean_ls_np
-        
-        
+        # Computing accuracies        
         residual_a3 = np.linalg.norm( b - np.dot(A, res) )/np.linalg.norm(b)
         residual_np = np.linalg.norm( b - np.dot(A, resnp) )/np.linalg.norm(b)
         reconstruct_a3 = np.linalg.norm( A - QR )/np.linalg.norm(A)
@@ -179,6 +197,28 @@ def scaling (starting_m, m, n, step, t) :
 
 
 def generic_test(M, b, test_type):
+    """Perform a test for both QR factorization algorithm and LS solver over the
+    given data matrix :M: and dependent variables :b:.
+
+    Parameters
+    ----------
+    M : np.ndarray
+        Data matrix.
+
+    b : np.ndarray
+        Dependend variables vector.
+
+    test_type : string
+        Name of the performed test.
+
+    Returns
+    -------
+    res : np.ndarray
+        Solution vector for the implemented LS solver.
+
+    resnp : np.ndarray
+        Solution vecor for the numpy LS solver.
+    """    
     ls = LS()
     m = M.shape[0]
     n = M.shape[1]
@@ -219,48 +259,37 @@ def generic_test(M, b, test_type):
 
 
 if __name__ == "__main__":
-    """This file provides various test suites, needed to check the accuracy of
-    the implemented methods, as well as printing the execution times for the
-    given dimension. In the following are listed all the implemented tests and
-    what they're supposed to do.
+    """Implements various tests to check the accuracy and performance of the
+    implemented methods. The types of implemented tests are:
 
-    - CUP dataset test: ran specifying as first execution parameter the 'cup'
-                        string. It needs an additional parameter that represents
-                        the CUP dataset as a .csv file. It runs the QR
-                        factorization on this dataset with both the implemented
-                        QR factorization and the off-the-shelf version with
-                        numpy. It checks both the accuracy achieved in the
-                        factorization and the execution time.
+    - CUP dataset test: runs the QR factorization and LS solver on cup dataset
+                        with both the implemented solver and the off-the-shelf
+                        version with numpy. It checks both the accuracy achieved
+                        in the solution and the execution time.
 
-    - Random dataset test: ran specifying as first execution parameter the
-                           'random' string. It needs two more parameters to be
-                           specified that describes the maximum number of rows
-                           and columns for the dataset. It checks the execution
-                           time, the accuracy in the LS problem result and in 
-                           the QR factorization for each generated dataset.
+    - Random dataset test: runs the QR factorization and LS solver on a randomly
+                           generated dataset with both the implemented solver and
+                           the numpy one. Checks both accuracy and execution time.
 
-    - Scaling test: ran specifying as first execution parameter the 'scaling'
-                    string. It checks the scalability of the implemented
-                    algorithm, running various random datasets with increasing
-                    sizes. It shows the execution times for each dataset as well
-                    as the difference in computing times from a dataset
-                    dimension to the previous one. We expect for this test to
-                    show a linear time increasing with the m dimension of the
-                    dataset matrix. Finally, it saves an image showing the time
-                    taken for each m dimension of the datasets used for testing.
+    - Scaling test: Checks the scalability of the implemented algorithm by
+                    running the same test over random datasets with increasing
+                    sizes. Shows both execution times and accuracy in the LS
+                    solution.
 
     """
 
-    test = sys.argv[1]      # test type ('cup', 'random' or 'scaling')
+    test = sys.argv[1]      # test type ('CUP', 'RANDOM' or 'SCALING')
 
     if test == CUP_TEST:
         M, _, b, _ = load_CUP(sys.argv[2], split=0)
         generic_test(M, b, test)
+
     elif test == RANDOM_TEST:
         m = int(sys.argv[2])    # number of rows
         n = int(sys.argv[3])    # number of cols
         M, b = generate(m, n)
         generic_test(M, b, test)
+        
     elif test == SCALING_TEST:
         starting_m = int(sys.argv[2])
         m = int(sys.argv[3])
@@ -268,3 +297,4 @@ if __name__ == "__main__":
         step = int(sys.argv[5])
         t = int(sys.argv[6])
         scaling(starting_m, m, n, step, t)
+ 
