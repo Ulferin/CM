@@ -11,21 +11,21 @@
 # configurations as specified in the file src/NN/testNET.py.
 
 # NOTE: all the results for the tests performed using this script file will be
-#		printed to a specific file with a standard name relative to the performed
-#		test. 
+#       printed to a specific file with a standard name relative to the performed
+#       test. 
 # To perform the test just run:
 # ./testNN.sh 'dataset' 'optimizer' 'grid'
 
 # Where:
-#	· dataset: dataset to use for the test, it can be 'monk1', 'monk2', 'monk3',
-#             'cup'. It will use the associated dataset as specified in the report
-#              file;
+#    · dataset: dataset to use for the test, it can be 'monk1', 'monk2', 'monk3',
+#               'cup'. It will use the associated dataset as specified in
+#               the report file;
 #
-#	· optimizer: optimizer to use for the speficied test, accepted values
+#    · optimizer: optimizer to use for the speficied test, accepted values
 #                are 'CM', 'NAG' and 'SGM' for a test with 'grid'=false,
 #                otherwise 'SGD' or 'SGM' are accepted for 'grid'=true;
 #
-#	· grid: whether to perform a grid search over the specified dataset/optimizer.
+#    · grid: whether to perform a grid search over the specified dataset/optimizer.
 #           Either true or false.
 
 # Example
