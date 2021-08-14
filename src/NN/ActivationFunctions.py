@@ -100,6 +100,8 @@ class LeakyReLU(ActivationFunction):
     """Implements static utility functions related to
     the Leaky ReLU activation function.""" 
 
+    rng = default_rng()
+
     @staticmethod
     def function(x):
         """Implements the Leaky ReLU activation function with constant 0.01.
@@ -170,8 +172,9 @@ class LeakyReLU(ActivationFunction):
             function applied elementwise.
         """
 
-        rng = default_rng()
-        return np.where(x>0, 1, np.where(x<0, 0.01, rng.uniform(0.01, 1)))
+        return np.where(x>0,
+                        1,
+                        np.where(x<0, 0.01, LeakyReLU.rng.uniform(0.01, 1)))
 
 
 class Sigmoid(ActivationFunction):
