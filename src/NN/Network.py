@@ -335,7 +335,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                     print("Reached desired precision in gradient norm,stopping.")
                     break
         except ValueError:
-            print("Computation did not finish due to NaN.")
             self.fitted = False
         finally:
             end = end_time(start)

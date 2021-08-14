@@ -6,7 +6,7 @@
 # AY: 2020/2021
 
 # Script file to test the fitting of a Neural Network with the specified optimizer
-# and dataset. It refers to the implementation of the Network class located in
+# and dataset. It tests the implementation of the Network class located in
 # src/NN/Network.py. Both normal execution and gridsearch will use the
 # configurations as specified in the file src/NN/testNET.py.
 
@@ -21,18 +21,22 @@
 #             'cup'. It will use the associated dataset as specified in the report
 #              file;
 #
-#	· optimizer: optimizer to use for the speficied test, either 'SGD' or 'SGM';
-#
+#	· optimizer: optimizer to use for the speficied test, accepted values
+#                are 'CM', 'NAG' and 'SGM' for a test with 'grid'=false,
+#                otherwise 'SGD' or 'SGM' are accepted for 'grid'=true;
 #
 #	· grid: whether to perform a grid search over the specified dataset/optimizer.
 #           Either true or false.
 
 # Example
-# $ ./testNN.sh 'monk1' 'SGD' false
+# $ ./testNN.sh 'monk1' 'CM' false
 # Will perform the test over the monk1 dataset with the Neural Network using the
-# SGD optimizer without performing a grid search. It will produce a file named
-# test_monk1_SGD.txt containing all the recorded statistics for the current
-# execution.
+# SGD optimizer with CM update without performing a grid search.
+# It will produce a file named test_monk1_CM.txt containing all the recorded
+# statistics for the current execution.
+
+# The grid test will also produce a .csv file containing all the tested models
+# and the achieved result with the give configuration.
 
 dataset="$1"
 optimizer="$2"
@@ -40,7 +44,7 @@ grid="$3"
 
 if $grid
 then
-    python -m src.NN.testNET $optimizer $dataset 'grid' >> "test_grid_${dataset}_${optimizer}.txt"
+    python -m src.NN.testNET $optimizer $dataset 'grid' > "test_grid_${dataset}_${optimizer}.txt"
 else
     python -m src.NN.testNET $optimizer $dataset >> "test_${dataset}_${optimizer}.txt"
 fi

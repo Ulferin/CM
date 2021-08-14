@@ -14,6 +14,146 @@ datasets = {
 }
 
 
+params = {
+    'cup': {
+        'SGD': {
+            'batch_size': None,
+            'epochs': 2000,
+            'eps': 1e-6,
+            'eta': 0.001,
+            'lmbda': 0.0001,
+            'momentum': 0.9,
+            'optimizer': "SGD",
+            'sizes': [30, 50],
+        },
+        'SGM': {
+            'batch_size': None,
+            'epochs': 2000,
+            'eps':1e-6,
+            'eta': 0.05,
+            'lmbda': 0.0001,
+            'optimizer': "SGM",
+            'sizes': [5, 10],
+        }
+    },
+    'monk1': {
+        'SGD': {
+            'batch_size': None,
+            'epochs': 2000,
+            'eps': 1e-6,
+            'eta': 0.1,
+            'lmbda': 0.01,
+            'momentum': 0.5,
+            'optimizer': "SGD",
+            'sizes': [16, 32],
+        },
+        'SGM': {
+            'batch_size': None,
+            'epochs': 2000,
+            'eps':1e-6,
+            'eta': 0.1,
+            'lmbda': 0.01,
+            'optimizer': "SGM",
+            'sizes': [16, 32],
+        }
+    },
+    'monk2': {
+        'SGD': {
+            'batch_size': None,
+            'epochs': 2000,
+            'eps': 1e-6,
+            'eta': 0.1,
+            'lmbda': 0.,
+            'momentum': 0.5,
+            'optimizer': "SGD",
+            'sizes': [16, 32],
+        },
+        'SGM': {
+            'batch_size': None,
+            'epochs': 2000,
+            'eps':1e-6,
+            'eta': 0.1,
+            'lmbda': 0.,
+            'optimizer': "SGM",
+            'sizes': [16, 32],
+        }
+    },
+    'monk3': {
+        'SGD': {
+            'batch_size': None,
+            'epochs': 2000,
+            'eps': 1e-6,
+            'eta': 0.01,
+            'lmbda': 0.0001,
+            'momentum': 0.5,
+            'optimizer': "SGD",
+            'sizes': [5, 10],
+        },
+        'SGM': {
+            'batch_size': None,
+            'epochs': 2000,
+            'eps':1e-6,
+            'eta': 0.01,
+            'lmbda': 0.0001,
+            'optimizer': "SGM",
+            'sizes': [5, 10],
+        }
+    }
+}
+
+
+# Parameter grids for gridsearch test
+grids = {
+    'cup': {
+        'SGM': {    
+            'sizes': [[5, 10], [16, 32], [30, 50]],
+            'lmbda': [0, 0.0001, 0.001, 0.01],
+            'epochs': [1000],
+            'batch_size': [None],
+            'eta':[0.001, 0.005,  0.01, 0.05, 0.1],
+            'eps': [1e-4],
+            'optimizer': ['SGM']
+        },
+    
+        'SGD': {
+            'sizes': [[5, 10], [16, 32], [30, 50]],
+            'lmbda': [0, 0.0001, 0.001, 0.01],
+            'momentum': [0, 0.5, 0.9],
+            'nesterov': [True, False],
+            'epochs': [1000],
+            'batch_size': [None],
+            'eta':[0.001, 0.01, 0.1],
+            'eps': [1e-4],
+            'optimizer': ['SGD']
+        }
+    },
+
+    'monk': {
+        'SGM': {    
+            'sizes': [[5, 10], [16, 32], [30, 50]],
+            'lmbda': [0, 0.0001, 0.001, 0.01],
+            'epochs': [2000],
+            'batch_size': [None],
+            'eta':[0.0001, 0.001, 0.01, 0.1],
+            'eps': [1e-6],
+            'optimizer': ['SGM']
+        },
+    
+        'SGD': {
+            'sizes': [[5, 10], [16, 32], [30, 50]],
+            'lmbda': [0, 0.0001, 0.001, 0.01],
+            'momentum': [0, 0.5, 0.9],
+            'nesterov': [True, False],
+            'epochs': [2000],
+            'batch_size': [None],
+            'eta':[0.0001, 0.001, 0.01, 0.1],
+            'eps': [1e-6],
+            'optimizer': ['SGD']
+        }
+    }
+}
+
+
 if __name__ == '__main__':
     test = sys.argv[1]
     dataset = sys.argv[2]
@@ -25,59 +165,8 @@ if __name__ == '__main__':
         X_train, X_test, y_train, y_test = utils.load_monk(datasets[dataset])
 
 
-
     # Performs gridsearch over the specified hyperparameters
     if grid:
-        
-        grids = {
-            'cup': {
-                'SGM': {    
-                    'sizes': [[5, 10], [16, 32], [30, 50]],
-                    'lmbda': [0, 0.0001, 0.001, 0.01],
-                    'epochs': [1000],
-                    'batch_size': [None],
-                    'eta':[0.001, 0.005,  0.01, 0.05, 0.1],
-                    'eps': [1e-4],
-                    'optimizer': ['SGM']
-                },
-            
-                'SGD': {
-                    'sizes': [[5, 10], [16, 32], [30, 50]],
-                    'lmbda': [0, 0.0001, 0.001, 0.01],
-                    'momentum': [0, 0.5, 0.9],
-                    'nesterov': [True, False],
-                    'epochs': [1000],
-                    'batch_size': [None],
-                    'eta':[0.001, 0.01, 0.1],
-                    'eps': [1e-4],
-                    'optimizer': ['SGD']
-                }
-            },
-
-            'monk': {
-                'SGM': {    
-                    'sizes': [[5, 10], [16, 32], [30, 50]],
-                    'lmbda': [0, 0.0001, 0.001, 0.01],
-                    'epochs': [2000],
-                    'batch_size': [None],
-                    'eta':[0.0001, 0.001, 0.01, 0.1],
-                    'eps': [1e-6],
-                    'optimizer': ['SGM']
-                },
-            
-                'SGD': {
-                    'sizes': [[5, 10], [16, 32], [30, 50]],
-                    'lmbda': [0, 0.0001, 0.001, 0.01],
-                    'momentum': [0, 0.5, 0.9],
-                    'nesterov': [True, False],
-                    'epochs': [2000],
-                    'batch_size': [None],
-                    'eta':[0.0001, 0.001, 0.01, 0.1],
-                    'eps': [1e-6],
-                    'optimizer': ['SGD']
-                }
-            }
-        }
 
         full_name = dataset
         if dataset == 'cup':
@@ -110,93 +199,13 @@ if __name__ == '__main__':
         print(net.best_score())
     
     else:
+        # Add nesterov momentum to params
+        if test == 'NAG':
+            test = 'SGD'
+            params[dataset][test]['nesterov'] = True
+        if test == 'CM':
+            test = 'SGD'
 
-        params = {
-            'cup': {
-                'SGD': {
-                    'batch_size': None,
-                    'epochs': 2000,
-                    'eps': 1e-6,
-                    'eta': 0.001,
-                    'lmbda': 0.0001,
-                    'momentum': 0.9,
-                    'optimizer': "SGD",
-                    'sizes': [30, 50],
-                },
-                'SGM': {
-                    'batch_size': None,
-                    'epochs': 2000,
-                    'eps':1e-6,
-                    'eta': 0.05,
-                    'lmbda': 0.0001,
-                    'optimizer': "SGM",
-                    'sizes': [5, 10],
-                }
-            },
-            'monk1': {
-                'SGD': {
-                    'batch_size': None,
-                    'epochs': 2000,
-                    'eps': 1e-6,
-                    'eta': 0.1,
-                    'lmbda': 0.01,
-                    'momentum': 0.5,
-                    'optimizer': "SGD",
-                    'sizes': [16, 32],
-                },
-                'SGM': {
-                    'batch_size': None,
-                    'epochs': 2000,
-                    'eps':1e-6,
-                    'eta': 0.1,
-                    'lmbda': 0.01,
-                    'optimizer': "SGM",
-                    'sizes': [16, 32],
-                }
-            },
-            'monk2': {
-                'SGD': {
-                    'batch_size': None,
-                    'epochs': 2000,
-                    'eps': 1e-6,
-                    'eta': 0.1,
-                    'lmbda': 0.,
-                    'momentum': 0.5,
-                    'optimizer': "SGD",
-                    'sizes': [16, 32],
-                },
-                'SGM': {
-                    'batch_size': None,
-                    'epochs': 2000,
-                    'eps':1e-6,
-                    'eta': 0.1,
-                    'lmbda': 0.,
-                    'optimizer': "SGM",
-                    'sizes': [16, 32],
-                }
-            },
-            'monk3': {
-                'SGD': {
-                    'batch_size': None,
-                    'epochs': 2000,
-                    'eps': 1e-6,
-                    'eta': 0.01,
-                    'lmbda': 0.0001,
-                    'momentum': 0.5,
-                    'optimizer': "SGD",
-                    'sizes': [5, 10],
-                },
-                'SGM': {
-                    'batch_size': None,
-                    'epochs': 2000,
-                    'eps':1e-6,
-                    'eta': 0.01,
-                    'lmbda': 0.0001,
-                    'optimizer': "SGM",
-                    'sizes': [5, 10],
-                }
-            }
-        }
         if dataset == 'cup':
             net = NR(**params[dataset][test])
         else:
