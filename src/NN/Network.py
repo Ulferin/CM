@@ -16,7 +16,7 @@ from matplotlib import pyplot as plt
 
 from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU, Linear
 from src.NN.metrics import mean_squared_error, accuracy_score
-from src.NN.optimizers import SGD, SGM
+from src.NN.optimizers import SGD, SGM, Adam
 from src.utils import end_time
 
 
@@ -28,7 +28,8 @@ ACTIVATIONS = {
 
 OPTIMIZERS = {
     'SGD': SGD,
-    'SGM': SGM
+    'SGM': SGM,
+    'Adam': Adam
 }
 
 
