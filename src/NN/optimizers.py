@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-
+from sklearn.neural_network import MLPRegressor
 import numpy as np
 
 
@@ -89,6 +89,93 @@ class SGD(Optimizer):
             return True
 
         return False
+
+
+
+class Adam(Optimizer):
+    def __init__(self, eta, eps=0.00001, beta1=0.9, beta2=0.999):
+        super().__init__(eta, eps)
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.t = 0
+        self.offset = 1e-8
+
+        self.first_momentw = []
+        self.first_momentb = []
+        self.second_momentw = []
+        self.second_momentb = []
+
+
+    def update_mini_batch(self, nn, mini_batch):
+        size = len(mini_batch[0])
+        self.t += 1
+
+        nabla_b, nabla_w = nn._compute_grad(mini_batch)
+
+        # Initialize/update gradient accumulation variable
+        if len(self.first_momentw) == 0:
+            self.first_momentw = [0]*len(nabla_w)
+            self.second_momentw = [0]*len(nabla_w)
+            self.first_momentb = [0]*len(nabla_b)
+            self.second_momentb = [0]*len(nabla_b)
+
+        self.first_momentw = [
+            self.beta1 * m + (1-self.beta1)*g
+            for m, g in zip(self.first_momentw, nabla_w)
+        ]
+
+        self.first_momentb = [
+            self.beta1 * m + (1-self.beta1)*g
+            for m, g in zip(self.first_momentb, nabla_b)
+        ]
+
+        self.second_momentw = [
+            self.beta2 * v + (1 - self.beta2)*(g ** 2)
+            for v, g in zip(self.second_momentw, nabla_w)
+        ]
+
+        self.second_momentb = [
+            self.beta2 * v + (1 - self.beta2)*(g ** 2)
+            for v, g in zip(self.second_momentb, nabla_b)
+        ]
+
+        self.learning_rate = (self.eta
+            * np.sqrt(1 - self.beta2**self.t)
+            / (1 - self.beta1**self.t))
+
+        nn.weights = [
+            w - self.learning_rate * fm / (np.sqrt(sm) + self.offset) - nn.lmbda/size * w
+            for w, fm, sm
+            in zip(nn.weights, self.first_momentw, self.second_momentw)
+        ]
+
+        nn.biases = [
+            b - self.learning_rate * fm / (np.sqrt(sm) + self.offset) - nn.lmbda/size * b
+            for b, fm, sm
+            in zip(nn.biases, self.first_momentb, self.second_momentb)
+        ]
+
+
+    def iteration_end(self, nn):
+        """Checks if the optimizer has reached an optimal state.
+
+        Parameters
+        ----------
+        nn : Object
+            Neural Network object being trained using this optimizer.
+
+        Returns
+        -------
+        bool
+            Boolean value indicating whether the optimizer has reached an
+            optimal state.
+        """        
+
+        if nn.ngrad < self.eps:
+            return True
+
+        return False
+    
 
 
 class SGM(Optimizer):
