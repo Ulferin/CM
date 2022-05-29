@@ -20,7 +20,7 @@ params = {
     'cup': {
         'SGD': {
             'batch_size': None,
-            'epochs': 2000,
+            'epochs': 100,
             'eps': 1e-6,
             'eta': 0.001,
             'lmbda': 0.0001,
@@ -39,7 +39,7 @@ params = {
         },
         'Adam': {
             'batch_size': None,
-            'epochs': 2000,
+            'epochs': 100,
             'eps': 1e-6,
             'eta': 0.1,
             'lmbda': 0.01,
@@ -272,9 +272,9 @@ if __name__ == '__main__':
             test = 'SGD'
 
         if dataset == 'cup':
-            net = NR(**params[dataset][test])
+            net = NR(**params[dataset][test], debug=True)
         else:
-            net = NC(**params[dataset][test])
+            net = NC(**params[dataset][test], debug=True)
 
         net.fit(X_train, y_train, test_data=(X_test, y_test))
         
