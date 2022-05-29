@@ -16,6 +16,11 @@ class Optimizer(metaclass=ABCMeta):
         pass
 
 
+    # @abstractmethod
+    # def get_updates(self, grads):
+    #     pass
+
+
     @abstractmethod
     def iteration_end(self, nn):      
         pass
@@ -100,10 +105,8 @@ class Adam(Optimizer):
         self.t = 0
         self.offset = 1e-8
 
-        self.first_momentw = []
-        self.first_momentb = []
-        self.second_momentw = []
-        self.second_momentb = []
+        self.first_moment = []
+        self.second_moment = []
 
 
     def update_mini_batch(self, nn, mini_batch):
@@ -111,49 +114,36 @@ class Adam(Optimizer):
         self.t += 1
 
         nabla_b, nabla_w = nn._compute_grad(mini_batch)
+        grads = nabla_w + nabla_b
 
         # Initialize/update gradient accumulation variable
-        if len(self.first_momentw) == 0:
-            self.first_momentw = [0]*len(nabla_w)
-            self.second_momentw = [0]*len(nabla_w)
-            self.first_momentb = [0]*len(nabla_b)
-            self.second_momentb = [0]*len(nabla_b)
+        if len(self.first_moment) == 0:
+            self.first_moment = [0]*len(grads)
+            self.second_moment = [0]*len(grads)
 
-        self.first_momentw = [
+        self.first_moment = [
             self.beta1 * m + (1-self.beta1)*g
-            for m, g in zip(self.first_momentw, nabla_w)
+            for m, g in zip(self.first_moment, grads)
         ]
 
-        self.first_momentb = [
-            self.beta1 * m + (1-self.beta1)*g
-            for m, g in zip(self.first_momentb, nabla_b)
-        ]
-
-        self.second_momentw = [
+        self.second_moment = [
             self.beta2 * v + (1 - self.beta2)*(g ** 2)
-            for v, g in zip(self.second_momentw, nabla_w)
-        ]
-
-        self.second_momentb = [
-            self.beta2 * v + (1 - self.beta2)*(g ** 2)
-            for v, g in zip(self.second_momentb, nabla_b)
+            for v, g in zip(self.second_moment, grads)
         ]
 
         self.learning_rate = (self.eta
             * np.sqrt(1 - self.beta2**self.t)
             / (1 - self.beta1**self.t))
 
-        nn.weights = [
-            w - self.learning_rate * fm / (np.sqrt(sm) + self.offset) - nn.lmbda/size * w
-            for w, fm, sm
-            in zip(nn.weights, self.first_momentw, self.second_momentw)
-        ]
+        params = nn.weights + nn.biases
+        updates = [
+            -self.learning_rate * fm / (np.sqrt(sm) + self.offset)
+            for fm, sm in zip(self.first_moment, self.second_moment)]
 
-        nn.biases = [
-            b - self.learning_rate * fm / (np.sqrt(sm) + self.offset) - nn.lmbda/size * b
-            for b, fm, sm
-            in zip(nn.biases, self.first_momentb, self.second_momentb)
-        ]
+        for param, update in zip((p for p in params), updates):
+            param += update
+            param -= np.sign(param)*nn.lmbda
+            # param -= nn.lmbda/size*param
 
 
     def iteration_end(self, nn):

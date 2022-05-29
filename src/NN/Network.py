@@ -304,9 +304,9 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.num_layers = len(self._sizes)
 
         # Initialize network parameters
-        self.biases = [self.rng.normal(0,0.5,l) for l in self._sizes[1:]]
+        self.biases = [np.array(self.rng.normal(0,0.5,l)) for l in self._sizes[1:]]
         self.weights = [
-            self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x))
+            np.array(self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)))
             for x, y in zip(self._sizes[:-1], self._sizes[1:])]
         self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
         self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
