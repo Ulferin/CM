@@ -20,7 +20,7 @@ params = {
     'cup': {
         'SGD': {
             'batch_size': None,
-            'epochs': 100,
+            'epochs': 2000,
             'eps': 1e-6,
             'eta': 0.001,
             'lmbda': 0.0001,
@@ -28,18 +28,9 @@ params = {
             'optimizer': "SGD",
             'sizes': [30, 50],
         },
-        'SGM': {
-            'batch_size': None,
-            'epochs': 2000,
-            'eps':1e-6,
-            'eta': 0.05,
-            'lmbda': 0.0001,
-            'optimizer': "SGM",
-            'sizes': [5, 10],
-        },
         'Adam': {
             'batch_size': None,
-            'epochs': 100,
+            'epochs': 2000,
             'eps': 1e-6,
             'eta': 0.1,
             'lmbda': 0.01,
@@ -68,15 +59,6 @@ params = {
             'momentum': 0.5,
             'optimizer': "Adam",
             'sizes': [16, 32],
-        },
-        'SGM': {
-            'batch_size': None,
-            'epochs': 2000,
-            'eps':1e-6,
-            'eta': 0.1,
-            'lmbda': 0.01,
-            'optimizer': "SGM",
-            'sizes': [16, 32],
         }
     },
     'monk2': {
@@ -98,15 +80,6 @@ params = {
             'lmbda': 0.01,
             'momentum': 0.5,
             'optimizer': "Adam",
-            'sizes': [16, 32],
-        },
-        'SGM': {
-            'batch_size': None,
-            'epochs': 2000,
-            'eps':1e-6,
-            'eta': 0.1,
-            'lmbda': 0.,
-            'optimizer': "SGM",
             'sizes': [16, 32],
         }
     },
@@ -130,15 +103,6 @@ params = {
             'momentum': 0.5,
             'optimizer': "Adam",
             'sizes': [16, 32],
-        },
-        'SGM': {
-            'batch_size': None,
-            'epochs': 2000,
-            'eps':1e-6,
-            'eta': 0.01,
-            'lmbda': 0.0001,
-            'optimizer': "SGM",
-            'sizes': [5, 10],
         }
     }
 }
@@ -147,22 +111,13 @@ params = {
 # Parameter grids for gridsearch test
 grids = {
     'cup': {
-        'SGM': {    
-            'sizes': [[5, 10], [16, 32], [30, 50]],
-            'lmbda': [0, 0.0001, 0.001, 0.01],
-            'epochs': [1000],
-            'batch_size': [None],
-            'eta':[0.001, 0.005,  0.01, 0.05, 0.1],
-            'eps': [1e-4],
-            'optimizer': ['SGM']
-        },
         
         'SGD': {
-            'sizes': [[5, 10], [16, 32], [30, 50]],
+            'sizes': [[2,5], [16, 32], 0],
             'lmbda': [0, 0.0001, 0.001, 0.01],
-            'momentum': [0, 0.5, 0.9],
+            'momentum': [0.5, 0.9],
             'nesterov': [True, False],
-            'epochs': [1000],
+            'epochs': [2000],
             'batch_size': [None],
             'eta':[0.001, 0.01, 0.1],
             'eps': [1e-4],
@@ -170,8 +125,8 @@ grids = {
         },
 
         'Adam': {
-            'sizes': [[5, 10], [16, 32], [30, 50]],
-            'lmbda': [0, 0.0001, 0.001, 0.01],
+            'sizes': [[16, 32]],
+            'lmbda': [0.0001, 0.001, 0.01],
             'epochs': [1000],
             'batch_size': [None],
             'eta':[0.001, 0.01, 0.1],
@@ -181,20 +136,11 @@ grids = {
     },
 
     'monk': {
-        'SGM': {    
-            'sizes': [[5, 10], [16, 32], [30, 50]],
-            'lmbda': [0, 0.0001, 0.001, 0.01],
-            'epochs': [2000],
-            'batch_size': [None],
-            'eta':[0.0001, 0.001, 0.01, 0.1],
-            'eps': [1e-6],
-            'optimizer': ['SGM']
-        },
     
         'SGD': {
             'sizes': [[5, 10], [16, 32], [30, 50]],
             'lmbda': [0, 0.0001, 0.001, 0.01],
-            'momentum': [0, 0.5, 0.9],
+            'momentum': [0.5, 0.9],
             'nesterov': [True, False],
             'epochs': [2000],
             'batch_size': [None],
@@ -249,7 +195,7 @@ if __name__ == '__main__':
         grid = grids[dataset][test]
 
         gs = GridSearchCV(net(), cv=cv, param_grid=grid, n_jobs=-1,
-                          verbose=0, scoring=scoring)
+                          verbose=10, scoring=scoring)
         gs.fit(X_train, y_train)
         print(f"Best score over VL: {gs.best_score_}, "
               f"best params: {gs.best_params_}\n")
@@ -274,7 +220,7 @@ if __name__ == '__main__':
         if dataset == 'cup':
             net = NR(**params[dataset][test], debug=True)
         else:
-            net = NC(**params[dataset][test], debug=True)
+            net = NC(**{'batch_size': None, 'epochs': 2000, 'eps': 1e-06, 'eta': 0.001, 'lmbda': 0, 'momentum': 0, 'nesterov': True, 'optimizer': 'SGD', 'sizes': [2, 3]}, debug=True)
 
         net.fit(X_train, y_train, test_data=(X_test, y_test))
         

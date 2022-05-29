@@ -80,7 +80,7 @@ class SGD(Optimizer):
 
         for param, update in zip((p for p in parameters), self.v):
             param += update
-            param -= self.lmbda*param/size
+            # param -= self.lmbda*param/size
             #FIXME:  notice here we are applying regularization to biases as well
             #       it would be good to avoid this and only consider weights
         
@@ -132,6 +132,6 @@ class Adam(Optimizer):
 
         for param, update in zip((p for p in parameters), updates):
             param += update
-            param -= np.sign(param)*self.lmbda/size
+            # param -= np.sign(param)*self.lmbda/size
             #FIXME: here we are applying regularization to both weights and
             #       biases, but it should be correct to only apply to weights

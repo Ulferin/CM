@@ -166,6 +166,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             each weight in the network.
         """        
         delta = 0
+        size = len(x)
         nabla_b = [0]*(len(self._sizes)-1)
         nabla_w = [0]*(len(self._sizes)-1)
 
@@ -187,6 +188,9 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
             nabla_b[-l] = delta.sum(axis=0)
             nabla_w[-l] = np.matmul(delta.T, units_out[-l-1])
+            # nabla_w[-l] += np.sign(nabla_w[-l])*self.lmbda
+            nabla_w[-l] += self.lmbda*self.weights[-l]
+            # nabla_w[-l] /= size
 
         # Computes execution statistics
         end = end_time(start)
@@ -267,8 +271,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         nabla_b, nabla_w = self._backpropagation_batch(
                                     mini_batch[0],mini_batch[1])
         self.ngrad = np.linalg.norm(
-                        np.hstack([el.ravel() for el in nabla_w + nabla_b])
-                        / len(mini_batch[0]))
+                        np.hstack([el.ravel() for el in nabla_w + nabla_b]))
 
         return nabla_b, nabla_w
 
