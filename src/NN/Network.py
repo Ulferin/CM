@@ -221,7 +221,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.num_batches = len(mini_batches)
 
         for mini_batch in mini_batches:
-            self.opti.update_mini_batch(self, mini_batch)
+            params = self.weights + self.biases
+            self.opti.update_mini_batch(self, mini_batch, params)
             self.grad_est.append(self.ngrad)
 
 
@@ -308,8 +309,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.weights = [
             np.array(self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)))
             for x, y in zip(self._sizes[:-1], self._sizes[1:])]
-        self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
-        self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
 
         start = dt.now()
         self.fitted = True

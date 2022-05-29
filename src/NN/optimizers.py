@@ -6,13 +6,14 @@ import numpy as np
 class Optimizer(metaclass=ABCMeta):
 
     @abstractmethod
-    def __init__(self, eta, eps=1e-5):
+    def __init__(self, eta, eps=1e-5, lmbda=0.001):
         self.eta = eta
         self.eps = eps
+        self.lmbda = lmbda
 
 
     @abstractmethod
-    def update_mini_batch(self, nn, mini_batch):           
+    def update_mini_batch(self, nn, mini_batch, parameters):           
         pass
 
 
@@ -29,11 +30,14 @@ class Optimizer(metaclass=ABCMeta):
 
 class SGD(Optimizer):
 
-    def __init__(self, eta, eps=1e-5):
-        super().__init__(eta, eps=eps)
+    def __init__(self, eta, eps=1e-5, lmbda=0.01, momentum=0.9, nesterov=True):
+        super().__init__(eta, eps=eps, lmbda=lmbda)
+        self.nesterov = nesterov
+        self.momentum = momentum
 
+        self.v = []
 
-    def update_mini_batch(self, nn, mini_batch):
+    def update_mini_batch(self, nn, mini_batch, parameters):
         """Updates weights and biases of the specified Neural Network object
         :nn: by using the current mini-batch samples :mini_batch:. Uses a
         regularized momentum based approach for the weights update.
@@ -49,31 +53,31 @@ class SGD(Optimizer):
         """
         size = len(mini_batch[0])
 
+        if len(self.v) == 0:
+            self.v = [np.zeros_like(param) for param in parameters]
+
         # Nesterov update
-        if nn.nesterov:
-            nn.weights = [w + nn.momentum * wv
-                            for w, wv in zip(nn.weights, nn.wvelocities)]
-            nn.biases = [b + nn.momentum * bv
-                            for b, bv in zip(nn.biases, nn.bvelocities)]
+        if self.nesterov:
+            for param, velocity in zip((p for p in parameters), self.v):
+                param += self.momentum * velocity
+
 
         # Compute current gradient
         nabla_b, nabla_w = nn._compute_grad(mini_batch)
+        grads = nabla_w + nabla_b
 
         # Updates velocities with the current momentum coefficient
-        nn.wvelocities = [nn.momentum * velocity - (self.eta/size)*nw
-                          for velocity,nw 
-                          in zip(nn.wvelocities, nabla_w)]
-        nn.bvelocities = [nn.momentum * velocity - (self.eta/size)*nb
-                          for velocity,nb
-                          in zip(nn.bvelocities, nabla_b)]
+        self.v = [
+            self.momentum * velocity - (self.eta/size)*g
+            for velocity, g
+            in zip(self.v, grads)
+        ]
 
-        # Updates weights
-        nn.weights = [w + velocity - (nn.lmbda/size) * w
-                      for w, velocity
-                      in zip(nn.weights, nn.wvelocities)]
-        nn.biases = [b + velocity
-                     for b, velocity
-                     in zip(nn.biases, nn.bvelocities)]
+        for param, update in zip((p for p in parameters), self.v):
+            param += update
+            param -= self.lmbda*param/size
+            #FIXME:  notice here we are applying regularization to biases as well
+            #       it would be good to avoid this and only consider weights
 
     def iteration_end(self, nn):
         """Checks if the optimizer has reached an optimal state.
@@ -98,8 +102,8 @@ class SGD(Optimizer):
 
 
 class Adam(Optimizer):
-    def __init__(self, eta, eps=0.00001, beta1=0.9, beta2=0.999):
-        super().__init__(eta, eps)
+    def __init__(self, eta, eps=0.00001, beta1=0.9, beta2=0.999, lmbda=0.01):
+        super().__init__(eta, eps, lmbda)
         self.beta1 = beta1
         self.beta2 = beta2
         self.t = 0
@@ -109,7 +113,7 @@ class Adam(Optimizer):
         self.second_moment = []
 
 
-    def update_mini_batch(self, nn, mini_batch):
+    def update_mini_batch(self, nn, mini_batch, parameters):
         size = len(mini_batch[0])
         self.t += 1
 
@@ -135,15 +139,16 @@ class Adam(Optimizer):
             * np.sqrt(1 - self.beta2**self.t)
             / (1 - self.beta1**self.t))
 
-        params = nn.weights + nn.biases
+        # params = nn.weights + nn.biases
         updates = [
             -self.learning_rate * fm / (np.sqrt(sm) + self.offset)
             for fm, sm in zip(self.first_moment, self.second_moment)]
 
-        for param, update in zip((p for p in params), updates):
+        for param, update in zip((p for p in parameters), updates):
             param += update
-            param -= np.sign(param)*nn.lmbda
-            # param -= nn.lmbda/size*param
+            param -= np.sign(param)*nn.lmbda/size
+            #FIXME: here we are applying regularization to both weights and
+            #       biases, but it should be correct to only apply to weights
 
 
     def iteration_end(self, nn):
