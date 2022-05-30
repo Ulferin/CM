@@ -27,6 +27,7 @@ params = {
             'lmbda': 0.0001,
             'momentum': 0.9,
             'optimizer': "SGD",
+            'activation': 'sigmoid',
             'sizes': [30, 50],
         },
         'Adam': {
@@ -37,6 +38,7 @@ params = {
             'lmbda': 0.01,
             'momentum': 0.5,
             'optimizer': "Adam",
+            'activation': 'sigmoid',
             'sizes': [16, 32],
         }
     },
@@ -49,6 +51,7 @@ params = {
             'lmbda': 0.01,
             'momentum': 0.5,
             'optimizer': "SGD",
+            'activation': 'sigmoid',
             'sizes': [16, 32],
         },
         'Adam': {
@@ -58,6 +61,7 @@ params = {
             'eta': 0.1,
             'lmbda': 0.0001,
             'optimizer': "Adam",
+            'activation': 'sigmoid',
             'sizes': [16, 32],
         }
     },
@@ -70,6 +74,7 @@ params = {
             'lmbda': 0.,
             'momentum': 0.5,
             'optimizer': "SGD",
+            'activation': 'sigmoid',
             'sizes': [16, 32],
         },
         'Adam': {
@@ -79,6 +84,7 @@ params = {
             'eta': 0.1,
             'lmbda': 0.01,
             'optimizer': "Adam",
+            'activation': 'sigmoid',
             'sizes': [16, 32],
         }
     },
@@ -91,6 +97,7 @@ params = {
             'lmbda': 0.0001,
             'momentum': 0.5,
             'optimizer': "SGD",
+            'activation': 'sigmoid',
             'sizes': [5, 10],
         },
         'Adam': {
@@ -100,6 +107,7 @@ params = {
             'eta': 0.1,
             'lmbda': 0.01,
             'optimizer': "Adam",
+            'activation': 'sigmoid',
             'sizes': [16, 32],
         }
     }
@@ -119,6 +127,7 @@ grids = {
             'batch_size': [None],
             'eta':[0.001, 0.01, 0.1],
             'eps': [1e-4],
+            'activation': 'sigmoid',
             'optimizer': ['SGD']
         },
 
@@ -129,6 +138,7 @@ grids = {
             'batch_size': [None],
             'eta':[0.001, 0.01, 0.1],
             'eps': [1e-4],
+            'activation': 'sigmoid',
             'optimizer': ['Adam']
         }
     },
@@ -136,25 +146,26 @@ grids = {
     'monk': {
     
         'SGD': {
-            'sizes': [[5, 10], [16, 32], [30, 50]],
+            'sizes': [[2,3], [3,5], [5,3], [5, 10], [10, 5]],
             'lmbda': [0, 0.0001, 0.001],
             'momentum': [0, 0.5, 0.9],
             'nesterov': [True, False],
-            'epochs': [2000],
-            'batch_size': [None],
+            'epochs': [500],
+            'batch_size': [10, 32, None],
             'eta':[0.0001, 0.001, 0.01, 0.1],
             'eps': [1e-6],
             'optimizer': ['SGD'],
-            'activation': ['Lrelu']
+            'activation': ['sigmoid'],
         },
 
         'Adam': {
-            'sizes': [[1,2], [3,5], [5, 10]],
+            'sizes': [[2,3], [3,5], [5,3], [5, 10], [10, 5]],
             'lmbda': [0, 0.0001, 0.001, 0.01],
             'epochs': [500],
-            'batch_size': [10, 32],
+            'batch_size': [10, 32, None],
             'eta':[0.0001, 0.001, 0.01, 0.1],
             'eps': [1e-4],
+            'activation': ['sigmoid'],
             'optimizer': ['Adam']
         }
     }
