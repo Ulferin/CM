@@ -122,7 +122,6 @@ class Adam(Optimizer):
             * np.sqrt(1 - self.beta2**self.t)
             / (1 - self.beta1**self.t))
 
-        # params = nn.weights + nn.biases
         updates = [
             -self.learning_rate * fm / (np.sqrt(sm) + self.offset)
             for fm, sm in zip(self.first_moment, self.second_moment)]

@@ -189,10 +189,10 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             nabla_b[-l] = delta.sum(axis=0)
             nabla_b[-l] /= size
             nabla_w[-l] = np.matmul(delta.T, units_out[-l-1])
-            # nabla_w[-l] += np.sign(nabla_w[-l])*self.lmbda
+            nabla_w[-l] += np.sign(self.weights[-l])*self.lmbda
             
             # Applying regularization and mean above samples
-            nabla_w[-l] += self.lmbda*self.weights[-l]
+            # nabla_w[-l] += self.lmbda*self.weights[-l]
             nabla_w[-l] /= size
 
         # Computes execution statistics
@@ -250,7 +250,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             grads = nabla_w + nabla_b
             
             self.opti.update_parameters(params, grads)
-            self.grad_est.append(self.ngrad)
 
 
     def _compute_grad(self, mini_batch):
@@ -275,6 +274,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                                     mini_batch[0],mini_batch[1])
         self.ngrad = np.linalg.norm(
                         np.hstack([el.ravel() for el in nabla_w + nabla_b]))
+        self.grad_est.append(self.ngrad)
 
         return nabla_b, nabla_w
 
