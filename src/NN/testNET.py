@@ -2,7 +2,6 @@ import sys
 
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
 
-from src.NN.net_old import NR as NR_old, NC as NC_old
 from src.NN.Network import NR, NC
 
 import src.utils as utils
@@ -181,13 +180,13 @@ if __name__ == '__main__':
 
         full_name = dataset
         if dataset == 'cup':
-            net = NR_old if sys.argv[4] == 'old' else NR
+            net = NR
             cv = 5
             scoring = 'neg_mean_squared_error'
         else:
             # Removes the monk number
             dataset = 'monk'
-            net = NC_old if sys.argv[4] == 'old' else NC
+            net = NC
             cv = StratifiedShuffleSplit(n_splits=5, test_size=0.20,
                                         random_state=42)
             scoring = 'accuracy'
@@ -219,16 +218,11 @@ if __name__ == '__main__':
 
         if dataset == 'cup':
             net = NR(**params[dataset][test], debug=True)
-            net_old = NR_old(**params[dataset][test], debug=True)
         else:
             net = NC(**params[dataset][test], debug=True)
-            net_old = NC_old(**params[dataset][test], debug=True)
 
         net.fit(X_train, y_train, test_data=(X_test, y_test))
-        net_old.fit(X_train, y_train, test_data=(X_test, y_test))
         
         print("Improved network:")
         print(net.best_score(name=f"{dataset}_{test}", save=False))
-        print("Old network:")
-        print(net_old.best_score(name=f"{dataset}_{test}", save=False))
     
