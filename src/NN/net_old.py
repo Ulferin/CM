@@ -16,18 +16,19 @@ from matplotlib import pyplot as plt
 
 from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU, Linear
 from src.NN.metrics import mean_squared_error, accuracy_score
-from src.NN.optimizers import SGD, Adam
+from src.NN.opt_old import SGD, SGM, Adam
 from src.utils import end_time
 
 
 ACTIVATIONS = {
-    # 'relu': ReLU,
-    # 'Lrelu':LeakyReLU,
+    'relu': ReLU,
+    'Lrelu':LeakyReLU,
     'sigmoid': Sigmoid
 }
 
 OPTIMIZERS = {
     'SGD': SGD,
+    'SGM': SGM,
     'Adam': Adam
 }
 
@@ -44,7 +45,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
     def __init__(self,
                 sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01,
                 activation='sigmoid', lmbda=0.0, momentum=0.0, nesterov=False,
-                eps=1e-5, batch_size=None, debug=False, beta1=0.9, beta2=0.999):            
+                eps=1e-5, batch_size=None, debug=False,):            
 
         self.rng = default_rng(seed)     # needed for reproducibility
 
@@ -78,21 +79,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.epochs_time = []
         self.total_time = 0
         self.update_avg = 0
-
-        # Initialize optimizer
-        optimizer_params = {
-            'eta': eta,
-            'eps': eps,
-            'lmbda': lmbda
-        }
-        if optimizer == 'SGD':
-            optimizer_params['momentum'] = momentum
-            optimizer_params['nesterov'] = nesterov
-        elif optimizer == 'Adam':
-            optimizer_params['beta1'] = beta1
-            optimizer_params['beta2'] = beta2
-
-        self.opti = OPTIMIZERS[self.optimizer](**optimizer_params)
 
 
     def _feedforward_batch(self, inp):
@@ -166,7 +152,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             each weight in the network.
         """        
         delta = 0
-        size = len(x)
         nabla_b = [0]*(len(self._sizes)-1)
         nabla_w = [0]*(len(self._sizes)-1)
 
@@ -187,13 +172,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 delta = delta * self.der(nets[-l])
 
             nabla_b[-l] = delta.sum(axis=0)
-            nabla_b[-l] /= size
             nabla_w[-l] = np.matmul(delta.T, units_out[-l-1])
-            # nabla_w[-l] += np.sign(nabla_w[-l])*self.lmbda
-            
-            # Applying regularization and mean above samples
-            nabla_w[-l] += self.lmbda*self.weights[-l]
-            nabla_w[-l] /= size
 
         # Computes execution statistics
         end = end_time(start)
@@ -242,14 +221,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.num_batches = len(mini_batches)
 
         for mini_batch in mini_batches:
-            params = self.weights + self.biases
-            size = len(mini_batch[0])
-            
-            # Compute current gradient
-            nabla_b, nabla_w = self._compute_grad(mini_batch)
-            grads = nabla_w + nabla_b
-            
-            self.opti.update_parameters(params, grads)
+            self.opti.update_mini_batch(self, mini_batch)
             self.grad_est.append(self.ngrad)
 
 
@@ -274,7 +246,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         nabla_b, nabla_w = self._backpropagation_batch(
                                     mini_batch[0],mini_batch[1])
         self.ngrad = np.linalg.norm(
-                        np.hstack([el.ravel() for el in nabla_w + nabla_b]))
+                        np.hstack([el.ravel() for el in nabla_w + nabla_b])
+                        / len(mini_batch[0]))
 
         return nabla_b, nabla_w
 
@@ -318,8 +291,11 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         # Set up activation function and optimizer
         self.act = ACTIVATIONS[self.activation]
-        # self.opti = OPTIMIZERS[self.optimizer](self.eta, eps=self.eps)
-        self.der = self.act.derivative
+        self.opti = OPTIMIZERS[self.optimizer](self.eta, eps=self.eps)
+        self.der = (
+            self.act.derivative
+            if self.optimizer == 'SGD'
+            else self.act.subgrad)
 
         # Set up input/output units
         self._sizes = self.sizes.copy()
@@ -328,10 +304,12 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.num_layers = len(self._sizes)
 
         # Initialize network parameters
-        self.biases = [np.array(self.rng.normal(0,0.5,l)) for l in self._sizes[1:]]
+        self.biases = [self.rng.normal(0,0.5,l) for l in self._sizes[1:]]
         self.weights = [
-            np.array(self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)))
+            self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x))
             for x, y in zip(self._sizes[:-1], self._sizes[1:])]
+        self.wvelocities = [np.zeros_like(weight) for weight in self.weights]
+        self.bvelocities = [np.zeros_like(bias) for bias in self.biases]
 
         start = dt.now()
         self.fitted = True
@@ -347,7 +325,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 self.evaluate(e)
 
                 self.score = self.train_loss[-1]
-                iteration_end = self.opti.iteration_end(self.ngrad)
+                iteration_end = self.opti.iteration_end(self)
                 
                 epoch_time = end_time(start)
                 self.epochs_time.append(epoch_time)

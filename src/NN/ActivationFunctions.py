@@ -224,8 +224,8 @@ class Sigmoid(ActivationFunction):
             derivative applied elementwise.
         """
 
-        x = Sigmoid.function(x)
-        return x * (1 - x)
+        sgmd = Sigmoid.function(x)
+        return sgmd * (1 - sgmd)
 
     
     @staticmethod
