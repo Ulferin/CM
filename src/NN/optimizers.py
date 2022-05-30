@@ -13,7 +13,7 @@ class Optimizer(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def update_parameters(self, parameters, grads, size):
+    def update_parameters(self, parameters, grads):
         pass
 
 
@@ -53,7 +53,7 @@ class SGD(Optimizer):
 
         self.v = []
 
-    def update_parameters(self, parameters, grads, size):
+    def update_parameters(self, parameters, grads):
         """Updates weights and biases of the specified Neural Network object
         :nn: by using the current mini-batch samples :mini_batch:. Uses a
         regularized momentum based approach for the weights update.
@@ -73,16 +73,13 @@ class SGD(Optimizer):
 
         # Updates velocities with the current momentum coefficient
         self.v = [
-            self.momentum * velocity - (self.eta/size)*g
+            self.momentum * velocity - self.eta*g
             for velocity, g
             in zip(self.v, grads)
         ]
 
         for param, update in zip((p for p in parameters), self.v):
             param += update
-            # param -= self.lmbda*param/size
-            #FIXME:  notice here we are applying regularization to biases as well
-            #       it would be good to avoid this and only consider weights
         
         # Nesterov update
         if self.nesterov:
@@ -103,7 +100,7 @@ class Adam(Optimizer):
         self.second_moment = []
 
 
-    def update_parameters(self, parameters, grads, size):
+    def update_parameters(self, parameters, grads):
         self.t += 1
 
         # Initialize/update gradient accumulation variable
@@ -125,13 +122,9 @@ class Adam(Optimizer):
             * np.sqrt(1 - self.beta2**self.t)
             / (1 - self.beta1**self.t))
 
-        # params = nn.weights + nn.biases
         updates = [
             -self.learning_rate * fm / (np.sqrt(sm) + self.offset)
             for fm, sm in zip(self.first_moment, self.second_moment)]
 
         for param, update in zip((p for p in parameters), updates):
             param += update
-            # param -= np.sign(param)*self.lmbda/size
-            #FIXME: here we are applying regularization to both weights and
-            #       biases, but it should be correct to only apply to weights

@@ -21,8 +21,8 @@ from src.utils import end_time
 
 
 ACTIVATIONS = {
-    'relu': ReLU,
-    'Lrelu':LeakyReLU,
+    # 'relu': ReLU,
+    # 'Lrelu':LeakyReLU,
     'sigmoid': Sigmoid
 }
 
@@ -43,7 +43,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
     @abstractmethod
     def __init__(self,
                 sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01,
-                activation='Lrelu', lmbda=0.0, momentum=0.0, nesterov=False,
+                activation='sigmoid', lmbda=0.0, momentum=0.0, nesterov=False,
                 eps=1e-5, batch_size=None, debug=False, beta1=0.9, beta2=0.999):            
 
         self.rng = default_rng(seed)     # needed for reproducibility
@@ -187,10 +187,13 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 delta = delta * self.der(nets[-l])
 
             nabla_b[-l] = delta.sum(axis=0)
+            nabla_b[-l] /= size
             nabla_w[-l] = np.matmul(delta.T, units_out[-l-1])
-            # nabla_w[-l] += np.sign(nabla_w[-l])*self.lmbda
-            nabla_w[-l] += self.lmbda*self.weights[-l]
-            # nabla_w[-l] /= size
+            nabla_w[-l] += np.sign(self.weights[-l])*self.lmbda
+            
+            # Applying regularization and mean above samples
+            # nabla_w[-l] += self.lmbda*self.weights[-l]
+            nabla_w[-l] /= size
 
         # Computes execution statistics
         end = end_time(start)
@@ -246,8 +249,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             nabla_b, nabla_w = self._compute_grad(mini_batch)
             grads = nabla_w + nabla_b
             
-            self.opti.update_parameters(params, grads, size)
-            self.grad_est.append(self.ngrad)
+            self.opti.update_parameters(params, grads)
 
 
     def _compute_grad(self, mini_batch):
@@ -272,6 +274,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                                     mini_batch[0],mini_batch[1])
         self.ngrad = np.linalg.norm(
                         np.hstack([el.ravel() for el in nabla_w + nabla_b]))
+        self.grad_est.append(self.ngrad)
 
         return nabla_b, nabla_w
 
@@ -600,7 +603,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 class NC(Network, BaseEstimator): 
     def __init__(
         self, sizes=None, optimizer='SGD', seed=0, epochs=300, eta=0.1,
-        activation='Lrelu', lmbda=0.0001, momentum=0.5, nesterov=False,
+        activation='sigmoid', lmbda=0.0001, momentum=0.5, nesterov=False,
         eps=1e-5, batch_size=None, debug=False):
         """Initializes the network with the specified hyperparameters. Network
         weights and biases will be initialized at fitting time following the shape
@@ -703,7 +706,7 @@ class NC(Network, BaseEstimator):
 class NR(Network, BaseEstimator):
     def __init__(
         self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01,
-        activation='Lrelu', lmbda=0.0001, momentum=0.5, nesterov=False, eps=1e-5,
+        activation='sigmoid', lmbda=0.0001, momentum=0.5, nesterov=False, eps=1e-5,
         batch_size=None, debug=False):
         """Initializes the network with the specified hyperparameters. Network
         weights and biases will be initialized at fitting time following the shape

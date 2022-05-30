@@ -2,7 +2,9 @@ import sys
 
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
 
+from src.NN.net_old import NR as NR_old, NC as NC_old
 from src.NN.Network import NR, NC
+
 import src.utils as utils
 
 
@@ -55,8 +57,7 @@ params = {
             'epochs': 2000,
             'eps': 1e-6,
             'eta': 0.1,
-            'lmbda': 0.01,
-            'momentum': 0.5,
+            'lmbda': 0.0001,
             'optimizer': "Adam",
             'sizes': [16, 32],
         }
@@ -78,7 +79,6 @@ params = {
             'eps': 1e-6,
             'eta': 0.1,
             'lmbda': 0.01,
-            'momentum': 0.5,
             'optimizer': "Adam",
             'sizes': [16, 32],
         }
@@ -100,7 +100,6 @@ params = {
             'eps': 1e-6,
             'eta': 0.1,
             'lmbda': 0.01,
-            'momentum': 0.5,
             'optimizer': "Adam",
             'sizes': [16, 32],
         }
@@ -139,22 +138,23 @@ grids = {
     
         'SGD': {
             'sizes': [[5, 10], [16, 32], [30, 50]],
-            'lmbda': [0, 0.0001, 0.001, 0.01],
-            'momentum': [0.5, 0.9],
+            'lmbda': [0, 0.0001, 0.001],
+            'momentum': [0, 0.5, 0.9],
             'nesterov': [True, False],
             'epochs': [2000],
             'batch_size': [None],
             'eta':[0.0001, 0.001, 0.01, 0.1],
             'eps': [1e-6],
-            'optimizer': ['SGD']
+            'optimizer': ['SGD'],
+            'activation': ['Lrelu']
         },
 
         'Adam': {
-            'sizes': [[5, 10], [16, 32], [30, 50]],
+            'sizes': [[1,2], [3,5], [5, 10]],
             'lmbda': [0, 0.0001, 0.001, 0.01],
-            'epochs': [1000],
-            'batch_size': [None],
-            'eta':[0.001, 0.01, 0.1],
+            'epochs': [500],
+            'batch_size': [10, 32],
+            'eta':[0.0001, 0.001, 0.01, 0.1],
             'eps': [1e-4],
             'optimizer': ['Adam']
         }
@@ -181,13 +181,13 @@ if __name__ == '__main__':
 
         full_name = dataset
         if dataset == 'cup':
-            net = NR
+            net = NR_old if sys.argv[4] == 'old' else NR
             cv = 5
             scoring = 'neg_mean_squared_error'
         else:
             # Removes the monk number
             dataset = 'monk'
-            net = NC
+            net = NC_old if sys.argv[4] == 'old' else NC
             cv = StratifiedShuffleSplit(n_splits=5, test_size=0.20,
                                         random_state=42)
             scoring = 'accuracy'
@@ -219,10 +219,16 @@ if __name__ == '__main__':
 
         if dataset == 'cup':
             net = NR(**params[dataset][test], debug=True)
+            net_old = NR_old(**params[dataset][test], debug=True)
         else:
-            net = NC(**{'batch_size': None, 'epochs': 2000, 'eps': 1e-06, 'eta': 0.001, 'lmbda': 0, 'momentum': 0, 'nesterov': True, 'optimizer': 'SGD', 'sizes': [2, 3]}, debug=True)
+            net = NC(**params[dataset][test], debug=True)
+            net_old = NC_old(**params[dataset][test], debug=True)
 
         net.fit(X_train, y_train, test_data=(X_test, y_test))
+        net_old.fit(X_train, y_train, test_data=(X_test, y_test))
         
+        print("Improved network:")
         print(net.best_score(name=f"{dataset}_{test}", save=False))
+        print("Old network:")
+        print(net_old.best_score(name=f"{dataset}_{test}", save=False))
     
