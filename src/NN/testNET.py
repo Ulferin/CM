@@ -31,15 +31,14 @@ params = {
             'sizes': [30, 50],
         },
         'Adam': {
-            'batch_size': None,
-            'epochs': 2000,
+            'batch_size': 32,
+            'epochs': 1000,
             'eps': 1e-6,
-            'eta': 0.1,
-            'lmbda': 0.01,
-            'momentum': 0.5,
+            'eta': 0.3,
+            'lmbda': 0.05,
             'optimizer': "Adam",
             'activation': 'sigmoid',
-            'sizes': [16, 32],
+            'sizes': [10, 5],
         }
     },
     'monk1': {
@@ -93,12 +92,12 @@ params = {
             'batch_size': None,
             'epochs': 2000,
             'eps': 1e-6,
-            'eta': 0.01,
-            'lmbda': 0.0001,
+            'eta': 0.1,
+            'lmbda': 0.1,
             'momentum': 0.5,
             'optimizer': "SGD",
             'activation': 'sigmoid',
-            'sizes': [5, 10],
+            'sizes': [2, 3],
         },
         'Adam': {
             'batch_size': None,
@@ -119,26 +118,26 @@ grids = {
     'cup': {
         
         'SGD': {
-            'sizes': [[2,5], [16, 32], 0],
-            'lmbda': [0, 0.0001, 0.001, 0.01],
+            'sizes': [[3,5], [5,10], [10,5]],
+            'lmbda': [0.0001, 0.001, 0.01, 0.05],
             'momentum': [0.5, 0.9],
             'nesterov': [True, False],
-            'epochs': [2000],
-            'batch_size': [None],
-            'eta':[0.001, 0.01, 0.1],
+            'epochs': [1000],
+            'batch_size': [32, None],
+            'eta':[0.001, 0.01, 0.1, 0.3, 0.5],
             'eps': [1e-4],
-            'activation': 'sigmoid',
+            'activation': ['sigmoid'],
             'optimizer': ['SGD']
         },
 
         'Adam': {
-            'sizes': [[16, 32]],
-            'lmbda': [0.0001, 0.001, 0.01],
+            'sizes': [[3,5], [5,10], [10,5]],
+            'lmbda': [0.0001, 0.001, 0.01, 0.05],
             'epochs': [1000],
-            'batch_size': [None],
-            'eta':[0.001, 0.01, 0.1],
+            'batch_size': [32, None],
+            'eta':[0.001, 0.01, 0.1, 0.3, 0.5],
             'eps': [1e-4],
-            'activation': 'sigmoid',
+            'activation': ['sigmoid'],
             'optimizer': ['Adam']
         }
     },
@@ -150,7 +149,7 @@ grids = {
             'lmbda': [0, 0.0001, 0.001],
             'momentum': [0, 0.5, 0.9],
             'nesterov': [True, False],
-            'epochs': [500],
+            'epochs': [2000],
             'batch_size': [10, 32, None],
             'eta':[0.0001, 0.001, 0.01, 0.1],
             'eps': [1e-6],
