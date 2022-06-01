@@ -32,7 +32,7 @@ params = {
         },
         'Adam': {
             'batch_size': 32,
-            'epochs': 1000,
+            'epochs': 100,
             'eps': 1e-6,
             'eta': 0.3,
             'lmbda': 0.05,
@@ -44,14 +44,14 @@ params = {
     'monk1': {
         'SGD': {
             'batch_size': None,
-            'epochs': 2000,
+            'epochs': 15000,
             'eps': 1e-6,
-            'eta': 0.1,
-            'lmbda': 0.01,
-            'momentum': 0.5,
+            'eta': 0.9,
+            'lmbda': 3e-4,
+            'momentum': 0.6,
             'optimizer': "SGD",
             'activation': 'sigmoid',
-            'sizes': [16, 32],
+            'sizes': [15],
         },
         'Adam': {
             'batch_size': None,
@@ -67,14 +67,14 @@ params = {
     'monk2': {
         'SGD': {
             'batch_size': None,
-            'epochs': 2000,
+            'epochs': 120,
             'eps': 1e-6,
             'eta': 0.1,
             'lmbda': 0.,
-            'momentum': 0.5,
+            'momentum': 0.9,
             'optimizer': "SGD",
             'activation': 'sigmoid',
-            'sizes': [16, 32],
+            'sizes': [10],
         },
         'Adam': {
             'batch_size': None,
@@ -90,14 +90,14 @@ params = {
     'monk3': {
         'SGD': {
             'batch_size': None,
-            'epochs': 2000,
+            'epochs': 300,
             'eps': 1e-6,
             'eta': 0.1,
             'lmbda': 0.1,
-            'momentum': 0.5,
+            'momentum': 0.9,
             'optimizer': "SGD",
             'activation': 'sigmoid',
-            'sizes': [2, 3],
+            'sizes': [10],
         },
         'Adam': {
             'batch_size': None,
