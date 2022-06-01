@@ -416,12 +416,11 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             truth_test = test_data[1]
 
             loss_test = self.loss(truth_test, self.last_pred)
-            # values_test = 0
-            # for w in self.weights:
-            #     w = w.ravel()
-            #     values_test += np.linalg.norm(w, 1, 0)
-            #     print(f"test: {values_test}")
-            # loss_test += 0.5*self.lmbda*values/self.training_size
+            values_test = 0
+            for w in self.weights:
+                w = w.ravel()
+                values_test += np.linalg.norm(w, 1, 0)
+            loss_test += 0.5*self.lmbda*values_test/self.training_size
 
             self.val_loss.append(loss_test)
             self.val_scores.append(self.scoring(truth_test, preds_test))
@@ -434,7 +433,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         for w in self.weights:
             w = w.ravel()
             values += np.linalg.norm(w, 1, 0)
-            # print(f"train: {values}")
         loss += (0.5 * self.lmbda) * values / self.training_size
 
         self.train_loss.append(loss)
