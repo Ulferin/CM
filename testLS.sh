@@ -60,13 +60,13 @@ REPEAT=10
 case $t in
     'RANDOM')
         # for each value of m from 'm' to 'lastm' with step 'stepm'
-        python -m src.LS.testLS $t $m $n >> "test_random${m}_${n}.txt"
+        python -m src.LS.testLS $t $m $n >> "report_tests/LS/Stats/test_random${m}_${n}.txt"
     ;;
     'SCALING')
         stepm="$4"    # step for m
         lastm="$5"    # last value for m
-        python -m src.LS.testLS $t $m $lastm $n $stepm $REPEAT >> "test_scaling${lastm}_${n}.txt"
+        python -m src.LS.testLS $t $m $lastm $n $stepm $REPEAT >> "report_tests/LS/Stats/test_scaling${lastm}_${n}.txt"
     ;;
     'CUP')
-        python -m src.LS.testLS $t 'data/ML-CUP20-TR.csv' >> "test_cup.txt"
+        python -m src.LS.testLS $t 'data/ML-CUP20-TR.csv' >> "report_tests/LS/Stats/test_cup.txt"
 esac
