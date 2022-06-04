@@ -83,7 +83,7 @@ class LS():
         eps = np.linalg.norm(A)/10**16
 
         m, n = A.shape
-        R = A.astype(np.float)
+        R = A.astype(float)
         u_list = []
 
         # note that this is always equal to n in our case
@@ -124,13 +124,13 @@ class LS():
         """
 
         m = len(b)
-        if b.dtype != np.float:
-            b = b.astype(np.float)
-            
-        for k, u in enumerate(self.u_list):
-            b[k:m] -= 2*np.matmul(u, np.matmul(u.T, b[k:m]))
+        n = len(self.u_list)
 
-        return b
+        implicit = b.copy()
+        for k, u in enumerate(self.u_list):
+            implicit[k:m] = implicit[k:m] - u.dot(2*(u.T.dot(implicit[k:m])))
+
+        return implicit
 
 
     def implicit_Qx(self, x):
@@ -151,9 +151,7 @@ class LS():
         n = len(self.u_list)
 
         for k in range(n-1, -1, -1):
-                x[k:m] -= np.matmul(
-                            self.u_list[k],
-                            np.matmul(self.u_list[k].T, 2*x[k:m]) )
+                x[k:m] -= self.u_list[k].dot(2*(self.u_list[k].T.dot(x[k:m])) )
 
         return x
 
@@ -182,7 +180,7 @@ class LS():
         Q = []
         # we have to form the first n columns of Q
         for i in range(n):
-            e_i = np.zeros(m, dtype=np.float)
+            e_i = np.zeros(m, dtype=float)
             e_i[i] = 1.0
             e_i = self.implicit_Qx(e_i)
             Q.append(e_i)
