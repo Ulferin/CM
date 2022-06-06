@@ -36,15 +36,15 @@ class Network(BaseEstimator, metaclass=ABCMeta):
     """Abstract class representing a standard Neural Network, also known as
     Multilayer Perceptron. It allows to build a network for both classification
     and regression tasks by using the preferred optimization technique between
-    sub-gradient method and stochastic gradient descent. Must be extended to 
+    sub-gradient method and stochastic gradient descent. Must be extended to
     specify which kind of task the network should solve.
-    """    
-    
+    """
+
     @abstractmethod
     def __init__(self,
                 sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01,
                 activation='sigmoid', lmbda=0.0, momentum=0.0, nesterov=False,
-                eps=1e-5, batch_size=None, debug=False, beta1=0.9, beta2=0.999):            
+                eps=1e-5, batch_size=None, debug=False, beta1=0.9, beta2=0.999):
 
         self.rng = default_rng(seed)     # needed for reproducibility
 
@@ -70,6 +70,11 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.train_scores = []
         self.val_loss = []
         self.train_loss = []
+        self.gap = []
+        self.f_star = 999
+        self.tol = 0.00001
+
+        #self._no_improvement_count = 0
 
         # Execution Statistics
         self.evaluate_avg = [0, 0]
@@ -113,9 +118,9 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             list of unit's input for each layer of the network.
 
         out : list
-            list of unit's output for each layer of the network. 
-        """  
-        start = dt.now()      
+            list of unit's output for each layer of the network.
+        """
+        start = dt.now()
 
         out = inp
         units_out = [out]
@@ -141,7 +146,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         return units_out, nets, out
 
-    
+
     def _backpropagation_batch(self, x, y):
         """Performs a backward pass by using the chain rule to compute the
         gradient for each weight and bias in the network for the current
@@ -151,7 +156,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         ----------
         x : np.ndarray
             Samples that will be used to estimate the current gradient values.
-        
+
         y : np.ndarray
             Expected output for the :x: samples. Used for loss computation.
 
@@ -160,11 +165,11 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         nabla_b : list
             List of np.ndarray containing for each layer the gradients for
             each bias in the network.
-        
+
         nabla_w : list
             List of np.ndarray containing for each layer the gradients for
             each weight in the network.
-        """        
+        """
         delta = 0
         size = len(x)
         nabla_b = [0]*(len(self._sizes)-1)
@@ -190,7 +195,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             nabla_b[-l] /= size
             nabla_w[-l] = np.matmul(delta.T, units_out[-l-1])
             nabla_w[-l] += np.sign(self.weights[-l])*self.lmbda
-            
+
             # Applying regularization and mean above samples
             # nabla_w[-l] += self.lmbda*self.weights[-l]
             nabla_w[-l] /= size
@@ -210,7 +215,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         -------
         mini_batches : list
             a list of mini-batches
-        """                      
+        """
         mini_batches = []
 
         if self.batch_size < self.training_size:
@@ -218,7 +223,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 start = b * self.batch_size
                 end = (b+1) * self.batch_size
                 mini_batches.append((self.X[start:end], self.y[start:end]))
-            
+
             # Add remaining data as last batch
             # (it may have different size than previous batches)
             last = (
@@ -236,7 +241,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         """Creates batches and updates the Neural Network weights and biases
         by performing updates using the optimizer associated to the current
         network.
-        """               
+        """
         mini_batches = self._create_batches()
         self.grad_est = []
         self.num_batches = len(mini_batches)
@@ -244,11 +249,11 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         for mini_batch in mini_batches:
             params = self.weights + self.biases
             size = len(mini_batch[0])
-            
+
             # Compute current gradient
             nabla_b, nabla_w = self._compute_grad(mini_batch)
             grads = nabla_w + nabla_b
-            
+
             self.opti.update_parameters(params, grads)
 
 
@@ -265,10 +270,10 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         -------
         nabla_b : np.ndarray
             Gradients w.r.t. network biases.
-        
+
         nabla_w : np.ndarray
             Gradients w.r.t network weights.
-        """        
+        """
 
         nabla_b, nabla_w = self._backpropagation_batch(
                                     mini_batch[0],mini_batch[1])
@@ -279,11 +284,11 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
-    def fit(self, X, y, test_data=None):   
+    def fit(self, X, y, test_data=None, f_star_set=None):
         """Trains the neural network on (:X:, :y:) samples for a given
         number of epochs by fine-tuning the weights and biases by using the
         update rules relative to the provided optimizer. The way updates are
-        performed is also determined by the configurations relative to 
+        performed is also determined by the configurations relative to
         batch size and eta hyperparameters.
 
         Parameters
@@ -299,6 +304,9 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             the instantaneous performance of the current network at each epoch
             of training, by default None
 
+        f_star_set : float, optional
+            If set the method will also compute the gap = (f_i - f_*) / f_*
+            for the model and then plot it , by default None.
         Returns
         -------
         Object
@@ -308,7 +316,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         # Initialize batch size w.r.t. training data
         self.X = X
         self.y = y
-        self.test_data = test_data   
+        self.test_data = test_data
         self.training_size = len(self.X)
         self.batch_size = (
             self.batch_size
@@ -344,11 +352,14 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
                 # Compute current gradient estimate
                 self.grad_est_per_epoch.append(np.average(self.grad_est))
-                self.evaluate(e)
+                if f_star_set:
+                    self.evaluate(e, f_star_set)
+                else:
+                    self.evaluate(e)
 
                 self.score = self.train_loss[-1]
                 iteration_end = self.opti.iteration_end(self.ngrad)
-                
+
                 epoch_time = end_time(start)
                 self.epochs_time.append(epoch_time)
 
@@ -363,7 +374,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             return self
 
 
-    def evaluate(self, e):
+
+    def evaluate(self, e, f_star_set=None):
         """Returns statistics for the current epoch if test data are provided
         while training the network. It prints the current epoch, gradient norm
         for convergence analysis and the current score computed as loss value.
@@ -372,30 +384,44 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         ----------
         e : int
             current epoch.
-        """              
+
+        f_star_set : float, optional
+            If set the method will also compute the gap = (f_i - f_*) / f_*
+            for the model and then plot it , by default None.
+        """
 
         start = dt.now()
 
         if self.test_data is not None:
-            self._evaluate((self.X, self.y), self.test_data)
-            if self.debug: print(
+            if f_star_set:
+                self._evaluate((self.X, self.y), self.test_data, f_star_set)
+            else:
+                self._evaluate((self.X, self.y), self.test_data)
+            if self.debug:
+                str_gap = ""
+                if self.gap:
+                    str_gap = f"|| gap: {self.gap[-1]}"
+                print(
                 f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || "
                 f"Loss: {self.val_loss[-1]:7.5e}, {self.train_loss[-1]:7.5e} ||"
                 f" Score: {self.val_scores[-1]:5.3g}, "
-                f"{self.train_scores[-1]:<5.3g}")
+                f"{self.train_scores[-1]:<5.3g} ||"
+                f"f_star: {self.f_star:7.5e} "+str_gap)
+
         else:
             self._evaluate((self.X, self.y))
             if self.debug: print(
                 f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || "
                 f"Loss: {self.train_loss[-1]:7.5e} || "
-                f"Score: {self.train_scores[-1]:<5.3g}")
+                f"Score: {self.train_scores[-1]:<5.3g}|| "
+                f" f_star: {self.f_star:7.5e} ")
 
         end = end_time(start)
         self.evaluate_avg[0] += 1
         self.evaluate_avg[1] += end
 
 
-    def _evaluate(self, train_data, test_data=None):
+    def _evaluate(self, train_data, test_data=None, f_star_set=None):
         """Evaluates the performances of the Network in the current state,
         propagating the test and training examples through the network via a
         complete feedforward step. It evaluates the performance using the
@@ -410,8 +436,13 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         test_data : tuple
             Couple of np.ndarray representing test samples and associated
             outputs. Used to test the generalization capabilities of the network.
-        """        
-        if test_data:            
+
+        f_star_set : float, optional
+            If set the method will also compute the gap = (f_i - f_*) / f_*
+            for the model and then plot it , by default None.
+
+        """
+        if test_data:
             preds_test = self.predict(test_data[0])
             truth_test = test_data[1]
 
@@ -422,6 +453,13 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 values_test += np.linalg.norm(w, 1, 0)
             loss_test += 0.5*self.lmbda*values_test/self.training_size
 
+            #improvement of at least tol
+            if len(self.val_loss) > 100 and (self.val_loss[-10] - loss_test) >= self.tol or loss_test < self.f_star:
+                    self.f_star = loss_test
+
+            if f_star_set:
+                current_gap = (loss_test - f_star_set) / f_star_set
+                self.gap.append(current_gap)
             self.val_loss.append(loss_test)
             self.val_scores.append(self.scoring(truth_test, preds_test))
 
@@ -448,7 +486,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         name : str, optional
             Only used when save=True, represents the name to use to save
             the statistics on a file, by default ""
-        
+
         save : bool, optional
             specifies whether to create a file with the computed statistics,
             by default False
@@ -457,7 +495,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         -------
         stats : string
             statistics computed during the network training.
-        """           
+        """
 
         if not self.fitted:
             return 'This model is not fitted yet.\n\n'
@@ -521,21 +559,21 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         ----------
         name : string
             prefix file name to use when saving the plot.
-        
+
         score : bool, optional
             whether to use the score instead of the loss, by default False
-        
+
         save : bool, optional
             whether to save the plot on the file specified with the name
             parameter, by default False
-        
+
         time : bool, optional
             whether build plots according to number of epochs or time of
             execution, by default False
-        
+
         log : bool, optional
             whether to use a logplot or not, by default False
-        """     
+        """
 
         if not self.fitted:
             return 'This model is not fitted yet.\n\n'
@@ -552,11 +590,11 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         if self.test_data is not None:
             plt.plot(x, val_res, '--', label='Validation loss')
         plt.plot(x, train_res, '--', label='Training loss')
-        
+
         plt.xlabel(x_label)
         plt.ylabel (curve_type)
         if log: plt.yscale('log')
-        
+
         plt.legend(loc='best')
         plt.title (f'{curve_type} {self.optimizer}')
         plt.draw()
@@ -571,7 +609,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             plt.show()
         plt.clf()
 
-    
+
     def plot_grad(self, name, save=False, time=False):
         """Builds a plot of the gradient values achieved during training of the
         current network.
@@ -580,14 +618,14 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         ----------
         name : string
             prefix file name for the plot file, only used when save=True.
-        
+
         save : bool, optional
             whether to save the plot on file or not, by default False
-        
+
         time : bool, optional
             whether to plot gradient w.r.t. epochs or execution time,
             by default False
-        """  
+        """
 
         if not self.fitted:
             return 'This model is not fitted yet.\n\n'
@@ -614,7 +652,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
 
-class NC(Network, BaseEstimator): 
+class NC(Network, BaseEstimator):
     def __init__(
         self, sizes=None, optimizer='SGD', seed=0, epochs=300, eta=0.1,
         activation='sigmoid', lmbda=0.0001, momentum=0.5, nesterov=False,
@@ -641,40 +679,40 @@ class NC(Network, BaseEstimator):
         seed : int, optional
             seed for random number generator used for initializing this network
             weights and biases. Needed for reproducibility, by default 0
-       
+
         epochs : int, optional
             the maximum number of epochs the training can run until stopping
             if no termination conditions are met, by default 1000
-     
+
         eta : float, optional
             learning rate for 'SGD' optimizer, starting step sizes for 'SGM'
             optimizer, by default 0.1
-   
+
         activation : function, optional
             specifies which activation function to use for the hidden layers
             of the network, must be in {'Lrelu', 'relu', 'sigmoid'},
             by default 'Lrelu'
-    
+
         lmbda : int, optional
             l2 regularization coefficient, by default 0.0001
-    
+
         momentum : int, optional
             momentum coefficient, by default 0.5
-    
+
         nesterov : bool, optional
             boolean flag indicating wether nesterov momentum must be used
             during optimization of the current network, by default False
-    
+
         eps : float, optional
             stopping condition for precision in gradient norm, by default 1e-5
-    
+
         batch_size : int or None, optional
             amount of samples to use for each evaluation of the gradient during
             optimization, by default None
-   
+
         debug : bool, optional
             debugging flag, by default False
-        """      
+        """
 
         super().__init__(sizes=sizes,
                         optimizer=optimizer,
@@ -710,7 +748,7 @@ class NC(Network, BaseEstimator):
         -------
         np.ndarray
             Binary classification prediction values for the given :data: samples.
-        """       
+        """
         self.last_pred = self._feedforward_batch(data)[2]
 
         return  self.last_pred >= 0.5
@@ -744,37 +782,37 @@ class NR(Network, BaseEstimator):
         seed : int, optional
             seed for random number generator used for initializing this network
             weights and biases. Needed for reproducibility, by default 0
-       
+
         epochs : int, optional
             the maximum number of epochs the training can run until stopping
             if no termination conditions are met, by default 1000
-     
+
         eta : float, optional
             learning rate for 'SGD' optimizer, starting step sizes for 'SGM'
             optimizer, by default 0.01
-   
+
         activation : function, optional
             specifies which activation function to use for the hidden layers
             of the network, must be in {'Lrelu', 'relu', 'sigmoid'},
             by default 'Lrelu'
-    
+
         lmbda : int, optional
             l2 regularization coefficient, by default 0.0001
-    
+
         momentum : int, optional
             momentum coefficient, by default 0.5
-    
+
         nesterov : bool, optional
             boolean flag indicating wether nesterov momentum must be used
             during optimization of the current network, by default False
-    
+
         eps : float, optional
             stopping condition for precision in gradient norm, by default 1e-5
-    
+
         batch_size : int or None, optional
             amount of samples to use for each evaluation of the gradient during
             optimization, by default None
-   
+
         debug : bool, optional
             debugging flag, by default False
         """

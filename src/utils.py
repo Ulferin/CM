@@ -1,6 +1,8 @@
 import pandas as pd
 
+import os
 import numpy as np
+import matplotlib.pyplot as plt
 import random
 
 from sklearn.model_selection import train_test_split
@@ -35,7 +37,7 @@ def load_CUP(file_path, split=0.3):
 
     y_test: np.ndarray
         Test samples' ground truth
-    """    
+    """
     ml_cup = np.delete(np.genfromtxt(file_path, delimiter=','), obj=0, axis=1)
     M, b = ml_cup[:, :-2], ml_cup[:, -2:]
 
@@ -79,12 +81,12 @@ def load_monk(name):
     """
     train = pd.read_csv(f"{name}.train", sep=' ', header=None, index_col=8)
     test = pd.read_csv(f"{name}.test", sep=' ', header=None, index_col=8)
-    
+
     X_train = train.iloc[:,2:].values
     y_train = (train.iloc[:,1].values).reshape(-1,1)
     X_test = test.iloc[:,2:].values
     y_test = (test.iloc[:,1].values).reshape(-1,1)
-    
+
     X_train, X_test = prepare_data(X_train, X_test)
 
     return X_train, X_test, y_train, y_test
@@ -137,7 +139,7 @@ def crossValToDf(res, scoring='Accuracy'):
     -------
     DataFrame
         DataFrame with grid-search results
-    """ 
+    """
 
     df1 = pd.concat(
             [pd.DataFrame(res["params"]), pd.DataFrame(res["mean_test_score"],
@@ -146,7 +148,7 @@ def crossValToDf(res, scoring='Accuracy'):
     df_sorted = df1.sort_values([f"Validation {scoring}"], ascending=False)
     df_sorted = df_sorted.reset_index(drop=True)
     return df_sorted
-        
+
 
 def end_time(start):
     """Computes elapsed time since the :start: datetime. Returns the time
@@ -161,6 +163,19 @@ def end_time(start):
     -------
     DateTime
         Elasped time since :start:, in milliseconds.
-    """    
+    """
     end = (dt.now() - start)
     return end.seconds*1000 + end.microseconds/1000
+
+
+def plot_gap(gap, dataset, solver):
+    epochs = range(len(gap))
+    fig, ax = plt.subplots()
+    ax.plot(epochs, gap)
+
+    ax.set(xlabel='epochs', ylabel='gap term',
+           title='Gap term '+dataset+' with '+solver)
+    ax.grid()
+
+    fig.savefig(os.path.join("./plots","gap_"+dataset+"_"+solver+".png"))
+    plt.show()

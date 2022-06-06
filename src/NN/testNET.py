@@ -10,8 +10,8 @@ import src.utils as utils
 datasets = {
     'cup': 'data/ML-CUP20-TR.csv',
     'monk1': 'data/monks-1',
-    'monk2': 'data/monks-2', 
-    'monk3': 'data/monks-3', 
+    'monk2': 'data/monks-2',
+    'monk3': 'data/monks-3',
 }
 
 # Hyperparameters configurations for each model/dataset couple
@@ -21,7 +21,7 @@ params = {
     'cup': {
         'SGD': {
             'batch_size': None,
-            'epochs': 2000,
+            'epochs': 500,
             'eps': 1e-6,
             'eta': 0.001,
             'lmbda': 0.0001,
@@ -32,7 +32,7 @@ params = {
         },
         'Adam': {
             'batch_size': 32,
-            'epochs': 100,
+            'epochs': 500,
             'eps': 1e-6,
             'eta': 0.3,
             'lmbda': 0.05,
@@ -44,7 +44,7 @@ params = {
     'monk1': {
         'SGD': {
             'batch_size': None,
-            'epochs': 15000,
+            'epochs': 5000,
             'eps': 1e-6,
             'eta': 0.9,
             'lmbda': 3e-4,
@@ -54,20 +54,20 @@ params = {
             'sizes': [15],
         },
         'Adam': {
-            'batch_size': None,
-            'epochs': 2000,
+            'batch_size': 10,
+            'epochs': 5000,
             'eps': 1e-6,
             'eta': 0.1,
-            'lmbda': 0.0001,
+            'lmbda': 0,
             'optimizer': "Adam",
             'activation': 'sigmoid',
-            'sizes': [16, 32],
+            'sizes': [10, 5],
         }
     },
     'monk2': {
         'SGD': {
             'batch_size': None,
-            'epochs': 120,
+            'epochs': 5000,
             'eps': 1e-6,
             'eta': 0.1,
             'lmbda': 0.,
@@ -77,37 +77,37 @@ params = {
             'sizes': [10],
         },
         'Adam': {
-            'batch_size': None,
-            'epochs': 2000,
+            'batch_size': 10,
+            'epochs': 5000,
             'eps': 1e-6,
             'eta': 0.1,
-            'lmbda': 0.01,
+            'lmbda': 0,
             'optimizer': "Adam",
             'activation': 'sigmoid',
-            'sizes': [16, 32],
+            'sizes': [2, 3],
         }
     },
     'monk3': {
         'SGD': {
             'batch_size': None,
-            'epochs': 300,
+            'epochs': 5000,
             'eps': 1e-6,
             'eta': 0.1,
             'lmbda': 0.1,
             'momentum': 0.9,
             'optimizer': "SGD",
             'activation': 'sigmoid',
-            'sizes': [10],
+            'sizes': [10,10],
         },
         'Adam': {
-            'batch_size': None,
-            'epochs': 2000,
+            'batch_size': 10,
+            'epochs': 5000,
             'eps': 1e-6,
             'eta': 0.1,
-            'lmbda': 0.01,
+            'lmbda': 0,
             'optimizer': "Adam",
             'activation': 'sigmoid',
-            'sizes': [16, 32],
+            'sizes': [10, 5],
         }
     }
 }
@@ -116,9 +116,9 @@ params = {
 # Parameter grids for gridsearch test
 grids = {
     'cup': {
-        
+
         'SGD': {
-            'sizes': [[3,5], [5,10], [10,5]],
+            'sizes': [[5], [10], [15]],
             'lmbda': [0.0001, 0.001, 0.01, 0.05],
             'momentum': [0.5, 0.9],
             'nesterov': [True, False],
@@ -143,14 +143,14 @@ grids = {
     },
 
     'monk': {
-    
+
         'SGD': {
-            'sizes': [[2,3], [3,5], [5,3], [5, 10], [10, 5]],
+            'sizes': [[2,3], [3,5], [5,5], [2], [3], [5]],
             'lmbda': [0, 0.0001, 0.001],
-            'momentum': [0, 0.5, 0.9],
-            'nesterov': [True, False],
-            'epochs': [2000],
-            'batch_size': [10, 32, None],
+            'momentum': [0.8, 0.9],
+            'nesterov': [True],
+            'epochs': [5000],
+            'batch_size': [32, 64, None],
             'eta':[0.0001, 0.001, 0.01, 0.1],
             'eps': [1e-6],
             'optimizer': ['SGD'],
@@ -158,11 +158,11 @@ grids = {
         },
 
         'Adam': {
-            'sizes': [[2,3], [3,5], [5,3], [5, 10], [10, 5]],
-            'lmbda': [0, 0.0001, 0.001, 0.01],
-            'epochs': [500],
-            'batch_size': [10, 32, None],
-            'eta':[0.0001, 0.001, 0.01, 0.1],
+            'sizes': [[2,3], [3,5], [5,3], [5, 10], [10, 5], [10,10]],
+            'lmbda': [0, 0.0001, 0.001],
+            'epochs': [1000],
+            'batch_size': [10, 32, 64, None],
+            'eta':[0.0001, 0.001, 0.005, 0.01, 0.05, 0.1],
             'eps': [1e-4],
             'activation': ['sigmoid'],
             'optimizer': ['Adam']
@@ -200,7 +200,7 @@ if __name__ == '__main__':
             cv = StratifiedShuffleSplit(n_splits=5, test_size=0.20,
                                         random_state=42)
             scoring = 'accuracy'
-        
+
         grid = grids[dataset][test]
 
         gs = GridSearchCV(net(), cv=cv, param_grid=grid, n_jobs=-1,
@@ -210,14 +210,14 @@ if __name__ == '__main__':
               f"best params: {gs.best_params_}\n")
 
         results = utils.crossValToDf(gs.cv_results_, scoring=scoring)
-        results.to_csv(f'./src/NN/res/scores/{full_name}_{test}.csv')  
+        results.to_csv(f'./src/NN/res/scores/{full_name}_{test}.csv')
 
         # Retraining w/ best parameters
         print("Retraining network with best parameters:")
         net = net(**gs.best_params_)
         net.fit(X_train, y_train, test_data=(X_test, y_test))
         print(net.best_score())
-    
+
     else:
         # Add nesterov momentum to params
         if test == 'NAG':
@@ -228,11 +228,18 @@ if __name__ == '__main__':
 
         if dataset == 'cup':
             net = NR(**params[dataset][test], debug=True)
+            params[dataset][test]['epochs'] = 5000
+            net_eval = NR(**params[dataset][test], debug=True)
         else:
             net = NC(**params[dataset][test], debug=True)
+            params[dataset][test]['epochs'] = 20000
+            net_eval = NC(**params[dataset][test], debug=False)
+        print("Evaluating f_* ...")
+        net_eval.fit(X_train, y_train, test_data=(X_test, y_test))
+        net.fit(X_train, y_train, test_data=(X_test, y_test), f_star_set=net_eval.f_star)
 
-        net.fit(X_train, y_train, test_data=(X_test, y_test))
-        
+        utils.plot_gap(net.gap, dataset, sys.argv[1])
+        print(f"f_*: {net_eval.f_star}")
+        print(f"last gap: {net.gap[-1]}")
         print("Improved network:")
         print(net.best_score(name=f"{dataset}_{test}", save=False))
-    
