@@ -102,7 +102,7 @@ params = {
         'Adam': {
             'batch_size': 10,
             'epochs': 5000,
-            'eps': 1e-6,
+            'eps': 1e-7,
             'eta': 0.1,
             'lmbda': 0,
             'optimizer': "Adam",

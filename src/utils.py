@@ -174,6 +174,7 @@ def plot_gap(gap, dataset, solver):
     ax.plot(epochs, gap)
 
     ax.set(xlabel='epochs', ylabel='gap term',
+            yscale='log',
            title='Gap term '+dataset+' with '+solver)
     ax.grid()
 

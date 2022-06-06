@@ -458,7 +458,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                     self.f_star = loss_test
 
             if f_star_set:
-                current_gap = (loss_test - f_star_set) / f_star_set
+                current_gap = (loss_test - f_star_set)
                 self.gap.append(current_gap)
             self.val_loss.append(loss_test)
             self.val_scores.append(self.scoring(truth_test, preds_test))
