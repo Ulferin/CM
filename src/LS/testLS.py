@@ -10,6 +10,8 @@ RANDOM_TEST = 'RANDOM'
 SCALING_TEST = 'SCALING'
 
 random.seed(42) # Needed for reproducibility
+plt.rcParams.update({'font.size': 17})
+plt.rcParams.update({'figure.figsize': (8, 6)})
 
 
 if __name__ == "__main__":
@@ -47,6 +49,13 @@ if __name__ == "__main__":
         res, resnp = generic_test(M, b, test)
         analizeCond(M, b, res, resnp)
 
+        # Create a customized linear solution and check if LS performs as expected
+        sol = np.random.rand(10)
+        b_new = M@sol
+
+        res_new, resnp_new = generic_test(M, b_new, 'GENERATED LINEAR CUP')
+        analizeCond(M, b_new, res_new, resnp_new, sol)
+
     elif test == RANDOM_TEST:
         if len(sys.argv) != 4:
             print("Usage: python -m src.LS.testLS 'RANDOM' m n")
@@ -54,13 +63,30 @@ if __name__ == "__main__":
 
         m = int(sys.argv[2])    # number of rows
         n = int(sys.argv[3])    # number of cols
-        M, _ = generate(m, n)
+        M, b = generate(m, n)
         sol = np.random.rand(n)
-        b = M@sol
+        b_linear = M@sol
 
         res, resnp = generic_test(M, b, test)
-        analizeCond(M, b, res, resnp, sol)
-        
+        analizeCond(M, b, res, resnp)
+
+        res, resnp = generic_test(M, b_linear, 'GENERATED LINEAR RANDOM')
+        analizeCond(M, b_linear, res, resnp, sol)
+
+
+        ls = LS()
+        R = ls.qr(M)
+        Q = ls.revertQ()
+        sol_explicit = np.linalg.inv(R)@Q.T@b_linear
+        sol_implicit = np.linalg.inv(R)@(ls.implicit_Qb(b_linear)[:n])
+
+        print(f"explicit: {np.linalg.norm(M@sol_explicit - b_linear,2) / np.linalg.norm(b_linear,2)}")
+        print(f"implicit: {np.linalg.norm(M@sol_implicit - b_linear,2) / np.linalg.norm(b_linear,2)}")
+
+        print((ls.revertQ().T@b_linear).shape, np.linalg.norm(ls.revertQ().T@b_linear,2))
+        print(ls.implicit_Qb(b_linear)[:n].shape, np.linalg.norm(ls.implicit_Qb(b_linear)[:n],2))
+        print(f"{np.linalg.norm(ls.revertQ().T@b_linear - ls.implicit_Qb(b_linear)[:n],2) / np.linalg.norm(ls.revertQ().T@b_linear,2)}")
+
     elif test == SCALING_TEST:
         if len(sys.argv) != 7:
             print("Usage: python -m src.LS.testLS 'SCALING' start_m m_last n step_m repeat_t")

@@ -79,7 +79,7 @@ def analizeCond(M, b, res, resnp, sol=None):
     print(f"{'|res - resnp|/|resnp|:':<23} {np.linalg.norm(res - resnp,2) / np.linalg.norm(resnp,2)}")
 
 
-def scaling (starting_m, m, n, step, t) :
+def scaling (starting_m, m, n, step, t, linear=True) :
     """Tests the QR factorization and the LS solver for different matrices 
     with scaling m, starting from :starting_m: up to :m:.
     Executes each example for a given amount of time :t: and averages the times
@@ -156,7 +156,15 @@ def scaling (starting_m, m, n, step, t) :
         mean_qr_np = 0
         mean_ls_a3 = 0
         mean_ls_np = 0
-        
+
+        sol = None
+        if linear:
+            sol = np.random.rand(n)
+            b = A@sol
+
+            res, resnp = generic_test(A, b, f'SCALING - {m}x{n}')
+            analizeCond(A, b, res, resnp, sol)
+
         for i in range(t):
             # Computes time for QR factorization
             startQR = dt.now()
@@ -328,7 +336,7 @@ def analizeCond(M, b, res, resnp, sol=None):
 
     if sol is not None:
         print(f"{'|x - ~x|/|x|:':<23} {np.linalg.norm(res - sol, 2) / np.linalg.norm(sol, 2)}")
-    print(f"{'|res - resnp|/|resnp|:':<23} {np.linalg.norm(res - resnp,2) / np.linalg.norm(resnp,2)}")
+    print(f"{'|res - resnp|/|resnp|:':<23} {np.linalg.norm(res - resnp,2) / np.linalg.norm(resnp,2)}\n")
 
 
 def plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, mrange, n, save=False):
@@ -336,10 +344,10 @@ def plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, mrange, n, save=F
     m = mrange.stop - mrange.step
     
     # --- Plotting QR stats ---
-    plt.plot(mrange, time_qr_np, "^-", label="np")
+    plt.plot(mrange, time_qr_np, "^-", label="(NP)")
     plt.xlabel ("m")
     plt.ylabel ("time (msec)")
-    plt.title (f"QR factorizzation of a matrix {m}x{n} (NP)")
+    plt.title (f"QR factorization of a matrix {m}x{n} (NP)")
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
     if save: plt.savefig(f"report_tests/LS/Scaling/QRscaling_np_n{n}m{m}.png")
@@ -349,19 +357,19 @@ def plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, mrange, n, save=F
     plt.plot (mrange, time_qr_a3, "o-", label="mio")
     plt.xlabel ("m")
     plt.ylabel ("time (msec)")
-    plt.title (f"QR factorizzation of a matrix {m}x{n} (A3)")
+    plt.title (f"QR factorization of a matrix {m}x{n} (A3)")
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
     if save: plt.savefig(f"report_tests/LS/Scaling/QRscaling_a3_n{n}m{m}.png")
     else: plt.show()
     plt.clf()
     
-    plt.plot(mrange, time_qr_np, "^-", label="np")
+    plt.plot(mrange, time_qr_np, "^-", label="(NP)")
     plt.plot (mrange, time_qr_a3, "o-", label="(A3)")
     plt.legend()
     plt.xlabel ("m")
     plt.ylabel ("time (msec)")
-    plt.title (f"QR factorizzation of a matrix {m}x{n}")
+    plt.title (f"QR factorization of a matrix {m}x{n}")
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
     if save: plt.savefig(f"report_tests/LS/Scaling/QRscaling_comparison_n{n}m{m}.png")
@@ -390,7 +398,7 @@ def plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, mrange, n, save=F
     else: plt.show()
     plt.clf()
     
-    plt.plot(mrange, time_ls_np, "^-", label="np")
+    plt.plot(mrange, time_ls_np, "^-", label="(NP)")
     plt.plot (mrange, time_ls_a3, "o-", label="(A3)")
     plt.legend()
     plt.xlabel ("m")

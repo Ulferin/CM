@@ -34,7 +34,7 @@ params = {
             'batch_size': 32,
             'epochs': 500,
             'eps': 1e-6,
-            'eta': 0.3,
+            'eta': 0.1,
             'lmbda': 0.05,
             'optimizer': "Adam",
             'activation': 'sigmoid',
@@ -91,7 +91,7 @@ params = {
         'SGD': {
             'batch_size': None,
             'epochs': 5000,
-            'eps': 1e-6,
+            'eps': 1e-10,
             'eta': 0.1,
             'lmbda': 0.1,
             'momentum': 0.9,
@@ -100,11 +100,11 @@ params = {
             'sizes': [10,10],
         },
         'Adam': {
-            'batch_size': 10,
-            'epochs': 5000,
-            'eps': 1e-7,
-            'eta': 0.1,
-            'lmbda': 0,
+            'batch_size': 32,
+            'epochs': 500,
+            'eps': 1e-10,
+            'eta': 0.01,
+            'lmbda': 0.5,
             'optimizer': "Adam",
             'activation': 'sigmoid',
             'sizes': [10, 5],
@@ -232,13 +232,14 @@ if __name__ == '__main__':
             net_eval = NR(**params[dataset][test], debug=True)
         else:
             net = NC(**params[dataset][test], debug=True)
-            params[dataset][test]['epochs'] = 20000
+            params[dataset][test]['epochs'] = 10000
             net_eval = NC(**params[dataset][test], debug=False)
         print("Evaluating f_* ...")
         net_eval.fit(X_train, y_train, test_data=(X_test, y_test))
         net.fit(X_train, y_train, test_data=(X_test, y_test), f_star_set=net_eval.f_star)
 
         utils.plot_gap(net.gap, dataset, sys.argv[1])
+        net.plot_rate('rate', False)
         print(f"f_*: {net_eval.f_star}")
         print(f"last gap: {net.gap[-1]}")
         print("Improved network:")

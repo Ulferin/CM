@@ -75,6 +75,9 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.tol = 0.00001
 
         #self._no_improvement_count = 0
+        self.loss_k = -1
+        self.loss_k1 = -1
+        self.conv_rate = []
 
         # Execution Statistics
         self.evaluate_avg = [0, 0]
@@ -453,13 +456,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 values_test += np.linalg.norm(w, 1, 0)
             loss_test += 0.5*self.lmbda*values_test/self.training_size
 
-            #improvement of at least tol
-            if len(self.val_loss) > 100 and (self.val_loss[-10] - loss_test) >= self.tol or loss_test < self.f_star:
-                    self.f_star = loss_test
-
-            if f_star_set:
-                current_gap = (loss_test - f_star_set)
-                self.gap.append(current_gap)
             self.val_loss.append(loss_test)
             self.val_scores.append(self.scoring(truth_test, preds_test))
 
@@ -472,6 +468,23 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             w = w.ravel()
             values += np.linalg.norm(w, 1, 0)
         loss += (0.5 * self.lmbda) * values / self.training_size
+
+        #improvement of at least tol
+        if loss < self.f_star:
+            self.f_star = loss
+
+        if f_star_set:
+            current_gap = (loss - f_star_set)/f_star_set
+            self.gap.append(current_gap)
+
+
+        self.loss_k = self.loss_k1
+        self.loss_k1 = loss
+        if f_star_set and len(self.val_loss) > 1:
+            abs_err_top = np.abs(self.loss_k1-f_star_set)
+            abs_err_bot = np.abs(self.loss_k-f_star_set)
+            p = np.log(abs_err_top) / np.log(abs_err_bot)
+            self.conv_rate.append(p)
 
         self.train_loss.append(loss)
         self.train_scores.append(self.scoring(truth_train, preds_train))
@@ -638,6 +651,30 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         plt.xlabel (x_label)
         plt.ylabel ('Gradient\'s norm')
         plt.title ('Gradient norm estimate')
+        plt.yscale('log')
+        plt.draw()
+
+        if save:
+            plt.savefig(
+                f"src/NN/res/stats/{name}ep{self.epochs}s{self.sizes}"
+                f"b{self.batch_size}e{self.eta}lmbda{self.lmbda}"
+                f"m{self.momentum}.png")
+        else:
+            plt.show()
+        plt.clf()
+
+    def plot_rate(self, name, save=False):
+        if not self.fitted:
+            return 'This model is not fitted yet.\n\n'
+
+        x = list(range(len(self.epochs_time[1:])))
+        x_label = 'Epochs'
+
+        plt.plot(x, self.conv_rate, label='')
+#         plt.legend(loc='best')
+        plt.xlabel (x_label)
+        plt.ylabel ('Convergence rate')
+        plt.title ('Convergence rate per epoch')
         plt.yscale('log')
         plt.draw()
 
