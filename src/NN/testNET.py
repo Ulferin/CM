@@ -56,7 +56,7 @@ params = {
         'Adam': {
             'batch_size': 10,
             'epochs': 5000,
-            'eps': 1e-6,
+            'eps': 1e-12,
             'eta': 0.1,
             'lmbda': 0,
             'optimizer': "Adam",
@@ -219,6 +219,7 @@ if __name__ == '__main__':
         print(net.best_score())
 
     else:
+        plot_name = f"{dataset}_{test}"
         # Add nesterov momentum to params
         if test == 'NAG':
             test = 'SGD'
@@ -228,19 +229,19 @@ if __name__ == '__main__':
 
         if dataset == 'cup':
             net = NR(**params[dataset][test], debug=True)
-            params[dataset][test]['epochs'] = 5000
+            #params[dataset][test]['epochs'] = 5000
             net_eval = NR(**params[dataset][test], debug=True)
         else:
             net = NC(**params[dataset][test], debug=True)
-            params[dataset][test]['epochs'] = 10000
+            #params[dataset][test]['epochs'] = 10000
             net_eval = NC(**params[dataset][test], debug=False)
         print("Evaluating f_* ...")
         net_eval.fit(X_train, y_train, test_data=(X_test, y_test))
         net.fit(X_train, y_train, test_data=(X_test, y_test), f_star_set=net_eval.f_star)
 
         utils.plot_gap(net.gap, dataset, sys.argv[1])
-        net.plot_rate('rate', False)
+        net.plot_rate(plot_name, True)
         print(f"f_*: {net_eval.f_star}")
         print(f"last gap: {net.gap[-1]}")
         print("Improved network:")
-        print(net.best_score(name=f"{dataset}_{test}", save=False))
+        print(net.best_score(name=plot_name, save=False))

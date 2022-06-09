@@ -17,11 +17,6 @@ class Optimizer(metaclass=ABCMeta):
         pass
 
 
-    # @abstractmethod
-    # def get_updates(self, grads):
-    #     pass
-
-
     def iteration_end(self, ngrad):
         """Checks if the optimizer has reached an optimal state.
 
@@ -54,6 +49,9 @@ class SGD(Optimizer):
         self.v = []
 
     def update_parameters(self, parameters, grads):
+        # TODO: maybe we can add definition of the optimizer and description of
+        #       its properties. Like a summary of the things we have written in
+        #       the report
         """Updates weights and biases of the specified Neural Network object
         :nn: by using the current mini-batch samples :mini_batch:. Uses a
         regularized momentum based approach for the weights update.
@@ -89,6 +87,7 @@ class SGD(Optimizer):
 
 
 class Adam(Optimizer):
+    # TODO: add method description
     def __init__(self, eta, eps=0.00001, beta1=0.9, beta2=0.999, lmbda=0.01):
         super().__init__(eta, eps, lmbda)
         self.beta1 = beta1

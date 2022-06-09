@@ -139,7 +139,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         # Last layer is linear for regression and sigmoid for classification
         net = np.matmul(out,self.weights[-1].T) + self.biases[-1]
         out = self.last_act.function(net)
-
         nets.append(net)
         units_out.append(out)
 
@@ -194,13 +193,11 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 delta = np.matmul(delta, self.weights[-l+1])
                 delta = delta * self.der(nets[-l])
 
+            # Applying regularization and mean above samples
             nabla_b[-l] = delta.sum(axis=0)
             nabla_b[-l] /= size
             nabla_w[-l] = np.matmul(delta.T, units_out[-l-1])
             nabla_w[-l] += np.sign(self.weights[-l])*self.lmbda
-
-            # Applying regularization and mean above samples
-            # nabla_w[-l] += self.lmbda*self.weights[-l]
             nabla_w[-l] /= size
 
         # Computes execution statistics
@@ -395,29 +392,26 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         start = dt.now()
 
-        if self.test_data is not None:
-            if f_star_set:
-                self._evaluate((self.X, self.y), self.test_data, f_star_set)
-            else:
-                self._evaluate((self.X, self.y), self.test_data)
-            if self.debug:
-                str_gap = ""
-                if self.gap:
-                    str_gap = f"|| gap: {self.gap[-1]}"
-                print(
-                f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || "
-                f"Loss: {self.val_loss[-1]:7.5e}, {self.train_loss[-1]:7.5e} ||"
-                f" Score: {self.val_scores[-1]:5.3g}, "
-                f"{self.train_scores[-1]:<5.3g} ||"
-                f"f_star: {self.f_star:7.5e} "+str_gap)
+        self._evaluate((self.X, self.y), self.test_data, f_star_set)
 
-        else:
-            self._evaluate((self.X, self.y))
-            if self.debug: print(
+        str_gap = ""
+        str_rate = ""
+        if self.gap:
+            str_gap = f"|| gap: {self.gap[-1]:7.5e}"
+        if f_star_set is not None and len(self.conv_rate) > 0:
+            str_rate = f"|| rate: {self.conv_rate[-1]:7.5e}"
+
+        val_loss = ""
+        if self.test_data is not None:
+            val_loss = f"{self.val_loss[-1]:7.5e}, "
+
+        if self.debug:
+            print(
                 f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || "
-                f"Loss: {self.train_loss[-1]:7.5e} || "
-                f"Score: {self.train_scores[-1]:<5.3g}|| "
-                f" f_star: {self.f_star:7.5e} ")
+                f"Loss: {val_loss}{self.train_loss[-1]:7.5e} ||"
+                f"Score: {self.val_scores[-1]:5.3g}, "
+                f"{self.train_scores[-1]:<5.3g} ||"
+                f"f_star: {self.f_star:7.5e} "+str_gap+str_rate)
 
         end = end_time(start)
         self.evaluate_avg[0] += 1
@@ -453,7 +447,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             values_test = 0
             for w in self.weights:
                 w = w.ravel()
-                values_test += np.linalg.norm(w, 1, 0)
+                values_test += np.linalg.norm(w, 2, 0)
             loss_test += 0.5*self.lmbda*values_test/self.training_size
 
             self.val_loss.append(loss_test)
@@ -466,7 +460,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         values = 0
         for w in self.weights:
             w = w.ravel()
-            values += np.linalg.norm(w, 1, 0)
+            values += np.linalg.norm(w, 2, 0)
         loss += (0.5 * self.lmbda) * values / self.training_size
 
         #improvement of at least tol
@@ -477,17 +471,19 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             current_gap = (loss - f_star_set)/f_star_set
             self.gap.append(current_gap)
 
+        self.train_loss.append(loss)
+        self.train_scores.append(self.scoring(truth_train, preds_train))
 
         self.loss_k = self.loss_k1
         self.loss_k1 = loss
-        if f_star_set and len(self.val_loss) > 1:
+        if f_star_set and len(self.train_loss) > 1:
             abs_err_top = np.abs(self.loss_k1-f_star_set)
+            abs_err_top = abs_err_top
             abs_err_bot = np.abs(self.loss_k-f_star_set)
+            abs_err_bot = abs_err_bot
             p = np.log(abs_err_top) / np.log(abs_err_bot)
+            print(p, abs_err_bot, abs_err_top)
             self.conv_rate.append(p)
-
-        self.train_loss.append(loss)
-        self.train_scores.append(self.scoring(truth_train, preds_train))
 
 
     def best_score(self, name="", save=False):
@@ -667,24 +663,23 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         if not self.fitted:
             return 'This model is not fitted yet.\n\n'
 
-        x = list(range(len(self.epochs_time[1:])))
+        x = list(range(len(self.conv_rate[:-1])))
         x_label = 'Epochs'
 
-        plt.plot(x, self.conv_rate, label='')
+        plt.plot(x, self.conv_rate[:-1], label='')
 #         plt.legend(loc='best')
         plt.xlabel (x_label)
         plt.ylabel ('Convergence rate')
         plt.title ('Convergence rate per epoch')
-        plt.yscale('log')
+        # plt.yscale('log')
         plt.draw()
 
         if save:
             plt.savefig(
-                f"src/NN/res/stats/{name}ep{self.epochs}s{self.sizes}"
-                f"b{self.batch_size}e{self.eta}lmbda{self.lmbda}"
-                f"m{self.momentum}.png")
+                f"./plots/rate_{name}.png")
         else:
-            plt.show()
+            pass
+        plt.show()
         plt.clf()
 
 
