@@ -118,14 +118,14 @@ grids = {
     'cup': {
 
         'SGD': {
-            'sizes': [[5], [10], [15]],
-            'lmbda': [0.0001, 0.001, 0.01, 0.05],
+            'sizes': [[2,3], [3,5], [5, 3]],
+            'lmbda': [0.0001, 0.001, 0.01, 0.1],
             'momentum': [0.5, 0.9],
             'nesterov': [True, False],
             'epochs': [1000],
             'batch_size': [32, None],
             'eta':[0.001, 0.01, 0.1, 0.3, 0.5],
-            'eps': [1e-4],
+            'eps': [1e-8],
             'activation': ['sigmoid'],
             'optimizer': ['SGD']
         },

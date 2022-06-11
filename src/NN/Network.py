@@ -77,6 +77,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         #self._no_improvement_count = 0
         self.loss_k = -1
         self.loss_k1 = -1
+        self.loss_k2 = -1
+        self.loss_k3 = -1
         self.conv_rate = []
 
         # Execution Statistics
@@ -475,13 +477,14 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.train_scores.append(self.scoring(truth_train, preds_train))
 
         self.loss_k = self.loss_k1
-        self.loss_k1 = loss
-        if f_star_set and len(self.train_loss) > 1:
-            abs_err_top = np.abs(self.loss_k1-f_star_set)
-            abs_err_top = abs_err_top
-            abs_err_bot = np.abs(self.loss_k-f_star_set)
-            abs_err_bot = abs_err_bot
-            p = np.log(abs_err_top) / np.log(abs_err_bot)
+        self.loss_k1 = self.loss_k2
+        self.loss_k2 = self.loss_k3
+        self.loss_k3 = loss
+        if f_star_set and len(self.train_loss) > 4:
+            abs_err_top = np.abs((self.loss_k3-self.loss_k2)/(self.loss_k2-self.loss_k1))
+            abs_err_bot = np.abs((self.loss_k2-self.loss_k1)/(self.loss_k1 - self.loss_k))
+            # p = np.log(abs_err_top) / np.log(abs_err_bot)
+            p = np.log(abs_err_top  ) / np.log(abs_err_bot)
             print(p, abs_err_bot, abs_err_top)
             self.conv_rate.append(p)
 
@@ -663,11 +666,12 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         if not self.fitted:
             return 'This model is not fitted yet.\n\n'
 
-        x = list(range(len(self.conv_rate[:-1])))
+        x = list(range(1, len(self.conv_rate[:-1]) + 1))
         x_label = 'Epochs'
 
-        plt.plot(x, self.conv_rate[:-1], label='')
-#         plt.legend(loc='best')
+        plt.plot(x, self.conv_rate[:-1], label='rate')
+        plt.plot(range(len(self.train_loss)), self.train_loss, label='loss')
+        plt.legend(loc='best')
         plt.xlabel (x_label)
         plt.ylabel ('Convergence rate')
         plt.title ('Convergence rate per epoch')
