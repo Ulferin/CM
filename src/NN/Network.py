@@ -16,19 +16,19 @@ from matplotlib import pyplot as plt
 
 from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU, Linear
 from src.NN.metrics import mean_squared_error, accuracy_score
-from src.NN.optimizers import SGD, Adam
+from src.NN.optimizers import sgd, Adam
 from src.utils import end_time
 
 
 ACTIVATIONS = {
-    # 'relu': ReLU,
-    # 'Lrelu':LeakyReLU,
-    'sigmoid': Sigmoid
+    'relu': ReLU,
+    'Lrelu':LeakyReLU,
+    'logistic': Sigmoid
 }
 
 OPTIMIZERS = {
-    'SGD': SGD,
-    'Adam': Adam
+    'sgd': sgd,
+    'adam': Adam
 }
 
 
@@ -42,24 +42,24 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self,
-                sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01,
-                activation='sigmoid', lmbda=0.0, momentum=0.0, nesterov=False,
-                eps=1e-5, batch_size=None, debug=False, beta1=0.9, beta2=0.999):
+                hidden_layer_sizes=None, solver='sgd', seed=0, max_iter=1000, learning_rate_init=0.01,
+                activation='logistic', alpha=0.0, momentum=0.0, nesterovs_momentum=False,
+                tol=1e-5, batch_size=None, verbose=False, beta_1=0.9, beta_2=0.999):
 
         self.rng = default_rng(seed)     # needed for reproducibility
 
         # Network hyperparameters
         self.batch_size = batch_size
-        self.eta = eta
-        self.eps = eps
-        self.epochs = epochs
-        self.optimizer = optimizer
+        self.learning_rate_init = learning_rate_init
+        self.tol = tol
+        self.max_iter = max_iter
+        self.solver = solver
         self.seed = seed
-        self.debug = debug
+        self.verbose = verbose
         self.momentum = momentum
-        self.nesterov = nesterov
-        self.lmbda = lmbda
-        self.sizes = sizes
+        self.nesterovs_momentum = nesterovs_momentum
+        self.alpha = alpha
+        self.hidden_layer_sizes = hidden_layer_sizes
         self.activation = activation
         self.last_act = None       # Must be defined by subclassing the Network
 
@@ -72,7 +72,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.train_loss = []
         self.gap = []
         self.f_star = 999
-        self.tol = 0.00001
 
         #self._no_improvement_count = 0
         self.loss_k = -1
@@ -91,18 +90,17 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         # Initialize optimizer
         optimizer_params = {
-            'eta': eta,
-            'eps': eps,
-            'lmbda': lmbda
+            'learning_rate_init': learning_rate_init,
+            'tol': tol
         }
-        if optimizer == 'SGD':
+        if solver == 'sgd':
             optimizer_params['momentum'] = momentum
-            optimizer_params['nesterov'] = nesterov
-        elif optimizer == 'Adam':
-            optimizer_params['beta1'] = beta1
-            optimizer_params['beta2'] = beta2
+            optimizer_params['nesterovs_momentum'] = nesterovs_momentum
+        elif solver == 'adam':
+            optimizer_params['beta_1'] = beta_1
+            optimizer_params['beta_2'] = beta_2
 
-        self.opti = OPTIMIZERS[self.optimizer](**optimizer_params)
+        self.opti = OPTIMIZERS[self.solver](**optimizer_params)
 
 
     def _feedforward_batch(self, inp):
@@ -138,7 +136,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             nets.append(net)
             units_out.append(out)
 
-        # Last layer is linear for regression and sigmoid for classification
+        # Last layer is linear for regression and logistic for classification
         net = np.matmul(out,self.weights[-1].T) + self.biases[-1]
         out = self.last_act.function(net)
         nets.append(net)
@@ -176,8 +174,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         """
         delta = 0
         size = len(x)
-        nabla_b = [0]*(len(self._sizes)-1)
-        nabla_w = [0]*(len(self._sizes)-1)
+        nabla_b = [0]*(len(self._hidden_layer_sizes)-1)
+        nabla_w = [0]*(len(self._hidden_layer_sizes)-1)
 
         # Forward computation
         units_out, nets, out = self._feedforward_batch(x)
@@ -199,9 +197,9 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             nabla_b[-l] = delta.sum(axis=0)
             nabla_b[-l] /= size
             nabla_w[-l] = np.matmul(delta.T, units_out[-l-1])
-            nabla_w[-l] += np.sign(self.weights[-l])*self.lmbda
+            nabla_w[-l] += np.sign(self.weights[-l])*self.alpha
             nabla_w[-l] /= size
-
+        
         # Computes execution statistics
         end = end_time(start)
         self.backprop_avg[0] += 1
@@ -241,7 +239,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
     def _update_batches(self):
         """Creates batches and updates the Neural Network weights and biases
-        by performing updates using the optimizer associated to the current
+        by performing updates using the solver associated to the current
         network.
         """
         mini_batches = self._create_batches()
@@ -288,10 +286,10 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
     def fit(self, X, y, test_data=None, f_star_set=None):
         """Trains the neural network on (:X:, :y:) samples for a given
-        number of epochs by fine-tuning the weights and biases by using the
-        update rules relative to the provided optimizer. The way updates are
+        number of max_iter by fine-tuning the weights and biases by using the
+        update rules relative to the provided solver. The way updates are
         performed is also determined by the configurations relative to
-        batch size and eta hyperparameters.
+        batch size and learning_rate_init hyperparameters.
 
         Parameters
         ----------
@@ -326,27 +324,27 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             else self.training_size)
         self.batches = int(self.training_size/self.batch_size)
 
-        # Set up activation function and optimizer
+        # Set up activation function and solver
         self.act = ACTIVATIONS[self.activation]
-        # self.opti = OPTIMIZERS[self.optimizer](self.eta, eps=self.eps)
         self.der = self.act.derivative
 
         # Set up input/output units
-        self._sizes = self.sizes.copy()
-        self._sizes.insert(0, self.X.shape[1])
-        self._sizes.append(1 if len(self.y.shape) == 1 else self.y.shape[1])
-        self.num_layers = len(self._sizes)
+        self._hidden_layer_sizes = self.hidden_layer_sizes.copy()
+        self._hidden_layer_sizes.insert(0, self.X.shape[1])
+        self._hidden_layer_sizes.append(1 if len(self.y.shape) == 1 else self.y.shape[1])
+        self.num_layers = len(self._hidden_layer_sizes)
 
         # Initialize network parameters
-        self.biases = [np.array(self.rng.normal(0,0.5,l)) for l in self._sizes[1:]]
+        self.biases = [np.array(self.rng.normal(0,0.5,l)) for l in self._hidden_layer_sizes[1:]]
         self.weights = [
-            np.array(self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)))
-            for x, y in zip(self._sizes[:-1], self._sizes[1:])]
+            # np.array(self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)))
+            np.array(self.rng.uniform(-np.sqrt(2/x+y), np.sqrt(2/x+y), (y,x)))
+            for x, y in zip(self._hidden_layer_sizes[:-1], self._hidden_layer_sizes[1:])]
 
         start = dt.now()
         self.fitted = True
         try:
-            for e in range(1, self.epochs+1):
+            for e in range(1, self.max_iter+1):
                 s = dt.now()
                 self._update_batches()
                 en = end_time(s)
@@ -407,7 +405,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         if self.test_data is not None:
             val_loss = f"{self.val_loss[-1]:7.5e}, "
 
-        if self.debug:
+        if self.verbose:
             print(
                 f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || "
                 f"Loss: {val_loss}{self.train_loss[-1]:7.5e} ||"
@@ -450,7 +448,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             for w in self.weights:
                 w = w.ravel()
                 values_test += np.linalg.norm(w, 2, 0)
-            loss_test += 0.5*self.lmbda*values_test/self.training_size
+            loss_test += 0.5*self.alpha*values_test/self.training_size
 
             self.val_loss.append(loss_test)
             self.val_scores.append(self.scoring(truth_test, preds_test))
@@ -463,7 +461,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         for w in self.weights:
             w = w.ravel()
             values += np.linalg.norm(w, 2, 0)
-        loss += (0.5 * self.lmbda) * values / self.training_size
+        loss += (0.5 * self.alpha) * values / self.training_size
 
         #improvement of at least tol
         if loss < self.f_star:
@@ -481,10 +479,10 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.loss_k2 = self.loss_k3
         self.loss_k3 = loss
         if f_star_set and len(self.train_loss) > 4:
-            abs_err_top = np.abs((self.loss_k3-self.loss_k2)/(self.loss_k2-self.loss_k1))
-            abs_err_bot = np.abs((self.loss_k2-self.loss_k1)/(self.loss_k1 - self.loss_k))
+            abs_err_top = np.abs((self.loss_k3 - f_star_set + 1e-16)/(self.loss_k2 - f_star_set + 1e-16))
+            abs_err_bot = np.abs((self.loss_k2 - f_star_set + 1e-16)/(self.loss_k1 - f_star_set + 1e-16))
             # p = np.log(abs_err_top) / np.log(abs_err_bot)
-            p = np.log(abs_err_top  ) / np.log(abs_err_bot)
+            p = np.log(abs_err_top  + 1e-16) / np.log(abs_err_bot + 1e-16)
             print(p, abs_err_bot, abs_err_top)
             self.conv_rate.append(p)
 
@@ -523,19 +521,19 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             best_loss = (-1, np.min(self.train_loss))
 
         stats = (
-            f"ep: {self.epochs:<7} | s: {self.sizes} | b: {self.batch_size} | "
-            f"e:{self.eta:5} | lmbda:{self.lmbda:5} | m:{self.momentum:5} | "
-            f"nesterov: {self.nesterov}\n"
+            f"ep: {self.max_iter:<7} | s: {self.hidden_layer_sizes} | b: {self.batch_size} | "
+            f"e:{self.learning_rate_init:5} | alpha:{self.alpha:5} | m:{self.momentum:5} | "
+            f"nesterovs_momentum: {self.nesterovs_momentum}\n"
 
             f"Grad: {self.ngrad:7.5e} | "
             f"Loss: {best_loss[0]:7.5e}, {best_loss[1]:7.5e} | "
             f"Score: {best_score[0]:5.3g}, {best_score[1]:<5.3g}\n"
 
             f"ended in: {self.total_time}, "
-            f"avg per ep: {self.total_time/self.epochs}\n"
+            f"avg per ep: {self.total_time/self.max_iter}\n"
 
             f"total update: {self.update_avg}, "
-            f"avg updt: {self.update_avg/self.epochs}\n"
+            f"avg updt: {self.update_avg/self.max_iter}\n"
 
             f"total ff: {self.feedforward_avg[0]}, "
             f"total ff time: {self.feedforward_avg[1]}, "
@@ -580,7 +578,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             parameter, by default False
 
         time : bool, optional
-            whether build plots according to number of epochs or time of
+            whether build plots according to number of max_iter or time of
             execution, by default False
 
         log : bool, optional
@@ -608,15 +606,17 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         if log: plt.yscale('log')
 
         plt.legend(loc='best')
-        plt.title (f'{curve_type} {self.optimizer}')
+        plt.title (f'{curve_type} {self.solver}')
         plt.draw()
 
 
         if save:
+            # plt.savefig(
+            #     f"src/NN/res/stats/{name}"
+            #     f"ep{self.max_iter}s{self.hidden_layer_sizes}b{self.batch_size}e{self.learning_rate_init}"
+            #     f"alpha{self.alpha}m{self.momentum}.png")
             plt.savefig(
-                f"src/NN/res/stats/{name}"
-                f"ep{self.epochs}s{self.sizes}b{self.batch_size}e{self.eta}"
-                f"lmbda{self.lmbda}m{self.momentum}.png")
+                f"plots/loss_{name}.png")
         else:
             plt.show()
         plt.clf()
@@ -635,7 +635,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             whether to save the plot on file or not, by default False
 
         time : bool, optional
-            whether to plot gradient w.r.t. epochs or execution time,
+            whether to plot gradient w.r.t. max_iter or execution time,
             by default False
         """
 
@@ -654,10 +654,12 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         plt.draw()
 
         if save:
+            # plt.savefig(
+            #     f"src/NN/res/stats/{name}ep{self.max_iter}s{self.hidden_layer_sizes}"
+            #     f"b{self.batch_size}e{self.learning_rate_init}alpha{self.alpha}"
+            #     f"m{self.momentum}.png")
             plt.savefig(
-                f"src/NN/res/stats/{name}ep{self.epochs}s{self.sizes}"
-                f"b{self.batch_size}e{self.eta}lmbda{self.lmbda}"
-                f"m{self.momentum}.png")
+                f"plots/grad_{name}.png")
         else:
             plt.show()
         plt.clf()
@@ -670,97 +672,96 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         x_label = 'Epochs'
 
         plt.plot(x, self.conv_rate[:-1], label='rate')
-        plt.plot(range(len(self.train_loss)), self.train_loss, label='loss')
+        # plt.plot(range(len(self.train_loss)), self.train_loss, label='loss')
         plt.legend(loc='best')
         plt.xlabel (x_label)
         plt.ylabel ('Convergence rate')
         plt.title ('Convergence rate per epoch')
-        # plt.yscale('log')
+        plt.yscale('log')
         plt.draw()
 
         if save:
             plt.savefig(
                 f"./plots/rate_{name}.png")
         else:
-            pass
-        plt.show()
+            plt.show()
         plt.clf()
 
 
 
 class NC(Network, BaseEstimator):
     def __init__(
-        self, sizes=None, optimizer='SGD', seed=0, epochs=300, eta=0.1,
-        activation='sigmoid', lmbda=0.0001, momentum=0.5, nesterov=False,
-        eps=1e-5, batch_size=None, debug=False):
+        self, hidden_layer_sizes=None, solver='sgd', seed=0, max_iter=300, learning_rate_init=0.1,
+        activation='logistic', alpha=0.0001, momentum=0.5, nesterovs_momentum=False,
+        tol=1e-5, batch_size=None, verbose=False):
         """Initializes the network with the specified hyperparameters. Network
         weights and biases will be initialized at fitting time following the shape
-        of the training data and the specified sizes, which represents the
+        of the training data and the specified hidden_layer_sizes, which represents the
         amount of units to include in each hidden layer of the current network.
         Each layer will be initialized randomly following the LeCun uniform
         initializer formula. Implements a neural network for classification
-        tasks, since it uses the sigmoid activation function in the output
+        tasks, since it uses the logistic activation function in the output
         layer.
 
         Parameters
         ----------
-        sizes : tuple, optional
+        hidden_layer_sizes : tuple, optional
             Tuple (l1, l2, ..., ln) containig the number of units for each
             layer of the network to be built, by default None
 
-        optimizer : str, optional
-            string indicating which optimizer should be used for the training
-            of the current network. Must be in {'SGM', 'SGD'}, by default 'SGD'
+        solver : str, optional
+            string indicating which solver should be used for the training
+            of the current network. Must be in {'SGM', 'sgd'}, by default 'sgd'
 
         seed : int, optional
             seed for random number generator used for initializing this network
             weights and biases. Needed for reproducibility, by default 0
 
-        epochs : int, optional
-            the maximum number of epochs the training can run until stopping
+        max_iter : int, optional
+            the maximum number of max_iter the training can run until stopping
             if no termination conditions are met, by default 1000
 
-        eta : float, optional
-            learning rate for 'SGD' optimizer, starting step sizes for 'SGM'
-            optimizer, by default 0.1
+        learning_rate_init : float, optional
+            learning rate for 'sgd' solver, starting step sizes for 'SGM'
+            solver, by default 0.1
 
         activation : function, optional
             specifies which activation function to use for the hidden layers
-            of the network, must be in {'Lrelu', 'relu', 'sigmoid'},
+            of the network, must be in {'Lrelu', 'relu', 'logistic'},
             by default 'Lrelu'
 
-        lmbda : int, optional
+        alpha : int, optional
             l2 regularization coefficient, by default 0.0001
 
         momentum : int, optional
             momentum coefficient, by default 0.5
 
-        nesterov : bool, optional
-            boolean flag indicating wether nesterov momentum must be used
+        nesterovs_momentum : bool, optional
+            boolean flag indicating wether nesterovs_momentum momentum must be used
             during optimization of the current network, by default False
 
-        eps : float, optional
+        tol : float, optional
             stopping condition for precision in gradient norm, by default 1e-5
 
         batch_size : int or None, optional
             amount of samples to use for each evaluation of the gradient during
             optimization, by default None
 
-        debug : bool, optional
+        verbose : bool, optional
             debugging flag, by default False
         """
 
-        super().__init__(sizes=sizes,
-                        optimizer=optimizer,
+        super().__init__(hidden_layer_sizes=hidden_layer_sizes,
+                        solver=solver,
                         seed=seed,
-                        epochs=epochs,
-                        eta=eta,
+                        max_iter=max_iter,
+                        learning_rate_init=learning_rate_init,
                         activation=activation,
-                        lmbda=lmbda,
+                        alpha=alpha,
                         momentum=momentum,
-                        nesterov=nesterov,
-                        debug=debug,
-                        eps=eps,
+                        nesterovs_momentum=nesterovs_momentum,
+                        verbose=verbose,
+                        tol=tol,
                         batch_size=batch_size)
 
         # Defines the behavior of the last layer of the network
@@ -793,12 +794,12 @@ class NC(Network, BaseEstimator):
 
 class NR(Network, BaseEstimator):
     def __init__(
-        self, sizes=None, optimizer='SGD', seed=0, epochs=1000, eta=0.01,
-        activation='sigmoid', lmbda=0.0001, momentum=0.5, nesterov=False, eps=1e-5,
-        batch_size=None, debug=False):
+        self, hidden_layer_sizes=None, solver='sgd', seed=0, max_iter=1000, learning_rate_init=0.01,
+        activation='logistic', alpha=0.0001, momentum=0.5, nesterovs_momentum=False, tol=1e-5,
+        batch_size=None, verbose=False):
         """Initializes the network with the specified hyperparameters. Network
         weights and biases will be initialized at fitting time following the shape
-        of the training data and the specified sizes, which represents the
+        of the training data and the specified hidden_layer_sizes, which represents the
         amount of units to include in each hidden layer of the current network.
         Each layer will be initialized randomly following the LeCun uniform
         initializer formula. Implements a neural network for regression
@@ -807,62 +808,62 @@ class NR(Network, BaseEstimator):
 
         Parameters
         ----------
-        sizes : tuple, optional
+        hidden_layer_sizes : tuple, optional
             Tuple (l1, l2, ..., ln) containig the number of units for each
             layer of the network to be built, by default None
 
-        optimizer : str, optional
-            string indicating which optimizer should be used for the training
-            of the current network. Must be in {'SGM', 'SGD'}, by default 'SGD'
+        solver : str, optional
+            string indicating which solver should be used for the training
+            of the current network. Must be in {'SGM', 'sgd'}, by default 'sgd'
 
         seed : int, optional
             seed for random number generator used for initializing this network
             weights and biases. Needed for reproducibility, by default 0
 
-        epochs : int, optional
-            the maximum number of epochs the training can run until stopping
+        max_iter : int, optional
+            the maximum number of max_iter the training can run until stopping
             if no termination conditions are met, by default 1000
 
-        eta : float, optional
-            learning rate for 'SGD' optimizer, starting step sizes for 'SGM'
-            optimizer, by default 0.01
+        learning_rate_init : float, optional
+            learning rate for 'sgd' solver, starting step sizes for 'SGM'
+            solver, by default 0.01
 
         activation : function, optional
             specifies which activation function to use for the hidden layers
-            of the network, must be in {'Lrelu', 'relu', 'sigmoid'},
+            of the network, must be in {'Lrelu', 'relu', 'logistic'},
             by default 'Lrelu'
 
-        lmbda : int, optional
+        alpha : int, optional
             l2 regularization coefficient, by default 0.0001
 
         momentum : int, optional
             momentum coefficient, by default 0.5
 
-        nesterov : bool, optional
-            boolean flag indicating wether nesterov momentum must be used
+        nesterovs_momentum : bool, optional
+            boolean flag indicating wether nesterovs_momentum momentum must be used
             during optimization of the current network, by default False
 
-        eps : float, optional
+        tol : float, optional
             stopping condition for precision in gradient norm, by default 1e-5
 
         batch_size : int or None, optional
             amount of samples to use for each evaluation of the gradient during
             optimization, by default None
 
-        debug : bool, optional
+        verbose : bool, optional
             debugging flag, by default False
         """
-        super().__init__(sizes=sizes,
-                        optimizer=optimizer,
+        super().__init__(hidden_layer_sizes=hidden_layer_sizes,
+                        solver=solver,
                         seed=seed,
-                        epochs=epochs,
-                        eta=eta,
+                        max_iter=max_iter,
+                        learning_rate_init=learning_rate_init,
                         activation=activation,
-                        lmbda=lmbda,
+                        alpha=alpha,
                         momentum=momentum,
-                        nesterov=nesterov,
-                        debug=debug,
-                        eps=eps,
+                        nesterovs_momentum=nesterovs_momentum,
+                        verbose=verbose,
+                        tol=tol,
                         batch_size=batch_size)
 
 

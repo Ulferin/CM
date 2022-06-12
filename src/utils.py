@@ -179,5 +179,5 @@ def plot_gap(gap, dataset, solver):
     ax.grid()
 
     fig.savefig(os.path.join("./plots","gap_"+dataset+"_"+solver+".png"))
-    # plt.clf()
+    plt.clf()
     # plt.show()

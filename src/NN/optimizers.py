@@ -6,10 +6,9 @@ import numpy as np
 class Optimizer(metaclass=ABCMeta):
 
     @abstractmethod
-    def __init__(self, eta, eps=1e-5, lmbda=0.001):
-        self.eta = eta
-        self.eps = eps
-        self.lmbda = lmbda
+    def __init__(self, learning_rate_init, tol=1e-5):
+        self.learning_rate_init = learning_rate_init
+        self.tol = tol
 
 
     @abstractmethod
@@ -32,18 +31,19 @@ class Optimizer(metaclass=ABCMeta):
             optimal state.
         """        
 
-        if ngrad < self.eps:
+        if ngrad < self.tol:
             return True
 
         return False
 
 
 
-class SGD(Optimizer):
+class sgd(Optimizer):
 
-    def __init__(self, eta, eps=1e-5, lmbda=0.01, momentum=0.9, nesterov=True):
-        super().__init__(eta, eps=eps, lmbda=lmbda)
-        self.nesterov = nesterov
+    def __init__(self, learning_rate_init, tol=1e-5, momentum=0.9,
+            nesterovs_momentum=True):
+        super().__init__(learning_rate_init, tol=tol)
+        self.nesterovs_momentum = nesterovs_momentum
         self.momentum = momentum
 
         self.v = []
@@ -71,7 +71,7 @@ class SGD(Optimizer):
 
         # Updates velocities with the current momentum coefficient
         self.v = [
-            self.momentum * velocity - self.eta*g
+            self.momentum * velocity - self.learning_rate_init*g
             for velocity, g
             in zip(self.v, grads)
         ]
@@ -79,8 +79,8 @@ class SGD(Optimizer):
         for param, update in zip((p for p in parameters), self.v):
             param += update
         
-        # Nesterov update
-        if self.nesterov:
+        # nesterovs_momentum update
+        if self.nesterovs_momentum:
             for param, velocity in zip((p for p in parameters), self.v):
                 param += self.momentum * velocity
 
@@ -88,10 +88,11 @@ class SGD(Optimizer):
 
 class Adam(Optimizer):
     # TODO: add method description
-    def __init__(self, eta, eps=0.00001, beta1=0.9, beta2=0.999, lmbda=0.01):
-        super().__init__(eta, eps, lmbda)
-        self.beta1 = beta1
-        self.beta2 = beta2
+    def __init__(self, learning_rate_init, tol=0.00001, beta_1=0.9,
+            beta_2=0.999):
+        super().__init__(learning_rate_init, tol)
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
         self.t = 0
         self.offset = 1e-8
 
@@ -108,18 +109,18 @@ class Adam(Optimizer):
             self.second_moment = [0]*len(grads)
 
         self.first_moment = [
-            self.beta1 * m + (1-self.beta1)*g
+            self.beta_1 * m + (1-self.beta_1)*g
             for m, g in zip(self.first_moment, grads)
         ]
 
         self.second_moment = [
-            self.beta2 * v + (1 - self.beta2)*(g ** 2)
+            self.beta_2 * v + (1 - self.beta_2)*(g ** 2)
             for v, g in zip(self.second_moment, grads)
         ]
 
-        self.learning_rate = (self.eta
-            * np.sqrt(1 - self.beta2**self.t)
-            / (1 - self.beta1**self.t))
+        self.learning_rate = (self.learning_rate_init
+            * np.sqrt(1 - self.beta_2**self.t)
+            / (1 - self.beta_1**self.t))
 
         updates = [
             -self.learning_rate * fm / (np.sqrt(sm) + self.offset)

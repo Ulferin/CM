@@ -1,11 +1,31 @@
 import sys
 
+import numpy as np
+from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
 
 from src.NN.Network import NR, NC
 
 import src.utils as utils
+from sklearn.metrics import mean_squared_error, classification_report
 
+
+def printScoreClas(clf, X, y, score='Accuracy'):
+    """
+    This function prints the score of classification/regression for all the models but Keras ones. 
+
+    Params:
+        - clf: model to use for predictions.
+        - X: training samples DataFrame.
+        - y: training target variables DataFrame.
+        - score : Score measure to print.
+    """
+
+    y_pred = clf.predict(X)
+    print(f"{score}: {clf.score(X, y)}")
+    print(f"MSE: {mean_squared_error(y, y_pred)}")
+    if score=='Accuracy':
+        print(classification_report(y, y_pred))
 
 datasets = {
     'cup': 'data/ML-CUP20-TR.csv',
@@ -19,95 +39,99 @@ datasets = {
 # as described in the report file.
 params = {
     'cup': {
-        'SGD': {
-            'batch_size': None,
-            'epochs': 500,
-            'eps': 1e-6,
-            'eta': 0.001,
-            'lmbda': 0.0001,
-            'momentum': 0.9,
-            'optimizer': "SGD",
-            'activation': 'sigmoid',
-            'sizes': [30, 50],
+        'sgd': {
+            'activation': 'logistic',
+            'alpha': 0.2,
+            'batch_size': 128,
+            'hidden_layer_sizes': [5, 10],
+            'learning_rate_init': 0.001,
+            'max_iter': 1500,
+            'momentum': 0.5,
+            'nesterovs_momentum': True,
+            'solver': 'sgd',
+            'tol': 1e-08
         },
-        'Adam': {
-            'batch_size': 32,
-            'epochs': 500,
-            'eps': 1e-6,
-            'eta': 0.1,
-            'lmbda': 0.05,
-            'optimizer': "Adam",
-            'activation': 'sigmoid',
-            'sizes': [10, 5],
+        'adam': {
+            'activation': 'logistic',
+            'alpha': 0.2,
+            'batch_size': 128,
+            'hidden_layer_sizes': [5, 10],
+            'learning_rate_init': 0.001,
+            'max_iter': 1500,
+            'solver': 'adam',
+            'tol': 1e-08
         }
     },
     'monk1': {
-        'SGD': {
-            'batch_size': None,
-            'epochs': 5000,
-            'eps': 1e-6,
-            'eta': 0.9,
-            'lmbda': 3e-4,
-            'momentum': 0.6,
-            'optimizer': "SGD",
-            'activation': 'sigmoid',
-            'sizes': [15],
-        },
-        'Adam': {
+        'sgd': {
+            'activation': 'logistic',
+            'alpha': 0,
             'batch_size': 10,
-            'epochs': 5000,
-            'eps': 1e-12,
-            'eta': 0.1,
-            'lmbda': 0,
-            'optimizer': "Adam",
-            'activation': 'sigmoid',
-            'sizes': [10, 5],
+            'hidden_layer_sizes': [3, 5],
+            'learning_rate_init': 0.1,
+            'max_iter': 1500,
+            'momentum': 0.8,
+            'nesterovs_momentum': False,
+            'solver': 'sgd',
+            'tol': 1e-06
+        },
+        'adam': {
+            'activation': 'logistic',
+            'alpha': 0,
+            'batch_size': 10,
+            'hidden_layer_sizes': [3,5],
+            'learning_rate_init': 0.1,
+            'max_iter': 1500,
+            'solver': "adam",
+            'tol': 1e-12,
         }
     },
     'monk2': {
-        'SGD': {
-            'batch_size': None,
-            'epochs': 5000,
-            'eps': 1e-6,
-            'eta': 0.1,
-            'lmbda': 0.,
-            'momentum': 0.9,
-            'optimizer': "SGD",
-            'activation': 'sigmoid',
-            'sizes': [10],
-        },
-        'Adam': {
+        'sgd': {
+            'activation': 'logistic',
+            'alpha': 0,
             'batch_size': 10,
-            'epochs': 5000,
-            'eps': 1e-6,
-            'eta': 0.1,
-            'lmbda': 0,
-            'optimizer': "Adam",
-            'activation': 'sigmoid',
-            'sizes': [2, 3],
+            'hidden_layer_sizes': [3, 5],
+            'learning_rate_init': 0.1,
+            'max_iter': 1500,
+            'momentum': 0.8,
+            'nesterovs_momentum': False,
+            'solver': 'sgd',
+            'tol': 1e-06
+        },
+        'adam': {
+            'activation': 'logistic',
+            'alpha': 0,
+            'batch_size': 10,
+            'hidden_layer_sizes': [3, 5],
+            'learning_rate_init': 0.1,
+            'max_iter': 1500,
+            'solver': 'adam',
+            'tol': 1e-12
         }
     },
     'monk3': {
-        'SGD': {
-            'batch_size': None,
-            'epochs': 5000,
-            'eps': 1e-10,
-            'eta': 0.1,
-            'lmbda': 0.1,
-            'momentum': 0.9,
-            'optimizer': "SGD",
-            'activation': 'sigmoid',
-            'sizes': [10,10],
-        },
-        'Adam': {
+        'sgd': {
+            'activation': 'logistic',
+            'alpha': 0,
             'batch_size': 32,
-            'epochs': 500,
-            'eps': 1e-10,
-            'eta': 0.01,
-            'lmbda': 0.5,
-            'optimizer': "Adam",
-            'activation': 'sigmoid',
-            'sizes': [10, 5],
+            'hidden_layer_sizes': [2, 3],
+            'learning_rate_init': 0.1,
+            'max_iter': 1500,
+            'momentum': 0.8,
+            'nesterovs_momentum': False,
+            'solver': 'sgd',
+            'tol': 1e-06
+        },
+        'adam': {
+            'activation': 'logistic',
+            'alpha': 0,
+            'batch_size': 32,
+            'hidden_layer_sizes': [2, 3],
+            'learning_rate_init': 0.1,
+            'max_iter': 1500,
+            'solver': 'adam',
+            'tol': 1e-12
         }
     }
 }
@@ -117,63 +141,63 @@ params = {
 grids = {
     'cup': {
 
-        'SGD': {
-            'sizes': [[2,3], [3,5], [5, 3]],
-            'lmbda': [0.0001, 0.001, 0.01, 0.1],
+        'sgd': {
+            'hidden_layer_sizes': [[2,3], [5,10], [7, 10]],
+            'alpha': [0.001, 0.01, 0.1, 0.2],
             'momentum': [0.5, 0.9],
-            'nesterov': [True, False],
-            'epochs': [1000],
-            'batch_size': [32, None],
-            'eta':[0.001, 0.01, 0.1, 0.3, 0.5],
-            'eps': [1e-8],
-            'activation': ['sigmoid'],
-            'optimizer': ['SGD']
+            'nesterovs_momentum': [True, False],
+            'max_iter': [1500],
+            'batch_size': [32, 128, None],
+            'learning_rate_init':[0.001, 0.01, 0.1, 0.3, 0.5],
+            'tol': [1e-8],
+            'activation': ['logistic'],
+            'solver': ['sgd']
         },
 
-        'Adam': {
-            'sizes': [[2,3], [3,5], [5,3]],
-            'lmbda': [0.0001, 0.001, 0.01, 0.1],
-            'epochs': [1000],
-            'batch_size': [32, None],
-            'eta':[0.001, 0.01, 0.1, 0.3, 0.5],
-            'eps': [1e-8],
-            'activation': ['sigmoid'],
-            'optimizer': ['Adam']
+        'adam': {
+            'hidden_layer_sizes': [[2,3], [5,10], [7, 10]],
+            'alpha': [0.001, 0.01, 0.1, 0.2],
+            'max_iter': [1500],
+            'batch_size': [32, 128, None],
+            'learning_rate_init':[0.001, 0.01, 0.1, 0.3, 0.5],
+            'tol': [1e-8],
+            'activation': ['logistic'],
+            'solver': ['adam']
         }
     },
 
     'monk': {
 
-        'SGD': {
-            'sizes': [[2,3], [3,5], [5,5], [2], [3], [5]],
-            'lmbda': [0, 0.0001, 0.001],
+        'sgd': {
+            'hidden_layer_sizes': [[2,3], [3,5]],
+            'alpha': [0, 0.1, 0.2],
             'momentum': [0.8, 0.9],
-            'nesterov': [True],
-            'epochs': [5000],
-            'batch_size': [32, 64, None],
-            'eta':[0.0001, 0.001, 0.01, 0.1],
-            'eps': [1e-6],
-            'optimizer': ['SGD'],
-            'activation': ['sigmoid'],
+            'nesterovs_momentum': [False, True],
+            'max_iter': [1500],
+            'batch_size': [10, 32, None],
+            'learning_rate_init':[0.1, 0.2, 0.5],
+            'tol': [1e-6],
+            'solver': ['sgd'],
+            'activation': ['logistic'],
         },
 
-        'Adam': {
-            'sizes': [[2,3], [3,5], [5,3], [5, 10], [10, 5], [10,10]],
-            'lmbda': [0, 0.0001, 0.001],
-            'epochs': [1000],
-            'batch_size': [10, 32, 64, None],
-            'eta':[0.0001, 0.001, 0.005, 0.01, 0.05, 0.1],
-            'eps': [1e-4],
-            'activation': ['sigmoid'],
-            'optimizer': ['Adam']
+        'adam': {
+            'hidden_layer_sizes': [[2,3], [3,5]],
+            'alpha': [0, 0.1, 0.2],
+            'max_iter': [1500],
+            'batch_size': [10, 32, None],
+            'learning_rate_init':[0.1, 0.2, 0.5],
+            'tol': [1e-12],
+            'activation': ['logistic'],
+            'solver': ['adam']
         }
     }
 }
 
 
 if __name__ == '__main__':
-    test = sys.argv[1]      # Test type, either 'CM', 'NAG' or 'SGM' when
-                            # grid==false, otherwise 'SGD' or 'SGM'
+    test = sys.argv[1]      # Test type, either 'CM', 'NAG' or 'adam' when
+                            # grid==false, otherwise 'sgd' or 'adam'
     dataset = sys.argv[2]   # Dataset to use, 'monk#' or 'grid'
     grid = (len(sys.argv) > 3
             and sys.argv[3] == 'grid') # Whether to perform grid or not
@@ -191,12 +215,14 @@ if __name__ == '__main__':
         full_name = dataset
         if dataset == 'cup':
             net = NR
+            # net = MLPRegressor
             cv = 5
             scoring = 'neg_mean_squared_error'
         else:
             # Removes the monk number
             dataset = 'monk'
             net = NC
+            # net = MLPClassifier
             cv = StratifiedShuffleSplit(n_splits=5, test_size=0.20,
                                         random_state=42)
             scoring = 'accuracy'
@@ -220,28 +246,36 @@ if __name__ == '__main__':
 
     else:
         plot_name = f"{dataset}_{test}"
-        # Add nesterov momentum to params
+        # Add nesterovs_momentum momentum to params
         if test == 'NAG':
-            test = 'SGD'
-            params[dataset][test]['nesterov'] = True
+            test = 'sgd'
+            params[dataset][test]['nesterovs_momentum'] = True
         if test == 'CM':
-            test = 'SGD'
+            test = 'sgd'
+            params[dataset][test]['nesterovs_momentum'] = False
 
         if dataset == 'cup':
-            net = NR(**params[dataset][test], debug=True)
-            #params[dataset][test]['epochs'] = 5000
-            net_eval = NR(**params[dataset][test], debug=True)
+            net = NR(**params[dataset][test], verbose=True)
+            net_sk = MLPRegressor(**params[dataset][test], verbose=True)
+            params[dataset][test]['max_iter'] = 10000
+            net_eval = NR(**params[dataset][test], verbose=True)
         else:
-            net = NC(**params[dataset][test], debug=True)
-            #params[dataset][test]['epochs'] = 10000
-            net_eval = NC(**params[dataset][test], debug=False)
+            net = NC(**params[dataset][test], verbose=True)
+            net_sk = MLPClassifier(**params[dataset][test], verbose=True)
+            params[dataset][test]['max_iter'] = 5000
+            net_eval = NC(**params[dataset][test], verbose=False)
         print("Evaluating f_* ...")
         net_eval.fit(X_train, y_train, test_data=(X_test, y_test))
         net.fit(X_train, y_train, test_data=(X_test, y_test), f_star_set=net_eval.f_star)
+        # net_sk.fit(X_train, y_train.ravel())
 
         utils.plot_gap(net.gap, dataset, sys.argv[1])
         net.plot_rate(plot_name, True)
+        net.plot_grad(plot_name, True, False)
+        net.plot_results(plot_name, False, True)
+        print(f"mean rate: {np.mean(net.conv_rate)}")
         print(f"f_*: {net_eval.f_star}")
         print(f"last gap: {net.gap[-1]}")
         print("Improved network:")
+        # printScoreClas(net_sk, X_train, y_train.ravel())
         print(net.best_score(name=plot_name, save=False))
