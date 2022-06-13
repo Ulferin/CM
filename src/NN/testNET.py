@@ -45,7 +45,7 @@ params = {
             'batch_size': 128,
             'hidden_layer_sizes': [5, 10],
             'learning_rate_init': 0.001,
-            'max_iter': 1500,
+            'max_iter': 5000,
             'momentum': 0.5,
             'nesterovs_momentum': True,
             'solver': 'sgd',
@@ -57,7 +57,7 @@ params = {
             'batch_size': 128,
             'hidden_layer_sizes': [5, 10],
             'learning_rate_init': 0.001,
-            'max_iter': 1500,
+            'max_iter': 5000,
             'solver': 'adam',
             'tol': 1e-08
         }
@@ -69,7 +69,7 @@ params = {
             'batch_size': 10,
             'hidden_layer_sizes': [3, 5],
             'learning_rate_init': 0.1,
-            'max_iter': 1500,
+            'max_iter': 5000,
             'momentum': 0.8,
             'nesterovs_momentum': False,
             'solver': 'sgd',
@@ -81,7 +81,7 @@ params = {
             'batch_size': 10,
             'hidden_layer_sizes': [3,5],
             'learning_rate_init': 0.1,
-            'max_iter': 1500,
+            'max_iter': 5000,
             'solver': "adam",
             'tol': 1e-12,
         }
@@ -93,7 +93,7 @@ params = {
             'batch_size': 10,
             'hidden_layer_sizes': [3, 5],
             'learning_rate_init': 0.1,
-            'max_iter': 1500,
+            'max_iter': 5000,
             'momentum': 0.8,
             'nesterovs_momentum': False,
             'solver': 'sgd',
@@ -105,7 +105,7 @@ params = {
             'batch_size': 10,
             'hidden_layer_sizes': [3, 5],
             'learning_rate_init': 0.1,
-            'max_iter': 1500,
+            'max_iter': 5000,
             'solver': 'adam',
             'tol': 1e-12
         }
@@ -117,7 +117,7 @@ params = {
             'batch_size': 32,
             'hidden_layer_sizes': [2, 3],
             'learning_rate_init': 0.1,
-            'max_iter': 1500,
+            'max_iter': 5000,
             'momentum': 0.8,
             'nesterovs_momentum': False,
             'solver': 'sgd',
@@ -125,11 +125,11 @@ params = {
         },
         'adam': {
             'activation': 'logistic',
-            'alpha': 0,
+            'alpha': 0.001,
             'batch_size': 32,
             'hidden_layer_sizes': [2, 3],
-            'learning_rate_init': 0.1,
-            'max_iter': 1500,
+            'learning_rate_init': 0.005,
+            'max_iter': 5000,
             'solver': 'adam',
             'tol': 1e-12
         }
@@ -246,6 +246,7 @@ if __name__ == '__main__':
 
     else:
         plot_name = f"{dataset}_{test}"
+        solver = test
         # Add nesterovs_momentum momentum to params
         if test == 'NAG':
             test = 'sgd'
@@ -257,19 +258,19 @@ if __name__ == '__main__':
         if dataset == 'cup':
             net = NR(**params[dataset][test], verbose=True)
             net_sk = MLPRegressor(**params[dataset][test], verbose=True)
-            params[dataset][test]['max_iter'] = 10000
+            # params[dataset][test]['max_iter'] = 10000
             net_eval = NR(**params[dataset][test], verbose=True)
         else:
             net = NC(**params[dataset][test], verbose=True)
             net_sk = MLPClassifier(**params[dataset][test], verbose=True)
-            params[dataset][test]['max_iter'] = 5000
+            # params[dataset][test]['max_iter'] = 5000
             net_eval = NC(**params[dataset][test], verbose=False)
         print("Evaluating f_* ...")
         net_eval.fit(X_train, y_train, test_data=(X_test, y_test))
         net.fit(X_train, y_train, test_data=(X_test, y_test), f_star_set=net_eval.f_star)
         # net_sk.fit(X_train, y_train.ravel())
 
-        utils.plot_gap(net.gap, dataset, sys.argv[1])
+        net.plot_gap(dataset, solver, save=True)
         net.plot_rate(plot_name, True)
         net.plot_grad(plot_name, True, False)
         net.plot_results(plot_name, False, True)

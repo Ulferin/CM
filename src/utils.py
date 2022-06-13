@@ -166,18 +166,3 @@ def end_time(start):
     """
     end = (dt.now() - start)
     return end.seconds*1000 + end.microseconds/1000
-
-
-def plot_gap(gap, dataset, solver):
-    epochs = range(len(gap))
-    fig, ax = plt.subplots()
-    ax.plot(epochs, gap)
-
-    ax.set(xlabel='epochs', ylabel='gap term',
-            yscale='log',
-           title='Gap term '+dataset+' with '+solver)
-    ax.grid()
-
-    fig.savefig(os.path.join("./plots","gap_"+dataset+"_"+solver+".png"))
-    plt.clf()
-    # plt.show()

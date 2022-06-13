@@ -483,7 +483,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             abs_err_bot = np.abs((self.loss_k2 - f_star_set + 1e-16)/(self.loss_k1 - f_star_set + 1e-16))
             # p = np.log(abs_err_top) / np.log(abs_err_bot)
             p = np.log(abs_err_top  + 1e-16) / np.log(abs_err_bot + 1e-16)
-            print(p, abs_err_bot, abs_err_top)
             self.conv_rate.append(p)
 
 
@@ -598,8 +597,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         x = self.epochs_time if time else list(range(len(train_res)))
 
         if self.test_data is not None:
-            plt.plot(x, val_res, '--', label='Validation loss')
-        plt.plot(x, train_res, '--', label='Training loss')
+            plt.plot(x, val_res, label='Validation loss')
+        plt.plot(x, train_res, label='Training loss')
 
         plt.xlabel(x_label)
         plt.ylabel (curve_type)
@@ -645,7 +644,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         x = self.epochs_time if time else list(range(len(self.epochs_time)))
         x_label = 'Execution Time' if time else 'Epochs'
 
-        plt.plot(x, self.grad_est_per_epoch, '--', label='')
+        plt.plot(x, self.grad_est_per_epoch, label='')
 #         plt.legend(loc='best')
         plt.xlabel (x_label)
         plt.ylabel ('Gradient\'s norm')
@@ -672,17 +671,35 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         x_label = 'Epochs'
 
         plt.plot(x, self.conv_rate[:-1], label='rate')
-        # plt.plot(range(len(self.train_loss)), self.train_loss, label='loss')
         plt.legend(loc='best')
         plt.xlabel (x_label)
         plt.ylabel ('Convergence rate')
         plt.title ('Convergence rate per epoch')
-        plt.yscale('log')
+        # plt.yscale('log')
         plt.draw()
 
         if save:
             plt.savefig(
                 f"./plots/rate_{name}.png")
+        else:
+            plt.show()
+        plt.clf()
+
+
+    def plot_gap(self, dataset, solver, save=True):
+        epochs = range(len(self.gap))
+
+        plt.plot(epochs, self.gap, label='gap')
+        plt.legend(loc='best')
+        plt.xlabel ('epochs')
+        plt.ylabel ('gap term')
+        plt.title ('Gap term '+dataset+' with '+solver)
+        plt.yscale('log')
+        plt.draw()
+
+        if save:
+            plt.savefig(
+                f"./plots/gap_{dataset}_{solver}.png")
         else:
             plt.show()
         plt.clf()
