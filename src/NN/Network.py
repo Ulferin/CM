@@ -339,7 +339,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         # Initialize network parameters
         self.biases = [np.array(self.rng.normal(0,0.5,l)) for l in self._hidden_layer_sizes[1:]]
         self.weights = [
-            # np.array(self.rng.uniform(-np.sqrt(3/x), np.sqrt(3/x), (y,x)))
             np.array(self.rng.uniform(-np.sqrt(2/x+y), np.sqrt(2/x+y), (y,x)))
             for x, y in zip(self._hidden_layer_sizes[:-1], self._hidden_layer_sizes[1:])]
 

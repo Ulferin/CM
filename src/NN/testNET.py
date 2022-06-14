@@ -65,12 +65,12 @@ params = {
     'monk1': {
         'sgd': {
             'activation': 'logistic',
-            'alpha': 0,
+            'alpha': 0.001,
             'batch_size': 10,
             'hidden_layer_sizes': [3, 5],
-            'learning_rate_init': 0.1,
+            'learning_rate_init': 0.005,
             'max_iter': 5000,
-            'momentum': 0.8,
+            'momentum': 0.9,
             'nesterovs_momentum': False,
             'solver': 'sgd',
             'tol': 1e-06
@@ -89,12 +89,12 @@ params = {
     'monk2': {
         'sgd': {
             'activation': 'logistic',
-            'alpha': 0,
+            'alpha': 0.001,
             'batch_size': 10,
             'hidden_layer_sizes': [3, 5],
             'learning_rate_init': 0.1,
             'max_iter': 5000,
-            'momentum': 0.8,
+            'momentum': 0.9,
             'nesterovs_momentum': False,
             'solver': 'sgd',
             'tol': 1e-06
@@ -118,7 +118,7 @@ params = {
             'hidden_layer_sizes': [3, 5],
             'learning_rate_init': 0.1,
             'max_iter': 5000,
-            'momentum': 0.8,
+            'momentum': 0.5,
             'nesterovs_momentum': False,
             'solver': 'sgd',
             'tol': 1e-06
@@ -142,13 +142,13 @@ grids = {
     'cup': {
 
         'sgd': {
-            'hidden_layer_sizes': [[2,3], [5,10], [7, 10]],
-            'alpha': [0.001, 0.01, 0.1, 0.2],
+            'hidden_layer_sizes': [[2,3], [3,5], [5, 10]],
+            'alpha': [0.001, 0.005, 0.01, 0.1],
             'momentum': [0.5, 0.9],
             'nesterovs_momentum': [True, False],
-            'max_iter': [1500],
+            'max_iter': [3000],
             'batch_size': [32, 128, None],
-            'learning_rate_init':[0.001, 0.01, 0.1, 0.3, 0.5],
+            'learning_rate_init':[0.001, 0.01, 0.1, 0.3],
             'tol': [1e-4],
             'activation': ['logistic'],
             'solver': ['sgd']
@@ -170,12 +170,12 @@ grids = {
 
         'sgd': {
             'hidden_layer_sizes': [[2,3], [3,5]],
-            'alpha': [0.002, 0.005, 0.1],
-            'momentum': [0.8, 0.9],
+            'alpha': [0.001, 0.005, 0.1],
+            'momentum': [0, 0.5, 0.9],
             'nesterovs_momentum': [False, True],
-            'max_iter': [5000],
+            'max_iter': [3000],
             'batch_size': [10, 32, None],
-            'learning_rate_init':[0.1, 0.2, 0.5],
+            'learning_rate_init':[0.001, 0.005, 0.1],
             'tol': [1e-6],
             'solver': ['sgd'],
             'activation': ['logistic'],
