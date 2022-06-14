@@ -53,11 +53,11 @@ params = {
         },
         'adam': {
             'activation': 'logistic',
-            'alpha': 0.2,
+            'alpha': 0.001,
             'batch_size': 128,
             'hidden_layer_sizes': [5, 10],
             'learning_rate_init': 0.001,
-            'max_iter': 5000,
+            'max_iter': 3000,
             'solver': 'adam',
             'tol': 1e-08
         }
@@ -77,10 +77,10 @@ params = {
         },
         'adam': {
             'activation': 'logistic',
-            'alpha': 0,
-            'batch_size': 10,
-            'hidden_layer_sizes': [3,5],
-            'learning_rate_init': 0.1,
+            'alpha': 0.005,
+            'batch_size': 32,
+            'hidden_layer_sizes': [5,10],
+            'learning_rate_init': 0.005,
             'max_iter': 5000,
             'solver': "adam",
             'tol': 1e-6,
@@ -101,10 +101,10 @@ params = {
         },
         'adam': {
             'activation': 'logistic',
-            'alpha': 0,
+            'alpha': 0.005,
             'batch_size': 10,
-            'hidden_layer_sizes': [3, 5],
-            'learning_rate_init': 0.1,
+            'hidden_layer_sizes': [5, 10],
+            'learning_rate_init': 0.001,
             'max_iter': 5000,
             'solver': 'adam',
             'tol': 1e-6
@@ -126,10 +126,10 @@ params = {
         'adam': {
             'activation': 'logistic',
             'alpha': 0.005,
-            'batch_size': None,
-            'hidden_layer_sizes': [2, 3],
-            'learning_rate_init': 0.001,
-            'max_iter': 8000,
+            'batch_size': 32,
+            'hidden_layer_sizes': [3, 5],
+            'learning_rate_init': 0.005,
+            'max_iter': 5000,
             'solver': 'adam',
             'tol': 1e-6
         }
@@ -155,11 +155,11 @@ grids = {
         },
 
         'adam': {
-            'hidden_layer_sizes': [[2,3], [5,10], [7, 10]],
-            'alpha': [0.001, 0.01, 0.1, 0.2],
-            'max_iter': [1500],
+            'hidden_layer_sizes': [[2,3], [3,5], [5, 10]],
+            'alpha': [0.001, 0.005, 0.1],
+            'max_iter': [3000],
             'batch_size': [32, 128, None],
-            'learning_rate_init':[0.001, 0.01, 0.1, 0.3, 0.5],
+            'learning_rate_init':[0.001, 0.005, 0.1, 0.3],
             'tol': [1e-4],
             'activation': ['logistic'],
             'solver': ['adam']
@@ -182,11 +182,11 @@ grids = {
         },
 
         'adam': {
-            'hidden_layer_sizes': [[2,3], [3,5]],
-            'alpha': [0.002, 0.005, 0.1],
+            'hidden_layer_sizes': [[2,3], [3,5], [5, 10]],
+            'alpha': [0.001, 0.005, 0.1],
             'max_iter': [5000],
             'batch_size': [10, 32, None],
-            'learning_rate_init':[0.1, 0.2, 0.5],
+            'learning_rate_init':[0.001, 0.005, 0.1],
             'tol': [1e-6],
             'activation': ['logistic'],
             'solver': ['adam']
@@ -265,7 +265,7 @@ if __name__ == '__main__':
             # net_sk = MLPClassifier(**params[dataset][test], verbose=True)
             # params[dataset][test]['max_iter'] = 1000
             # params[dataset][test]['tol'] = 1e-16
-            net_eval = NC(**params[dataset][test], verbose=False)
+            net_eval = NC(**params[dataset][test], verbose=True)
         print("Evaluating f_* ...")
         net_eval.fit(X_train, y_train, test_data=(X_test, y_test))
         net.fit(X_train, y_train, test_data=(X_test, y_test), f_star_set=net_eval.f_star, grad_star=net_eval.grad_star)
