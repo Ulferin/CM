@@ -83,7 +83,7 @@ params = {
             'learning_rate_init': 0.1,
             'max_iter': 5000,
             'solver': "adam",
-            'tol': 1e-12,
+            'tol': 1e-6,
         }
     },
     'monk2': {
@@ -107,15 +107,15 @@ params = {
             'learning_rate_init': 0.1,
             'max_iter': 5000,
             'solver': 'adam',
-            'tol': 1e-12
+            'tol': 1e-6
         }
     },
     'monk3': {
         'sgd': {
             'activation': 'logistic',
-            'alpha': 0,
+            'alpha': 0.005,
             'batch_size': 32,
-            'hidden_layer_sizes': [2, 3],
+            'hidden_layer_sizes': [3, 5],
             'learning_rate_init': 0.1,
             'max_iter': 5000,
             'momentum': 0.8,
@@ -125,13 +125,13 @@ params = {
         },
         'adam': {
             'activation': 'logistic',
-            'alpha': 0.001,
-            'batch_size': 32,
+            'alpha': 0.005,
+            'batch_size': None,
             'hidden_layer_sizes': [2, 3],
-            'learning_rate_init': 0.005,
-            'max_iter': 5000,
+            'learning_rate_init': 0.001,
+            'max_iter': 8000,
             'solver': 'adam',
-            'tol': 1e-12
+            'tol': 1e-6
         }
     }
 }
@@ -149,7 +149,7 @@ grids = {
             'max_iter': [1500],
             'batch_size': [32, 128, None],
             'learning_rate_init':[0.001, 0.01, 0.1, 0.3, 0.5],
-            'tol': [1e-8],
+            'tol': [1e-4],
             'activation': ['logistic'],
             'solver': ['sgd']
         },
@@ -160,7 +160,7 @@ grids = {
             'max_iter': [1500],
             'batch_size': [32, 128, None],
             'learning_rate_init':[0.001, 0.01, 0.1, 0.3, 0.5],
-            'tol': [1e-8],
+            'tol': [1e-4],
             'activation': ['logistic'],
             'solver': ['adam']
         }
@@ -170,10 +170,10 @@ grids = {
 
         'sgd': {
             'hidden_layer_sizes': [[2,3], [3,5]],
-            'alpha': [0, 0.1, 0.2],
+            'alpha': [0.002, 0.005, 0.1],
             'momentum': [0.8, 0.9],
             'nesterovs_momentum': [False, True],
-            'max_iter': [1500],
+            'max_iter': [5000],
             'batch_size': [10, 32, None],
             'learning_rate_init':[0.1, 0.2, 0.5],
             'tol': [1e-6],
@@ -183,11 +183,11 @@ grids = {
 
         'adam': {
             'hidden_layer_sizes': [[2,3], [3,5]],
-            'alpha': [0, 0.1, 0.2],
-            'max_iter': [1500],
+            'alpha': [0.002, 0.005, 0.1],
+            'max_iter': [5000],
             'batch_size': [10, 32, None],
             'learning_rate_init':[0.1, 0.2, 0.5],
-            'tol': [1e-12],
+            'tol': [1e-6],
             'activation': ['logistic'],
             'solver': ['adam']
         }
@@ -262,17 +262,19 @@ if __name__ == '__main__':
             net_eval = NR(**params[dataset][test], verbose=True)
         else:
             net = NC(**params[dataset][test], verbose=True)
-            net_sk = MLPClassifier(**params[dataset][test], verbose=True)
-            # params[dataset][test]['max_iter'] = 5000
+            # net_sk = MLPClassifier(**params[dataset][test], verbose=True)
+            # params[dataset][test]['max_iter'] = 1000
+            # params[dataset][test]['tol'] = 1e-16
             net_eval = NC(**params[dataset][test], verbose=False)
         print("Evaluating f_* ...")
         net_eval.fit(X_train, y_train, test_data=(X_test, y_test))
-        net.fit(X_train, y_train, test_data=(X_test, y_test), f_star_set=net_eval.f_star)
+        net.fit(X_train, y_train, test_data=(X_test, y_test), f_star_set=net_eval.f_star, grad_star=net_eval.grad_star)
         # net_sk.fit(X_train, y_train.ravel())
 
         net.plot_gap(dataset, solver, save=True)
         net.plot_rate(plot_name, True)
-        net.plot_grad(plot_name, True, False)
+        net.plot_grad(plot_name, True, False, False)
+        net.plot_grad(plot_name, True, False, True)
         net.plot_results(plot_name, False, True)
         print(f"mean rate: {np.mean(net.conv_rate)}")
         print(f"f_*: {net_eval.f_star}")

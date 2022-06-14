@@ -72,6 +72,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.train_loss = []
         self.gap = []
         self.f_star = 999
+        self.grad_star = 999
+        self.grad_gap = []
 
         #self._no_improvement_count = 0
         self.loss_k = -1
@@ -284,7 +286,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         return nabla_b, nabla_w
 
 
-    def fit(self, X, y, test_data=None, f_star_set=None):
+    def fit(self, X, y, test_data=None, f_star_set=None, grad_star=None):
         """Trains the neural network on (:X:, :y:) samples for a given
         number of max_iter by fine-tuning the weights and biases by using the
         update rules relative to the provided solver. The way updates are
@@ -353,7 +355,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 # Compute current gradient estimate
                 self.grad_est_per_epoch.append(np.average(self.grad_est))
                 if f_star_set:
-                    self.evaluate(e, f_star_set)
+                    self.evaluate(e, f_star_set, grad_star)
                 else:
                     self.evaluate(e)
 
@@ -375,7 +377,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
 
-    def evaluate(self, e, f_star_set=None):
+    def evaluate(self, e, f_star_set=None, grad_star=None):
         """Returns statistics for the current epoch if test data are provided
         while training the network. It prints the current epoch, gradient norm
         for convergence analysis and the current score computed as loss value.
@@ -392,7 +394,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         start = dt.now()
 
-        self._evaluate((self.X, self.y), self.test_data, f_star_set)
+        self._evaluate((self.X, self.y), self.test_data, f_star_set, grad_star)
 
         str_gap = ""
         str_rate = ""
@@ -418,7 +420,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.evaluate_avg[1] += end
 
 
-    def _evaluate(self, train_data, test_data=None, f_star_set=None):
+    def _evaluate(self, train_data, test_data=None, f_star_set=None, grad_star=None):
         """Evaluates the performances of the Network in the current state,
         propagating the test and training examples through the network via a
         complete feedforward step. It evaluates the performance using the
@@ -466,10 +468,16 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         #improvement of at least tol
         if loss < self.f_star:
             self.f_star = loss
+        
+        if self.grad_est_per_epoch[-1] < self.grad_star:
+            self.grad_star = self.grad_est_per_epoch[-1]
 
         if f_star_set:
             current_gap = (loss - f_star_set)/f_star_set
             self.gap.append(current_gap)
+
+            grad_gap = (self.grad_est_per_epoch[-1] - grad_star)/grad_star
+            self.grad_gap.append(grad_gap)
 
         self.train_loss.append(loss)
         self.train_scores.append(self.scoring(truth_train, preds_train))
@@ -621,7 +629,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         plt.clf()
 
 
-    def plot_grad(self, name, save=False, time=False):
+    def plot_grad(self, name, save=False, time=False, gap=False):
         """Builds a plot of the gradient values achieved during training of the
         current network.
 
@@ -643,12 +651,18 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         x = self.epochs_time if time else list(range(len(self.epochs_time)))
         x_label = 'Execution Time' if time else 'Epochs'
-
-        plt.plot(x, self.grad_est_per_epoch, label='')
+        title = ''
+        if gap:
+            title = 'Gradient norm gap'
+            name = name + '_gap'
+            plt.plot(x, self.grad_gap, label='')
+        else:
+            title = 'Gradient norm'
+            plt.plot(x, self.grad_est_per_epoch, label='')
 #         plt.legend(loc='best')
         plt.xlabel (x_label)
         plt.ylabel ('Gradient\'s norm')
-        plt.title ('Gradient norm estimate')
+        plt.title (title)
         plt.yscale('log')
         plt.draw()
 
@@ -675,7 +689,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         plt.xlabel (x_label)
         plt.ylabel ('Convergence rate')
         plt.title ('Convergence rate per epoch')
-        # plt.yscale('log')
+        plt.yscale('log')
         plt.draw()
 
         if save:
