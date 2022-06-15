@@ -61,6 +61,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.alpha = alpha
         self.hidden_layer_sizes = hidden_layer_sizes
         self.activation = activation
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
         self.last_act = None       # Must be defined by subclassing the Network
 
         # Performance attributes
@@ -723,7 +725,7 @@ class NC(Network, BaseEstimator):
     def __init__(
         self, hidden_layer_sizes=None, solver='sgd', seed=0, max_iter=300, learning_rate_init=0.1,
         activation='logistic', alpha=0.0001, momentum=0.5, nesterovs_momentum=False,
-        tol=1e-5, batch_size=None, verbose=False):
+        tol=1e-5, batch_size=None, verbose=False, beta_1=0.9, beta_2=0.999):
         """Initializes the network with the specified hyperparameters. Network
         weights and biases will be initialized at fitting time following the shape
         of the training data and the specified hidden_layer_sizes, which represents the
@@ -792,7 +794,9 @@ class NC(Network, BaseEstimator):
                         nesterovs_momentum=nesterovs_momentum,
                         verbose=verbose,
                         tol=tol,
-                        batch_size=batch_size)
+                        batch_size=batch_size,
+                        beta_1=beta_1,
+                        beta_2=beta_2)
 
         # Defines the behavior of the last layer of the network
         # and the specific scoring function
@@ -826,7 +830,7 @@ class NR(Network, BaseEstimator):
     def __init__(
         self, hidden_layer_sizes=None, solver='sgd', seed=0, max_iter=1000, learning_rate_init=0.01,
         activation='logistic', alpha=0.0001, momentum=0.5, nesterovs_momentum=False, tol=1e-5,
-        batch_size=None, verbose=False):
+        batch_size=None, verbose=False, beta_1=0.9, beta_2=0.999):
         """Initializes the network with the specified hyperparameters. Network
         weights and biases will be initialized at fitting time following the shape
         of the training data and the specified hidden_layer_sizes, which represents the
@@ -894,7 +898,9 @@ class NR(Network, BaseEstimator):
                         nesterovs_momentum=nesterovs_momentum,
                         verbose=verbose,
                         tol=tol,
-                        batch_size=batch_size)
+                        batch_size=batch_size,
+                        beta_1=beta_1,
+                        beta_2=beta_2)
 
 
         # Defines the behavior of the last layer of the network

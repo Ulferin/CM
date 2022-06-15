@@ -41,12 +41,12 @@ params = {
     'cup': {
         'sgd': {
             'activation': 'logistic',
-            'alpha': 0.2,
-            'batch_size': 128,
-            'hidden_layer_sizes': [5, 10],
+            'alpha': 0.001,
+            'batch_size': None,
+            'hidden_layer_sizes': [3, 5],
             'learning_rate_init': 0.001,
-            'max_iter': 5000,
-            'momentum': 0.5,
+            'max_iter': 3000,
+            'momentum': 0.9,
             'nesterovs_momentum': True,
             'solver': 'sgd',
             'tol': 1e-08
@@ -80,7 +80,7 @@ params = {
             'alpha': 0.005,
             'batch_size': 32,
             'hidden_layer_sizes': [5,10],
-            'learning_rate_init': 0.005,
+            'learning_rate_init': 0.001,
             'max_iter': 5000,
             'solver': "adam",
             'tol': 1e-6,
@@ -113,9 +113,9 @@ params = {
     'monk3': {
         'sgd': {
             'activation': 'logistic',
-            'alpha': 0.005,
-            'batch_size': 32,
-            'hidden_layer_sizes': [3, 5],
+            'alpha': 0.001,
+            'batch_size': None,
+            'hidden_layer_sizes': [2, 3],
             'learning_rate_init': 0.1,
             'max_iter': 5000,
             'momentum': 0.5,
@@ -125,10 +125,10 @@ params = {
         },
         'adam': {
             'activation': 'logistic',
-            'alpha': 0.005,
-            'batch_size': 32,
-            'hidden_layer_sizes': [3, 5],
-            'learning_rate_init': 0.005,
+            'alpha': 0.1,
+            'batch_size': None,
+            'hidden_layer_sizes': [2, 3],
+            'learning_rate_init': 0.001,
             'max_iter': 5000,
             'solver': 'adam',
             'tol': 1e-6
