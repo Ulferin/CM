@@ -41,23 +41,22 @@ params = {
     'cup': {
         'sgd': {
             'activation': 'logistic',
-            'alpha': 0.001,
+            'alpha': 0.3,
             'batch_size': None,
-            'hidden_layer_sizes': [3, 5],
-            'learning_rate_init': 0.001,
-            'max_iter': 3000,
-            'momentum': 0.9,
-            'nesterovs_momentum': True,
+            'hidden_layer_sizes': [5, 10],
+            'learning_rate_init': 0.01,
+            'max_iter': 10000,
+            'momentum': 0.5,
             'solver': 'sgd',
             'tol': 1e-08
         },
         'adam': {
             'activation': 'logistic',
-            'alpha': 0.001,
-            'batch_size': 128,
+            'alpha': 0.5,
+            'batch_size': None,
             'hidden_layer_sizes': [5, 10],
-            'learning_rate_init': 0.001,
-            'max_iter': 3000,
+            'learning_rate_init': 0.005,
+            'max_iter': 10000,
             'solver': 'adam',
             'tol': 1e-08
         }
@@ -69,7 +68,7 @@ params = {
             'batch_size': 10,
             'hidden_layer_sizes': [3, 5],
             'learning_rate_init': 0.005,
-            'max_iter': 5000,
+            'max_iter': 10000,
             'momentum': 0.9,
             'nesterovs_momentum': False,
             'solver': 'sgd',
@@ -78,10 +77,10 @@ params = {
         'adam': {
             'activation': 'logistic',
             'alpha': 0.005,
-            'batch_size': 32,
+            'batch_size': None,
             'hidden_layer_sizes': [5,10],
             'learning_rate_init': 0.001,
-            'max_iter': 5000,
+            'max_iter': 10000,
             'solver': "adam",
             'tol': 1e-6,
         }
@@ -93,19 +92,19 @@ params = {
             'batch_size': 10,
             'hidden_layer_sizes': [3, 5],
             'learning_rate_init': 0.1,
-            'max_iter': 5000,
-            'momentum': 0.9,
+            'max_iter': 10000,
+            'momentum': 0.5,
             'nesterovs_momentum': False,
             'solver': 'sgd',
             'tol': 1e-06
         },
         'adam': {
             'activation': 'logistic',
-            'alpha': 0.005,
+            'alpha': 0.001,
             'batch_size': 10,
-            'hidden_layer_sizes': [5, 10],
+            'hidden_layer_sizes': [3, 5],
             'learning_rate_init': 0.001,
-            'max_iter': 5000,
+            'max_iter': 10000,
             'solver': 'adam',
             'tol': 1e-6
         }
@@ -117,7 +116,7 @@ params = {
             'batch_size': None,
             'hidden_layer_sizes': [2, 3],
             'learning_rate_init': 0.1,
-            'max_iter': 5000,
+            'max_iter': 10000,
             'momentum': 0.5,
             'nesterovs_momentum': False,
             'solver': 'sgd',
@@ -125,11 +124,11 @@ params = {
         },
         'adam': {
             'activation': 'logistic',
-            'alpha': 0.1,
+            'alpha': 0.001,
             'batch_size': None,
             'hidden_layer_sizes': [2, 3],
             'learning_rate_init': 0.001,
-            'max_iter': 5000,
+            'max_iter': 10000,
             'solver': 'adam',
             'tol': 1e-6
         }

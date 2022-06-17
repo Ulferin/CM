@@ -474,10 +474,10 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             self.grad_star = self.grad_est_per_epoch[-1]
 
         if f_star_set:
-            current_gap = (loss - f_star_set)/f_star_set
+            current_gap = np.abs((loss - f_star_set))/np.abs(f_star_set)
             self.gap.append(current_gap)
 
-            grad_gap = (self.grad_est_per_epoch[-1] - grad_star)/grad_star
+            grad_gap = np.abs(self.grad_est_per_epoch[-1] - grad_star)/np.abs(grad_star)
             self.grad_gap.append(grad_gap)
 
         self.train_loss.append(loss)
