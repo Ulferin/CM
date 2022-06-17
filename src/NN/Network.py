@@ -541,7 +541,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             f"avg per ep: {self.total_time/self.max_iter}\n"
 
             f"total update: {self.update_avg}, "
-            f"avg updt: {self.update_avg/self.max_iter}\n"
+            f"avg updt: {self.update_avg/(self.max_iter*self.batches)}\n"
 
             f"total ff: {self.feedforward_avg[0]}, "
             f"total ff time: {self.feedforward_avg[1]}, "
