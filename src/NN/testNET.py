@@ -142,24 +142,24 @@ grids = {
     'cup': {
 
         'sgd': {
-            'hidden_layer_sizes': [[2,3], [3,5], [5, 10]],
-            'alpha': [0.001, 0.005, 0.01, 0.1],
+            'hidden_layer_sizes': [[3,5], [5,3], [10,5], [5, 10]],
+            'alpha': [0.1, 0.2, 0.3],
             'momentum': [0.5, 0.9],
-            'nesterovs_momentum': [True, False],
-            'max_iter': [3000],
-            'batch_size': [32, 128, None],
-            'learning_rate_init':[0.001, 0.01, 0.1, 0.3],
+            'nesterovs_momentum': [True],
+            'max_iter': [10000],
+            'batch_size': [None],
+            'learning_rate_init':[0.01, 0.02, 0.05, 0.1],
             'tol': [1e-4],
             'activation': ['logistic'],
             'solver': ['sgd']
         },
 
         'adam': {
-            'hidden_layer_sizes': [[2,3], [3,5], [5, 10]],
-            'alpha': [0.001, 0.005, 0.1],
-            'max_iter': [3000],
-            'batch_size': [32, 128, None],
-            'learning_rate_init':[0.001, 0.005, 0.1, 0.3],
+            'hidden_layer_sizes': [[3,5], [5,3], [10,5], [5, 10]],
+            'alpha': [0.1, 0.2, 0.3, 0.5],
+            'max_iter': [10000],
+            'batch_size': [None],
+            'learning_rate_init':[0.005, 0.01, 0.02, 0.05],
             'tol': [1e-4],
             'activation': ['logistic'],
             'solver': ['adam']
