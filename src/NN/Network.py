@@ -410,7 +410,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         if self.verbose:
             print(
-                f"{e:<7} || Gradient norm: {self.ngrad:7.5e} || "
+                f"{e:<7} || Gradient norm: {self.grad_est_per_epoch[-1]:7.5e} || "
                 f"Loss: {val_loss}{self.train_loss[-1]:7.5e} ||"
                 f"Score: {self.val_scores[-1]:5.3g}, "
                 f"{self.train_scores[-1]:<5.3g} ||"
@@ -533,7 +533,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             f"e:{self.learning_rate_init:5} | alpha:{self.alpha:5} | m:{self.momentum:5} | "
             f"nesterovs_momentum: {self.nesterovs_momentum}\n"
 
-            f"Grad: {self.ngrad:7.5e} | "
+            f"Grad: {self.grad_est_per_epoch[-1]:7.5e} | "
             f"Loss: {best_loss[0]:7.5e}, {best_loss[1]:7.5e} | "
             f"Score: {best_score[0]:5.3g}, {best_score[1]:<5.3g}\n"
 
