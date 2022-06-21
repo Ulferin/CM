@@ -12,7 +12,7 @@ from sklearn.metrics import mean_squared_error, classification_report
 
 def printScoreClas(clf, X, y, score='Accuracy'):
     """
-    This function prints the score of classification/regression for all the models but Keras ones. 
+    This function prints the score of classification/regression for all the models but Keras ones.
 
     Params:
         - clf: model to use for predictions.
@@ -76,9 +76,9 @@ params = {
         },
         'adam': {
             'activation': 'logistic',
-            'alpha': 0.005,
-            'batch_size': None,
-            'hidden_layer_sizes': [5,10],
+            'alpha': 0.001,
+            'batch_size': 10,
+            'hidden_layer_sizes': [3,5],
             'learning_rate_init': 0.001,
             'max_iter': 10000,
             'solver': "adam",
@@ -168,24 +168,24 @@ grids = {
     'monk': {
 
         'sgd': {
-            'hidden_layer_sizes': [[2,3], [3,5]],
-            'alpha': [0.001, 0.005, 0.1],
+            'hidden_layer_sizes': [[3,5]],
+            'alpha': [0.001],
             'momentum': [0, 0.5, 0.9],
             'nesterovs_momentum': [False, True],
             'max_iter': [3000],
-            'batch_size': [10, 32, None],
-            'learning_rate_init':[0.001, 0.005, 0.1],
+            'batch_size': [10, 32, 64, None],
+            'learning_rate_init':[0.001, 0.005, 0.01, 0.05, 0.1],
             'tol': [1e-6],
             'solver': ['sgd'],
             'activation': ['logistic'],
         },
 
         'adam': {
-            'hidden_layer_sizes': [[2,3], [3,5], [5, 10]],
-            'alpha': [0.001, 0.005, 0.1],
+            'hidden_layer_sizes': [[3,5]],
+            'alpha': [0.001],
             'max_iter': [5000],
-            'batch_size': [10, 32, None],
-            'learning_rate_init':[0.001, 0.005, 0.1],
+            'batch_size': [10, 32, 64, None],
+            'learning_rate_init':[0.001, 0.005, 0.01, 0.05, 0.1],
             'tol': [1e-6],
             'activation': ['logistic'],
             'solver': ['adam']
@@ -276,6 +276,7 @@ if __name__ == '__main__':
         net.plot_grad(plot_name, True, False, True)
         net.plot_results(plot_name, False, True)
         print(f"mean rate: {np.mean(net.conv_rate)}")
+        print(f"grad f_*: {net_eval.grad_star}")
         print(f"f_*: {net_eval.f_star}")
         print(f"last gap: {net.gap[-1]}")
         print("Improved network:")
