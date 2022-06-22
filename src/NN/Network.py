@@ -76,6 +76,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.f_star = 999
         self.grad_star = 999
         self.grad_gap = []
+        self.grad_rate = []
 
         #self._no_improvement_count = 0
         self.loss_k = -1
@@ -494,6 +495,9 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             p = np.log(abs_err_top  + 1e-16) / np.log(abs_err_bot + 1e-16)
             self.conv_rate.append(p)
 
+        if f_star_set and len(self.train_loss) > 1:
+            self.grad_rate.append(self.grad_gap[-1]/self.grad_gap[-2])
+
 
     def best_score(self, name="", save=False):
         """Returns performance statistics related to achieved performances
@@ -696,6 +700,32 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         if save:
             plt.savefig(
                 f"./plots/rate_{name}.png")
+        else:
+            plt.show()
+        plt.clf()
+
+    def plot_grad_rate(self, name, save=False):
+        if not self.fitted:
+            return 'This model is not fitted yet.\n\n'
+
+        x = list(range(1, len(self.grad_gap[1:]) + 1))
+        x_label = 'Epochs'
+
+        grad_rate = []
+        for i in range(len(self.grad_gap[1:])):
+            grad_rate.append(self.grad_gap[i]/self.grad_gap[i-1])
+
+        plt.plot(x, grad_rate, label='rate')
+        plt.legend(loc='best')
+        plt.xlabel (x_label)
+        plt.ylabel ('Convergence rate')
+        plt.title ('Convergence rate per epoch')
+        plt.yscale('log')
+        plt.draw()
+
+        if save:
+            plt.savefig(
+                f"./plots/grad_rate_{name}.png")
         else:
             plt.show()
         plt.clf()
