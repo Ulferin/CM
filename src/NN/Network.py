@@ -77,7 +77,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.grad_star = 999
         self.grad_gap = []
         self.grad_rate = []
-
+        self.r_i = []
         #self._no_improvement_count = 0
         self.loss_k = -1
         self.loss_k1 = -1
@@ -204,7 +204,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             nabla_w[-l] = np.matmul(delta.T, units_out[-l-1])
             nabla_w[-l] += np.sign(self.weights[-l])*self.alpha
             nabla_w[-l] /= size
-        
+
         # Computes execution statistics
         end = end_time(start)
         self.backprop_avg[0] += 1
@@ -470,7 +470,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         #improvement of at least tol
         if loss < self.f_star:
             self.f_star = loss
-        
+
         if self.grad_est_per_epoch[-1] < self.grad_star:
             self.grad_star = self.grad_est_per_epoch[-1]
 
@@ -480,7 +480,11 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
             grad_gap = np.abs(self.grad_est_per_epoch[-1] - grad_star)/np.abs(grad_star)
             self.grad_gap.append(grad_gap)
-
+            if len(self.grad_gap) > 1:
+                prev_gap = self.grad_gap[-2]
+                if self.grad_gap[-2] == 0:
+                    prev_gap = 0.0001;
+                self.r_i.append(grad_gap/prev_gap)
         self.train_loss.append(loss)
         self.train_scores.append(self.scoring(truth_train, preds_train))
 
