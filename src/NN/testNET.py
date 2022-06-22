@@ -103,7 +103,7 @@ params = {
             'alpha': 0.001,
             'batch_size': None,
             'hidden_layer_sizes': [3, 5],
-            'learning_rate_init': 0.001,
+            'learning_rate_init': 0.005,
             'max_iter': 10000,
             'solver': 'adam',
             'tol': 1e-6
