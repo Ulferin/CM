@@ -89,7 +89,7 @@ params = {
         'sgd': {
             'activation': 'logistic',
             'alpha': 0.001,
-            'batch_size': None,
+            'batch_size': 10,
             'hidden_layer_sizes': [3, 5],
             'learning_rate_init': 0.1,
             'max_iter': 10000,
