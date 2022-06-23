@@ -89,7 +89,7 @@ params = {
         'sgd': {
             'activation': 'logistic',
             'alpha': 0.001,
-            'batch_size': 10,
+            'batch_size': None,
             'hidden_layer_sizes': [3, 5],
             'learning_rate_init': 0.1,
             'max_iter': 10000,
@@ -275,6 +275,10 @@ if __name__ == '__main__':
         net.plot_grad(plot_name, True, False, False)
         net.plot_grad(plot_name, True, False, True)
         net.plot_results(plot_name, False, True)
+
+        for i in range(len(net.r_i)):
+            print(f"r[{i}]: {net.r_i[i]}\n")
+        print(f"upper bound: {1/np.sqrt(net.max_iter)}")
         print(f"mean p: {np.mean(net.conv_rate)}")
         print(f"mean r: {np.mean(net.r_i)}")
         print(f"grad f_*: {net_eval.grad_star}")
