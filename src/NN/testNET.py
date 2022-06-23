@@ -271,13 +271,13 @@ if __name__ == '__main__':
         # net_sk.fit(X_train, y_train.ravel())
 
         net.plot_gap(dataset, solver, save=True)
-        net.plot_rate(plot_name, True)
+        net.plot_rate(plot_name, False)
         net.plot_grad(plot_name, True, False, False)
         net.plot_grad(plot_name, True, False, True)
         net.plot_results(plot_name, False, True)
 
-        for i in range(len(net.r_i)):
-            print(f"r[{i}]: {net.r_i[i]}\n")
+        # for i in range(len(net.r_i)):
+        #     print(f"r[{i}]: {net.r_i[i]}\n")
         print(f"upper bound: {1/np.sqrt(net.max_iter)}")
         print(f"mean p: {np.mean(net.conv_rate)}")
         print(f"mean r: {np.mean(net.r_i)}")

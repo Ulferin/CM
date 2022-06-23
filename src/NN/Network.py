@@ -82,8 +82,9 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.loss_k = -1
         self.loss_k1 = -1
         self.loss_k2 = -1
-        self.loss_k3 = -1
         self.conv_rate = []
+        self.r_list = []
+        self.q_list = []
 
         # Execution Statistics
         self.evaluate_avg = [0, 0]
@@ -483,18 +484,22 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             if len(self.grad_gap) > 1:
                 prev_gap = self.grad_gap[-2]
                 if self.grad_gap[-2] == 0:
-                    prev_gap = 0.0001;
+                    prev_gap = 0.0001
                 self.r_i.append(grad_gap/prev_gap)
         self.train_loss.append(loss)
         self.train_scores.append(self.scoring(truth_train, preds_train))
 
         self.loss_k = self.loss_k1
         self.loss_k1 = self.loss_k2
-        self.loss_k2 = self.loss_k3
-        self.loss_k3 = loss
+        self.loss_k2 = loss
+
         if f_star_set and len(self.train_loss) > 4:
-            abs_err_top = np.abs((self.loss_k3 - f_star_set + 1e-16)/(self.loss_k2 - f_star_set + 1e-16))
-            abs_err_bot = np.abs((self.loss_k2 - f_star_set + 1e-16)/(self.loss_k1 - f_star_set + 1e-16))
+            self.r_list.append((self.loss_k2 - f_star_set)/((self.loss_k1 - f_star_set)**self.conv_rate[-1]))
+            print(f"r: {self.r_list[-1]} - q: {self.conv_rate[-1]}")
+
+        if f_star_set and len(self.train_loss) > 3:
+            abs_err_top = np.abs((self.loss_k2 - f_star_set + 1e-16)/(self.loss_k1 - f_star_set + 1e-16))
+            abs_err_bot = np.abs((self.loss_k1 - f_star_set + 1e-16)/(self.loss_k - f_star_set + 1e-16))
             # p = np.log(abs_err_top) / np.log(abs_err_bot)
             p = np.log(abs_err_top  + 1e-16) / np.log(abs_err_bot + 1e-16)
             self.conv_rate.append(p)
@@ -690,10 +695,10 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         if not self.fitted:
             return 'This model is not fitted yet.\n\n'
 
-        x = list(range(1, len(self.conv_rate[:-1]) + 1))
+        x = list(range(1, len(self.r_list) + 1))
         x_label = 'Epochs'
 
-        plt.plot(x, self.conv_rate[:-1], label='rate')
+        plt.plot(x, self.r_list, label='rate')
         plt.legend(loc='best')
         plt.xlabel (x_label)
         plt.ylabel ('Convergence rate')
