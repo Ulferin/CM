@@ -493,16 +493,13 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.loss_k1 = self.loss_k2
         self.loss_k2 = loss
 
-        if f_star_set and len(self.train_loss) > 4:
-            self.r_list.append((self.loss_k2 - f_star_set)/((self.loss_k1 - f_star_set)**self.conv_rate[-1]))
-            print(f"r: {self.r_list[-1]} - q: {self.conv_rate[-1]}")
-
         if f_star_set and len(self.train_loss) > 3:
             abs_err_top = np.abs((self.loss_k2 - f_star_set + 1e-16)/(self.loss_k1 - f_star_set + 1e-16))
             abs_err_bot = np.abs((self.loss_k1 - f_star_set + 1e-16)/(self.loss_k - f_star_set + 1e-16))
             # p = np.log(abs_err_top) / np.log(abs_err_bot)
             p = np.log(abs_err_top  + 1e-16) / np.log(abs_err_bot + 1e-16)
             self.conv_rate.append(p)
+            self.r_list.append((self.loss_k2 - f_star_set)/((self.loss_k1 - f_star_set)**self.conv_rate[-1]))
 
         if f_star_set and len(self.train_loss) > 1:
             self.grad_rate.append(self.grad_gap[-1]/self.grad_gap[-2])
@@ -695,7 +692,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         if not self.fitted:
             return 'This model is not fitted yet.\n\n'
 
-        x = list(range(1, len(self.r_list) + 1))
+        x = list(range(3, len(self.r_list) + 3))
         x_label = 'Epochs'
 
         plt.plot(x, self.r_list, label='rate')
