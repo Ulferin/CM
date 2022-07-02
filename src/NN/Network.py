@@ -493,16 +493,16 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.loss_k1 = self.loss_k2
         self.loss_k2 = loss
 
-        if f_star_set and len(self.train_loss) > 3:
-            abs_err_top = np.abs((self.loss_k2 - f_star_set + 1e-16)/(self.loss_k1 - f_star_set + 1e-16))
-            abs_err_bot = np.abs((self.loss_k1 - f_star_set + 1e-16)/(self.loss_k - f_star_set + 1e-16))
-            # p = np.log(abs_err_top) / np.log(abs_err_bot)
-            p = np.log(abs_err_top  + 1e-16) / np.log(abs_err_bot + 1e-16)
-            self.conv_rate.append(p)
-            self.r_list.append((self.loss_k2 - f_star_set)/((self.loss_k1 - f_star_set)**self.conv_rate[-1]))
+        # if f_star_set and len(self.train_loss) > 3:
+        #     abs_err_top = np.abs((self.loss_k2 - f_star_set + 1e-16)/(self.loss_k1 - f_star_set + 1e-16))
+        #     abs_err_bot = np.abs((self.loss_k1 - f_star_set + 1e-16)/(self.loss_k - f_star_set + 1e-16))
+        #     # p = np.log(abs_err_top) / np.log(abs_err_bot)
+        #     p = np.log(abs_err_top  + 1e-16) / np.log(abs_err_bot + 1e-16)
+        #     self.conv_rate.append(p)
+        #     self.r_list.append((self.loss_k2 - f_star_set)/((self.loss_k1 - f_star_set)**self.conv_rate[-1] + 1e-8))
 
-        if f_star_set and len(self.train_loss) > 1:
-            self.grad_rate.append(self.grad_gap[-1]/self.grad_gap[-2])
+        # if f_star_set and len(self.train_loss) > 1:
+        #     self.grad_rate.append(self.grad_gap[-1]/(self.grad_gap[-2] + 1e-8))
 
 
     def best_score(self, name="", save=False):
