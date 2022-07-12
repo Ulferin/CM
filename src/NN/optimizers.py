@@ -47,6 +47,8 @@ class sgd(Optimizer):
         self.momentum = momentum
 
         self.v = []
+        self.updates_norm = []
+        self.updates_norm_per_epoch = []
 
     def update_parameters(self, parameters, grads):
         # TODO: maybe we can add definition of the optimizer and description of
@@ -76,6 +78,8 @@ class sgd(Optimizer):
             in zip(self.v, grads)
         ]
 
+        self.updates_norm.append(np.linalg.norm(np.hstack([u.ravel() for u in self.v])))
+
         for param, update in zip((p for p in parameters), self.v):
             param += update
         
@@ -98,6 +102,8 @@ class Adam(Optimizer):
 
         self.first_moment = []
         self.second_moment = []
+
+        self.updates_norm = []
 
 
     def update_parameters(self, parameters, grads):
@@ -125,6 +131,8 @@ class Adam(Optimizer):
         updates = [
             -self.learning_rate * fm / (np.sqrt(sm) + self.offset)
             for fm, sm in zip(self.first_moment, self.second_moment)]
+
+        self.updates_norm.append(np.linalg.norm(np.hstack([u.ravel() for u in updates])))
 
         for param, update in zip((p for p in parameters), updates):
             param += update

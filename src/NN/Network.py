@@ -8,8 +8,12 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 from numpy.random import default_rng
 
+import pickle
+from tqdm import tqdm
+
 from sklearn.base import BaseEstimator
 from sklearn.utils import shuffle
+from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import r2_score
 
 from matplotlib import pyplot as plt
@@ -72,6 +76,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.train_scores = []
         self.val_loss = []
         self.train_loss = []
+        self.loss_noreg = []
+        self.reg = []
         self.gap = []
         self.f_star = 999
         self.grad_star = 999
@@ -249,7 +255,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         network.
         """
         mini_batches = self._create_batches()
-        self.grad_est = []
+        self.grad_est = 0
         self.num_batches = len(mini_batches)
 
         for mini_batch in mini_batches:
@@ -285,7 +291,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                                     mini_batch[0],mini_batch[1])
         self.ngrad = np.linalg.norm(
                         np.hstack([el.ravel() for el in nabla_w + nabla_b]))
-        self.grad_est.append(self.ngrad)
+        self.grad_est += self.ngrad
 
         return nabla_b, nabla_w
 
@@ -349,14 +355,14 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         start = dt.now()
         self.fitted = True
         try:
-            for e in range(1, self.max_iter+1):
+            for e in tqdm(range(1, self.max_iter+1)):
                 s = dt.now()
                 self._update_batches()
                 en = end_time(s)
                 self.update_avg += en
 
                 # Compute current gradient estimate
-                self.grad_est_per_epoch.append(np.average(self.grad_est))
+                self.grad_est_per_epoch.append(self.grad_est / self.num_batches)
                 if f_star_set:
                     self.evaluate(e, f_star_set, grad_star)
                 else:
@@ -371,11 +377,16 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 if iteration_end:
                     print("Reached desired precision in gradient norm,stopping.")
                     break
-        except ValueError:
+        except Exception as VE:
+            print(VE)
             self.fitted = False
         finally:
             end = end_time(start)
             self.total_time = end
+
+            if not f_star_set:
+                best = np.min(self.train_loss)
+                self.gap = [(curr - best) / best for curr in self.train_loss]
             return self
 
 
@@ -449,10 +460,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             truth_test = test_data[1]
 
             loss_test = self.loss(truth_test, self.last_pred)
-            values_test = 0
-            for w in self.weights:
-                w = w.ravel()
-                values_test += np.linalg.norm(w, 2, 0)
+            values_test = np.sum([np.sum(np.abs(w)) for w in self.weights])
             loss_test += 0.5*self.alpha*values_test/self.training_size
 
             self.val_loss.append(loss_test)
@@ -462,11 +470,12 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         truth_train = train_data[1]
 
         loss = self.loss(truth_train, self.last_pred)
-        values = 0
-        for w in self.weights:
-            w = w.ravel()
-            values += np.linalg.norm(w, 2, 0)
+        values = np.sum([np.sum(np.abs(w)) for w in self.weights])
+        self.loss_noreg.append(loss)
         loss += (0.5 * self.alpha) * values / self.training_size
+        self.reg.append((0.5 * self.alpha) * values / self.training_size)
+        self.train_loss.append(loss)
+        self.train_scores.append(self.scoring(truth_train, preds_train))
 
         #improvement of at least tol
         if loss < self.f_star:
@@ -486,23 +495,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 if self.grad_gap[-2] == 0:
                     prev_gap = 0.0001
                 self.r_i.append(grad_gap/prev_gap)
-        self.train_loss.append(loss)
-        self.train_scores.append(self.scoring(truth_train, preds_train))
-
-        self.loss_k = self.loss_k1
-        self.loss_k1 = self.loss_k2
-        self.loss_k2 = loss
-
-        # if f_star_set and len(self.train_loss) > 3:
-        #     abs_err_top = np.abs((self.loss_k2 - f_star_set + 1e-16)/(self.loss_k1 - f_star_set + 1e-16))
-        #     abs_err_bot = np.abs((self.loss_k1 - f_star_set + 1e-16)/(self.loss_k - f_star_set + 1e-16))
-        #     # p = np.log(abs_err_top) / np.log(abs_err_bot)
-        #     p = np.log(abs_err_top  + 1e-16) / np.log(abs_err_bot + 1e-16)
-        #     self.conv_rate.append(p)
-        #     self.r_list.append((self.loss_k2 - f_star_set)/((self.loss_k1 - f_star_set)**self.conv_rate[-1] + 1e-8))
-
-        # if f_star_set and len(self.train_loss) > 1:
-        #     self.grad_rate.append(self.grad_gap[-1]/(self.grad_gap[-2] + 1e-8))
 
 
     def best_score(self, name="", save=False):
@@ -577,6 +569,33 @@ class Network(BaseEstimator, metaclass=ABCMeta):
     @abstractmethod
     def predict(self, data):
         pass
+
+
+    def saveModel(self, name):
+        """Saves the model in a file.
+
+        Parameters
+        ----------
+        name : str
+            name of the file to save the model.
+        """
+        file_path = f"./res/models/{name}.pkl"
+        with open(file_path, 'wb+') as f:
+            pickle.dump(self, f)
+
+
+    def loadModel(self, name):
+        """Loads the model from a file.
+
+        Parameters
+        ----------
+        name : str
+            name of the file to load the model.
+        """
+        file_path = f"./res/models/{name}.pkl"
+        with open(file_path, 'rb') as f:
+            self = pickle.load(f)
+        return self
 
 
     def plot_results(self, name, score=False, save=False, time=False, log=False):
@@ -738,6 +757,9 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
     def plot_gap(self, dataset, solver, save=True):
+        if not self.gap:
+            self.gap = (self.train_loss - self.train_loss[-1])/self.train_loss[-1]
+            print(len(self.gap))
         epochs = range(len(self.gap))
 
         plt.plot(epochs, self.gap, label='gap')
