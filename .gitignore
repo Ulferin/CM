@@ -4,3 +4,4 @@ Pipfile*
 __pycache*
 *.txt
 data*
+*.pkl
