@@ -257,7 +257,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         mini_batches = []
 
         # Shuffle the samples
-        self.X, self.y = self._shuffle(self.X, self.y)
+        # self.X, self.y = self._shuffle(self.X, self.y)
 
         if self.batch_size < self.training_size:
             for b in range(self.batches):
