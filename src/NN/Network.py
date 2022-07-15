@@ -72,6 +72,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         # Performance attributes
         self.grad_est = []
         self.grad_est_per_epoch = []
+        self.weights_per_epoch = []
+        self.grads_per_epoch = []
         self.weights_norm = []
         self.layer_grad_norm = []
         self.val_scores = []
@@ -294,6 +296,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             # Compute current gradient
             nabla_b, nabla_w = self._compute_grad(mini_batch)
             grads = nabla_w + nabla_b
+            self.grads_per_epoch.append(nabla_w)
 
             self.opti.update_parameters(params, grads)
 
@@ -385,6 +388,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             np.array(self.rng.uniform(-np.sqrt(2/x+y), np.sqrt(2/x+y), (y,x)))
             for x, y in zip(self._hidden_layer_sizes[:-1], self._hidden_layer_sizes[1:])]
 
+        self.weights_per_epoch.append([w.copy() for w in self.weights])
+
         self.weights_norm = [[] for _ in self.weights]
         self.layer_grad_norm = [[] for _ in self.weights]
         
@@ -405,6 +410,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                     self.evaluate(e, f_star_set, grad_star)
                 else:
                     self.evaluate(e)
+
+                self.weights_per_epoch.append([w.copy() for w in self.weights])
 
                 self.score = self.train_loss[-1]
                 iteration_end = self.opti.iteration_end(self.ngrad)
