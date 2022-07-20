@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.random import default_rng
 
 from abc import ABCMeta, abstractmethod
 
@@ -14,17 +13,11 @@ class ActivationFunction(metaclass=ABCMeta):
     def derivative(self, x):
         pass
 
-    @abstractmethod
-    def subgrad(self, x):
-        pass
-
 
 class ReLU(ActivationFunction):
     """Implements static utility functions related to
     the ReLU activation function."""    
     
-    rng = default_rng()
-
     @staticmethod
     def function(x):
         """Implements the ReLU activation function.
@@ -71,36 +64,10 @@ class ReLU(ActivationFunction):
 
         return 1. * (x >= 0)
 
-    
-    @staticmethod
-    def subgrad(x):
-        """Implements the subgradient of the ReLU activation function.
-        The subgradient is applied elementwise in the case :x: is a vector.
-        The returned value, for each element of :x: is:
-            
-            · 1         if x > 0
-            · [0,1]     if x = 0    (value selected with a uniform distribution)
-            · 0         if x < 0
-
-        Parameters
-        ----------
-        x : np.ndarray
-            Input vector/scalar.
-
-        Returns
-        -------
-        np.ndarray
-            Vector with the same shape as input :x: with the ReLU subgradient
-            function applied elementwise.
-        """        
-        return np.where(x>0, 1, np.where(x<0, 0, ReLU.rng.uniform()))
-
 
 class LeakyReLU(ActivationFunction): 
     """Implements static utility functions related to
     the Leaky ReLU activation function.""" 
-
-    rng = default_rng()
 
     @staticmethod
     def function(x):
@@ -148,33 +115,6 @@ class LeakyReLU(ActivationFunction):
         """
 
         return np.where(x<0, 0.01, 1)
-
-
-    @staticmethod
-    def subgrad(x):
-        """Implements the subgradient of the Leaky ReLU activation function.
-        The subgradient is applied elementwise in the case :x: is a vector.
-        The returned value, for each element of :x: is:
-            
-            · 1         if x > 0
-            · [0.01,1]  if x = 0    (value selected with a uniform distribution)
-            · 0.01      if x < 0
-
-        Parameters
-        ----------
-        x : np.ndarray
-            Input vector/scalar.
-
-        Returns
-        -------
-        np.ndarray
-            Vector with the same shape as input :x: with the ReLU subgradient
-            function applied elementwise.
-        """
-
-        return np.where(x>0,
-                        1,
-                        np.where(x<0, 0.01, LeakyReLU.rng.uniform(0.01, 1)))
 
 
 class Sigmoid(ActivationFunction):
@@ -227,14 +167,6 @@ class Sigmoid(ActivationFunction):
         sgmd = Sigmoid.function(x)
         return sgmd * (1 - sgmd)
 
-    
-    @staticmethod
-    def subgrad(x):
-        """Since Sigmoid activation function is derivable, this is equivalent of
-        the derivative function."""
-
-        return Sigmoid.derivative(x)
-
 
 class Linear(ActivationFunction):
     """Implements static utility functions related to
@@ -284,11 +216,3 @@ class Linear(ActivationFunction):
         """
 
         return 1
-
-    
-    @staticmethod
-    def subgrad(x):
-        """Since Linear activation function is derivable, this is equivalent of
-        the derivative function."""
-
-        return Linear.derivative(x)
