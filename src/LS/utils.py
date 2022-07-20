@@ -9,7 +9,7 @@ from src.utils import *
 random.seed(42) # Needed for reproducibility
 
 def generate(m, n):
-    """Generates a random dataset starting from the given dimensions.
+    """Generates a random dataset starting from the given dimensions m and n.
 
     Parameters
     ----------
@@ -307,36 +307,6 @@ def generic_test(M, b, test_type):
           )
     
     return res, resnp
-
-
-def analizeCond(M, b, res, resnp, sol=None):
-    kappa = np.linalg.cond(M)
-    eta = None
-    if sol is not None:
-        eta = np.linalg.norm(M,2) * np.linalg.norm(sol,2) / np.linalg.norm(M@res)
-    theta = np.arcsin(np.linalg.norm(b-M@res, 2)/np.linalg.norm(b,2))
-
-    cond_yWRTA = kappa / np.cos(theta)
-    cond_yWRTb = 1 / np.cos(theta)
-    cond_xWRTA = None
-    cond_xWRTb = None
-    if sol is not None:
-        cond_xWRTb = kappa / (eta*np.cos(theta))
-        cond_xWRTA = kappa + (kappa**2 * np.tan(theta))/eta
-
-    print(
-        f"{'Theta:':<18} {theta}\n"
-        f"{'eta:':<18} {eta}\n"
-        f"{'kappa:':<18} {kappa}\n"
-        f"{'cos(Theta):':<18} {np.cos(theta)}\n"
-        f"{'cond y w.r.t b:':<18} {cond_yWRTb}\n"
-        f"{'cond y w.r.t A:':<18} {cond_yWRTA}\n"
-        f"{'cond x w.r.t. b:':<18} {cond_xWRTb}\n"
-        f"{'cond x w.r.t. A:':<18} {cond_xWRTA}\n")
-
-    if sol is not None:
-        print(f"{'|x - ~x|/|x|:':<23} {np.linalg.norm(res - sol, 2) / np.linalg.norm(sol, 2)}")
-    print(f"{'|res - resnp|/|resnp|:':<23} {np.linalg.norm(res - resnp,2) / np.linalg.norm(resnp,2)}\n")
 
 
 def plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, mrange, n, save=False):

@@ -53,6 +53,7 @@ if __name__ == "__main__":
         sol = np.random.rand(10)
         b_new = M@sol
 
+        print("\n\n")
         res_new, resnp_new = generic_test(M, b_new, 'GENERATED LINEAR CUP')
         analizeCond(M, b_new, res_new, resnp_new, sol)
 
@@ -70,6 +71,7 @@ if __name__ == "__main__":
         res, resnp = generic_test(M, b, test)
         analizeCond(M, b, res, resnp)
 
+        print("\n\n")
         res, resnp = generic_test(M, b_linear, 'GENERATED LINEAR RANDOM')
         analizeCond(M, b_linear, res, resnp, sol)
 
@@ -80,12 +82,9 @@ if __name__ == "__main__":
         sol_explicit = np.linalg.inv(R)@Q.T@b_linear
         sol_implicit = np.linalg.inv(R)@(ls.implicit_Qb(b_linear)[:n])
 
-        print(f"explicit: {np.linalg.norm(M@sol_explicit - b_linear,2) / np.linalg.norm(b_linear,2)}")
-        print(f"implicit: {np.linalg.norm(M@sol_implicit - b_linear,2) / np.linalg.norm(b_linear,2)}")
-
-        print((ls.revertQ().T@b_linear).shape, np.linalg.norm(ls.revertQ().T@b_linear,2))
-        print(ls.implicit_Qb(b_linear)[:n].shape, np.linalg.norm(ls.implicit_Qb(b_linear)[:n],2))
-        print(f"{np.linalg.norm(ls.revertQ().T@b_linear - ls.implicit_Qb(b_linear)[:n],2) / np.linalg.norm(ls.revertQ().T@b_linear,2)}")
+        print("\nRelative errors")
+        print(f"explicit solution (explicit reconstruction of matrix Q): {np.linalg.norm(M@sol_explicit - b_linear,2) / np.linalg.norm(b_linear,2)}")
+        print(f"implicit solution (implicit Q*b product): {np.linalg.norm(M@sol_implicit - b_linear,2) / np.linalg.norm(b_linear,2)}")
 
     elif test == SCALING_TEST:
         if len(sys.argv) != 7:
@@ -97,7 +96,7 @@ if __name__ == "__main__":
         n = int(sys.argv[4])
         step = int(sys.argv[5])
         repeat = int(sys.argv[6])
-        time_qr_np, time_qr_a3, time_ls_np, time_ls_a3 = scaling(starting_m, last_m, n, step, repeat)
+        time_qr_np, time_qr_a3, time_ls_np, time_ls_a3 = scaling(starting_m, last_m, n, step, repeat, False)
         plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, range(starting_m, last_m+step, step), n, save=True)
 
  

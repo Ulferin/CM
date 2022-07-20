@@ -1,5 +1,4 @@
 import numpy as np
-from datetime import datetime as dt
 
 class LS():
     """This class implements the least square problem solver for the given data.
