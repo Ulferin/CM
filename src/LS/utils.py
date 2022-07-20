@@ -1,15 +1,18 @@
 import numpy as np
 import random
-from src.LS.LS import LS
-from datetime import datetime as dt
 import matplotlib.pyplot as plt
 
+from datetime import datetime as dt
+
 from src.utils import *
+from src.LS.LS import LS
 
 random.seed(42) # Needed for reproducibility
 
 def generate(m, n):
     """Generates a random dataset starting from the given dimensions m and n.
+    Each entry is generated randomly from a gaussian distribution with mean 0 and
+    standard deviation 1.
 
     Parameters
     ----------
@@ -34,22 +37,42 @@ def generate(m, n):
     return M, b.reshape(-1,1)
 
 
-def generate_squareK(n, k):
-    n = n
-    cond_P = k     # Condition number
-    log_cond_P = np.log(cond_P)
-    exp_vec = np.arange(-log_cond_P/4., log_cond_P * (n)/(4 * (n - 1)), log_cond_P/(2.*(n-1)))
-    s = np.exp(exp_vec)
-    S = np.diag(s)
-    U, _ = np.linalg.qr((np.random.rand(n, n) - 5.) * 200)
-    V, _ = np.linalg.qr((np.random.rand(n, n) - 5.) * 200)
-    P = U.dot(S).dot(V.T)
-    P = P.dot(P.T)
-
-    return P
-
-
 def analizeCond(M, b, res, resnp, sol=None):
+    """Given the data matrix :M: and dependent variables :b:, computes the
+    quantities to analyze the conditioning of the problem with respect to
+    changes in both the data matrix and the dependent variables.
+
+    If the solution vector :sol: is given, it will be used to compute the
+    relative error on the known solution, using both the numpy and the implemented
+    solver solutions.
+
+    It computes the quantities:
+     ° theta = cos^-1( ||y|| / ||b|| )
+     ° eta = ( ||M||*||sol|| ) / ||M@sol||
+     ° kappa(M) = ||M|| * ||M^-1||
+    in order to compute the condition numbers of the solution and the dependent
+    variable with respect to both changes in M and b, like:
+        
+          ------------------ sol -------------------------- y ------------
+      M  |     kappa+(kappa^2 * tan(theta))/eta  |   kappa / cos(theta)  |
+         |---------------------------------------|-----------------------|
+      b  |       kappa / (eta*cos(theta))        |    1 / np.cos(theta)  |
+          ----------------------------------------------------------------
+
+    Parameters
+    ----------
+    M : np.ndarray
+        Data matrix with dimensions (m x n).
+    b : np.ndarray
+        Dependend variables vector with dimensions (m x 1).
+    res : np.ndarray
+        Solution vector for the implemented LS solver.
+    resnp : np.ndarray
+        Solution vector for the numpy LS solver.
+    sol : np.ndarray, optional
+        Known solutions for the given LS problem, by default None
+    """    
+
     kappa = np.linalg.cond(M)
     eta = None
     if sol is not None:
@@ -79,14 +102,15 @@ def analizeCond(M, b, res, resnp, sol=None):
     print(f"{'|res - resnp|/|resnp|:':<23} {np.linalg.norm(res - resnp,2) / np.linalg.norm(resnp,2)}")
 
 
-def scaling (starting_m, m, n, step, t, linear=True) :
+def scaling (starting_m, m, n, step, t) :
     """Tests the QR factorization and the LS solver for different matrices 
-    with scaling m, starting from :starting_m: up to :m:.
-    Executes each example for a given amount of time :t: and averages the times
-    accordingly. For each result prints the size m and the average execution
-    time, together with the time difference from the previous result, expressed
-    as a delta. It compares the execution with the off-the-shelf-solver from
-    Numpy library.
+    with scaling m, starting from :starting_m: up to a maximum dimension :m:.
+    Executes each example for a given number of times :t: and averages the
+    execution times accordingly. For each result prints the size m and the
+    average execution time for the current dimensions, together with the time
+    difference from the previous result, expressed as a delta. It compares the
+    execution with the off-the-shelf-solver from Numpy library 'np.linalg.qr'
+    and 'np.linalg.lstsq'.
 
     Parameters
     ----------
@@ -156,14 +180,6 @@ def scaling (starting_m, m, n, step, t, linear=True) :
         mean_qr_np = 0
         mean_ls_a3 = 0
         mean_ls_np = 0
-
-        sol = None
-        if linear:
-            sol = np.random.rand(n)
-            b = A@sol
-
-            res, resnp = generic_test(A, b, f'SCALING - {m}x{n}')
-            analizeCond(A, b, res, resnp, sol)
 
         for i in range(t):
             # Computes time for QR factorization
@@ -244,7 +260,21 @@ def scaling (starting_m, m, n, step, t, linear=True) :
 
 def generic_test(M, b, test_type):
     """Perform a test for both QR factorization algorithm and LS solver over the
-    given data matrix :M: and dependent variables :b:.
+    given data matrix :M: and dependent variables :b:. Compares the obtained
+    results of the implemented algorithms with the results of the numpy
+    'np.linalg.qr' and 'np.linalg.lstsq' functions.
+
+    Prints various statistics about the test:
+     ° execution time in milliseconds both for the LS solution and the thin QR
+       factorization
+     ° relative error of the solution of the LS solver computed as:
+         ||b - M*res||/||b|| where res can be the solution computed by the Numpy
+       solver and the implemented LS solver, b is the dependent variables vector.
+     ° relative error of the QR factorization computed as:
+         ||M - Q*R||/||M||.
+     ° distance in norm between the quantities Q, R and QR computed by the tested
+       algorithms.
+
 
     Parameters
     ----------
@@ -263,7 +293,7 @@ def generic_test(M, b, test_type):
         Solution vector for the implemented LS solver.
 
     resnp : np.ndarray
-        Solution vecor for the numpy LS solver.
+        Solution vecor for the numpy LS solver 'np.linalg.lstsq'.
     """    
 
     ls = LS()
@@ -310,6 +340,33 @@ def generic_test(M, b, test_type):
 
 
 def plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, mrange, n, save=False):
+    """Utility function to plot the statistics of the performed during the
+    scaling test. The function plots the time spent by the implemented algorithms
+    to solve both QR factorization and LS solution. Produces individual plots for
+    each algorithm and a combined plot in order to compare the performance of
+    the two algorithms.
+
+    Parameters
+    ----------
+    time_qr_np : list
+        List of the execution times for the QR factorization algorithm using the
+        Numpy implementation.
+    time_qr_a3 : list
+        List of the execution times for the QR factorization algorithm using the
+        implemented algorithm.
+    time_ls_np : list
+        List of the execution times for the LS solver algorithm using the Numpy
+        implementation.
+    time_ls_a3 : list
+        List of the execution times for the LS solver algorithm using the
+        implemented algorithm.
+    mrange : list
+        List of the m dimensions of the data matrix used for the scaling test.
+    n : int
+        n dimension of the data matrix used for the scaling test.
+    save : bool, optional
+        If true, the plots are saved in tests/LS/plots/ folder, by default False.
+    """    
     
     m = mrange.stop - mrange.step
     
@@ -320,7 +377,7 @@ def plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, mrange, n, save=F
     plt.title (f"QR factorization of a matrix {m}x{n} (NP)")
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
-    if save: plt.savefig(f"report_tests/LS/Scaling/QRscaling_np_n{n}m{m}.png")
+    if save: plt.savefig(f"tests/LS/plots/QRscaling_np_n{n}m{m}.png")
     else: plt.show()
     plt.clf()
 
@@ -330,7 +387,7 @@ def plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, mrange, n, save=F
     plt.title (f"QR factorization of a matrix {m}x{n} (A3)")
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
-    if save: plt.savefig(f"report_tests/LS/Scaling/QRscaling_a3_n{n}m{m}.png")
+    if save: plt.savefig(f"tests/LS/plots/QRscaling_a3_n{n}m{m}.png")
     else: plt.show()
     plt.clf()
     
@@ -342,7 +399,7 @@ def plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, mrange, n, save=F
     plt.title (f"QR factorization of a matrix {m}x{n}")
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
-    if save: plt.savefig(f"report_tests/LS/Scaling/QRscaling_comparison_n{n}m{m}.png")
+    if save: plt.savefig(f"tests/LS/plots/QRscaling_comparison_n{n}m{m}.png")
     else: plt.show()
     plt.clf()
     
@@ -354,7 +411,7 @@ def plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, mrange, n, save=F
     plt.title (f"LS of a matrix {m}x{n} (NP)")
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
-    if save: plt.savefig(f"report_tests/LS/Scaling/LSscaling_np_n{n}m{m}.png")
+    if save: plt.savefig(f"tests/LS/plots/LSscaling_np_n{n}m{m}.png")
     else: plt.show()
     plt.clf()
 
@@ -364,7 +421,7 @@ def plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, mrange, n, save=F
     plt.title (f"LS of a matrix {m}x{n} (A3)")
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
-    if save: plt.savefig(f"report_tests/LS/Scaling/LSscaling_a3_n{n}m{m}.png")
+    if save: plt.savefig(f"tests/LS/plots/LSscaling_a3_n{n}m{m}.png")
     else: plt.show()
     plt.clf()
     
@@ -376,6 +433,6 @@ def plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, mrange, n, save=F
     plt.title (f"LS of a matrix {m}x{n}")
     plt.gca().set_xlim ((min(mrange)-1, max(mrange)+1))
 
-    if save: plt.savefig(f"report_tests/LS/Scaling/LSscaling_comparison_n{n}m{m}.png")
+    if save: plt.savefig(f"tests/LS/plots/LSscaling_comparison_n{n}m{m}.png")
     else: plt.show()
     plt.clf()

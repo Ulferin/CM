@@ -26,6 +26,8 @@ if __name__ == "__main__":
     - Random dataset test: runs the QR factorization and LS solver on a randomly
                            generated dataset with both the implemented solver and
                            the numpy one. Checks both accuracy and execution time.
+                           The dataset is generated using the 'generate' utility
+                           function. Refer to utils.py for more information.
 
     - Scaling test: Checks the scalability of the implemented algorithm by
                     running the same test over random datasets with increasing
@@ -96,7 +98,7 @@ if __name__ == "__main__":
         n = int(sys.argv[4])
         step = int(sys.argv[5])
         repeat = int(sys.argv[6])
-        time_qr_np, time_qr_a3, time_ls_np, time_ls_a3 = scaling(starting_m, last_m, n, step, repeat, False)
+        time_qr_np, time_qr_a3, time_ls_np, time_ls_a3 = scaling(starting_m, last_m, n, step, repeat)
         plot_stats(time_qr_np, time_qr_a3, time_ls_np, time_ls_a3, range(starting_m, last_m+step, step), n, save=True)
 
  
