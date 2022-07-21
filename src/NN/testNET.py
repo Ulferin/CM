@@ -62,7 +62,7 @@ params = {
             'hidden_layer_sizes': [3,5],
             'learning_rate_init': 0.001,
             'max_iter': 10000,
-            'solver': "adam",
+            'solver': 'adam',
             'tol': 1e-6,
         }
     },
@@ -243,15 +243,11 @@ if __name__ == '__main__':
             net_eval = NC(**params[dataset][test], verbose=True)
 
         print("Evaluating f_* ...")
-        net_eval.fit(X_train, y_train, test_data=(X_test, y_test))
-        net.fit(X_train, y_train, test_data=(X_test, y_test), f_star_set=net_eval.f_star, grad_star=net_eval.grad_star)
+        net.fit(X_train, y_train, test_data=(X_test, y_test))
 
         net.plot_gap(dataset, solver, save=True)
         net.plot_grad(plot_name, True, False)
         net.plot_results(plot_name, False, True)
 
         print(f"upper bound: {1/np.sqrt(net.max_iter)}")
-        print(f"f_*: {net_eval.f_star}")
-
-        print(f"last gap: {net.gap[-1]}")
-        print(net.best_score(name=plot_name, save=False))
+        print(net.best_score())

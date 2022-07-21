@@ -4,6 +4,12 @@ from abc import ABCMeta, abstractmethod
 
 
 class ActivationFunction(metaclass=ABCMeta):
+    """Abstract base class for the activation functions used in the implemented
+    neural network. Provides the interface for the derived classes implementing
+    specific activation functions. Each derived class must implement the methods
+    needed to compute the function value and the derivative of the function,
+    needed in the backpropagation phase.
+    """    
 
     @abstractmethod
     def function(self, x):
@@ -15,8 +21,8 @@ class ActivationFunction(metaclass=ABCMeta):
 
 
 class ReLU(ActivationFunction):
-    """Implements static utility functions related to
-    the ReLU activation function."""    
+    """Implements static functionalities related to the ReLU activation function.
+    """    
     
     @staticmethod
     def function(x):
@@ -30,11 +36,11 @@ class ReLU(ActivationFunction):
         Parameters
         ----------
         x : np.ndarray
-            input vector/scalar
+            Input vector/scalar over which the activation function is applied.
 
         Returns
         -------
-        np.ndarray
+          : np.ndarray
             Vector with the same shape as input :x: with the ReLU function
             applied elementwise.
         """
@@ -50,14 +56,19 @@ class ReLU(ActivationFunction):
             · 1         if x_i >= 0
             · 0         otherwise
 
+        The ReLU function is not differentiable at zero, however, as suggested
+        by [Deep Learning. Goodfellow, Bengio, Courville. 2016] the derivative
+        at zero can be set to 1.
+
         Parameters
         ----------
         x : np.ndarray
-            Input vector/scalar.
+            Input vector/scalar over which the activation function derivative
+            is applied.
 
         Returns
         -------
-        np.ndarray
+          : np.ndarray
             Vector with the same shape as input :x: with the ReLU derivative
             applied elementswise.
         """        
@@ -66,8 +77,10 @@ class ReLU(ActivationFunction):
 
 
 class LeakyReLU(ActivationFunction): 
-    """Implements static utility functions related to
-    the Leaky ReLU activation function.""" 
+    """Implements static functionalities related to the Leaky ReLU activation
+    function. This kind of activation function is used to reduce dying ReLU
+    problem associated with the ReLU activation function. 
+    """
 
     @staticmethod
     def function(x):
@@ -81,11 +94,11 @@ class LeakyReLU(ActivationFunction):
         Parameters
         ----------
         x : np.ndarray
-            input vector/scalar
+            Input vector/scalar over which the activation function is applied.
 
         Returns
         -------
-        np.ndarray
+          : np.ndarray
             Vector with the same shape as input :x: with the Leaky ReLU
             function applied elementwise.
         """
@@ -102,14 +115,19 @@ class LeakyReLU(ActivationFunction):
             · 1         if x_i >= 0
             · 0.01      otherwise
 
+        As for the ReLU activation function, also the Leaky ReLU function is not
+        differentiable at zero, however, also in this case we use the convention
+        of defining the derivative at zero to be 1.
+
         Parameters
         ----------
         x : np.ndarray
-            Input vector/scalar.
+            Input vector/scalar over which the activation function derivative
+            is applied.
 
         Returns
         -------
-        np.ndarray
+          : np.ndarray
             Vector with the same shape as input :x: with the Leaky ReLU
             derivative applied elementwise.
         """
@@ -118,8 +136,15 @@ class LeakyReLU(ActivationFunction):
 
 
 class Sigmoid(ActivationFunction):
-    """Implements static utility functions related to
-    the Sigmoid activation function."""
+    """Implements static functionalities related to the sigmoid activation
+    function. This is the activation function which is used in the final version
+    of the project for the CM course both for internal units and output units
+    in case of binary classification tasks.
+
+    To identify the predicted class, the sigmoid function's output is checked
+    and for values which are above 0.5, the class is considered to be 1,
+    otherwise 0.
+    """
 
     @staticmethod
     def function(x):
@@ -129,10 +154,13 @@ class Sigmoid(ActivationFunction):
 
             · 1.0 / (1.0 + exp(-x_i))
 
+        The function is continuously differentiable and always returns values
+        between 0 and 1.
+
         Parameters
         ----------
         x : np.ndarray
-            input vector/scalar
+            Input vector/scalar over which the activation function is applied.
 
         Returns
         -------
@@ -155,7 +183,8 @@ class Sigmoid(ActivationFunction):
         Parameters
         ----------
         x : np.ndarray
-            Input vector/scalar.
+            Input vector/scalar over which the activation function derivative
+            is applied.
 
         Returns
         -------
@@ -169,13 +198,18 @@ class Sigmoid(ActivationFunction):
 
 
 class Linear(ActivationFunction):
-    """Implements static utility functions related to
-    the Linear activation function."""
+    """Implements static functionalities related to the linear activation
+    function. This is the activation function which is used in the output layer
+    of networks used to solve regression tasks.
+
+    The output of the linear activation function is taken 'as is' to compute
+    the predictions of the network with respect to it's inputs. 
+    """
 
     @staticmethod
     def function(x):      
         """Implements the Linear activation function.
-        The function is applied elementwise in the case :x: is a vector.
+        The function simply returns the same values contained in :x:.
         The returned values, for each element of :x: is:
 
             · x_i
@@ -183,12 +217,12 @@ class Linear(ActivationFunction):
         Parameters
         ----------
         x : np.ndarray
-            input vector/scalar
+            Input vector/scalar over which the activation function is applied.
 
         Returns
         -------
-        np.ndarray
-            Vector with the same shape as input :x: with the Linear
+         : np.ndarray
+            Vector with the same shape as input :x: with the linear
             function applied elementwise.
         """
 
@@ -206,11 +240,12 @@ class Linear(ActivationFunction):
         Parameters
         ----------
         x : np.ndarray
-            Input vector/scalar.
+            Input vector/scalar over which the activation function derivative
+            is applied.
 
         Returns
         -------
-        np.ndarray
+         : np.ndarray
             Vector with the same shape as input :x: with the Linear
             derivative applied elementwise.
         """
