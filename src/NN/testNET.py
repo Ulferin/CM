@@ -1,31 +1,12 @@
 import sys
 
 import numpy as np
-from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
-
-from src.NN.Network import NR, NC
-
-import src.utils as utils
 from sklearn.metrics import mean_squared_error, classification_report
 
+from src.NN.Network import NR, NC
+import src.utils as utils
 
-def printScoreClas(clf, X, y, score='Accuracy'):
-    """
-    This function prints the score of classification/regression for all the models but Keras ones.
-
-    Params:
-        - clf: model to use for predictions.
-        - X: training samples DataFrame.
-        - y: training target variables DataFrame.
-        - score : Score measure to print.
-    """
-
-    y_pred = clf.predict(X)
-    print(f"{score}: {clf.score(X, y)}")
-    print(f"MSE: {mean_squared_error(y, y_pred)}")
-    if score=='Accuracy':
-        print(classification_report(y, y_pred))
 
 datasets = {
     'cup': 'data/ML-CUP20-TR.csv',
@@ -81,7 +62,7 @@ params = {
             'hidden_layer_sizes': [3,5],
             'learning_rate_init': 0.001,
             'max_iter': 10000,
-            'solver': "adam",
+            'solver': 'adam',
             'tol': 1e-6,
         }
     },
@@ -103,7 +84,7 @@ params = {
             'alpha': 0.001,
             'batch_size': None,
             'hidden_layer_sizes': [3, 5],
-            'learning_rate_init': 0.001,
+            'learning_rate_init': 0.005,
             'max_iter': 10000,
             'solver': 'adam',
             'tol': 1e-6
@@ -256,36 +237,17 @@ if __name__ == '__main__':
 
         if dataset == 'cup':
             net = NR(**params[dataset][test], verbose=True)
-            net_sk = MLPRegressor(**params[dataset][test], verbose=True)
-            # params[dataset][test]['max_iter'] = 10000
             net_eval = NR(**params[dataset][test], verbose=True)
         else:
             net = NC(**params[dataset][test], verbose=True)
-            # net_sk = MLPClassifier(**params[dataset][test], verbose=True)
-            # params[dataset][test]['max_iter'] = 1000
-            # params[dataset][test]['tol'] = 1e-16
             net_eval = NC(**params[dataset][test], verbose=True)
+
         print("Evaluating f_* ...")
-        net_eval.fit(X_train, y_train, test_data=(X_test, y_test))
-        net.fit(X_train, y_train, test_data=(X_test, y_test), f_star_set=net_eval.f_star, grad_star=net_eval.grad_star)
-        # net_sk.fit(X_train, y_train.ravel())
+        net.fit(X_train, y_train, test_data=(X_test, y_test))
 
         net.plot_gap(dataset, solver, save=True)
-        net.plot_rate(plot_name, False)
-        net.plot_grad(plot_name, True, False, False)
-        net.plot_grad(plot_name, True, False, True)
+        net.plot_grad(plot_name, True, False)
         net.plot_results(plot_name, False, True)
 
-        # for i in range(len(net.r_i)):
-        #     print(f"r[{i}]: {net.r_i[i]}\n")
         print(f"upper bound: {1/np.sqrt(net.max_iter)}")
-        print(f"mean p: {np.mean(net.conv_rate)}")
-        print(f"mean r: {np.mean(net.r_i)}")
-        print(f"grad f_*: {net_eval.grad_star}")
-        print(f"f_*: {net_eval.f_star}")
-
-
-        print(f"last gap: {net.gap[-1]}")
-        print("Improved network:")
-        # printScoreClas(net_sk, X_train, y_train.ravel())
-        print(net.best_score(name=plot_name, save=False))
+        print(net.best_score())

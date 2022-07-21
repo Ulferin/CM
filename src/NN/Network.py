@@ -4,14 +4,13 @@
 
 from datetime import datetime as dt
 from abc import ABCMeta, abstractmethod
+import pickle
+from tqdm import tqdm
 
 import numpy as np
 from numpy.random import default_rng
-
 from sklearn.base import BaseEstimator
-from sklearn.utils import shuffle
 from sklearn.metrics import r2_score
-
 from matplotlib import pyplot as plt
 
 from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU, Linear
@@ -33,29 +32,115 @@ OPTIMIZERS = {
 
 
 class Network(BaseEstimator, metaclass=ABCMeta):
-    """Abstract class representing a standard Neural Network, also known as
-    Multilayer Perceptron. It allows to build a network for both classification
-    and regression tasks by using the preferred optimization technique between
-    sub-gradient method and stochastic gradient descent. Must be extended to
+    """Abstract base class representing a standard Neural Network, also known as
+    Multilayer Perceptron. Provides an interface for derived networks solving
+    classification and regression tasks. It allows to 'plug-in' various
+    optimization methods, implemented in 'optimizers.py'. Must be extended to
     specify which kind of task the network should solve.
+
+    Two derived classes are implemented:
+        · NC: Neural Network solving classification tasks. Provides classification
+              specific functionalities, such as sigmoid activation function in
+              the last layer and accuracy score as score metric.
+        · NR: Neural Network solving regression tasks. Provides regression
+              specific functionalities, such as linear activation function in
+              the last layer and r2_score as score metric.
     """
 
     @abstractmethod
     def __init__(self,
-                hidden_layer_sizes=None, solver='sgd', seed=0, max_iter=1000, learning_rate_init=0.01,
-                activation='logistic', alpha=0.0, momentum=0.0, nesterovs_momentum=False,
-                tol=1e-5, batch_size=None, verbose=False, beta_1=0.9, beta_2=0.999):
+                hidden_layer_sizes=[2,], solver='sgd', seed=0, max_iter=1000,
+                learning_rate_init=0.01, activation='logistic', alpha=0.0,
+                momentum=0.0, nesterovs_momentum=False, tol=1e-5, batch_size=None,
+                beta_1=0.9, beta_2=0.999, verbose=False):
+        """Abstract constructor, defines and initializes common hyperparameters
+        for all the implemented networks, like network topology and optimization
+        algorithm to use during the training phase.
+
+        NOTE: the naming convention for the hyperparameters names is dictated by
+        the necessity to make the implemented classes compatible with the model
+        selection utilities provided by the sklearn framework.
+
+       Parameters
+        ----------
+        hidden_layer_sizes : list, optional
+            Network topology, defined as list of integers representing the amount
+            of units for each of the hidden layer of the network. Note that the
+            input layer and output layer will be automatically determined,
+            respectively, by the shape of the training samples and the shape of
+            the ground truth vector. By default [2,].
+
+        solver : string, optional
+            Optimizer to use to update the network parameters during the training
+            phase. Allowed values are {'sgd', 'adam'}. Note that some of the
+            network hyperparameters will be meaningful only for specific choices
+            of the :solver:, like :momentum: for 'sgd' and :beta_1:/:beta_2: for
+            'adam'. By default 'sgd'
+
+        seed : int, optional
+            Seed for random number generator, needed for reproducibilty of the
+            results, by default 0
+
+        max_iter : int, optional
+            Maximum number of iteration the learning process can run. Used as an
+            early stopping condition in case the tolerance over the gradient norm
+            is not reached, by default 1000
+
+        learning_rate_init : float, optional
+            Learning rate for the optimization algorithm, specifies the fixed
+            learning rate for the 'sgd' optimizer and the base learning rate for
+            the 'adam' optimizer, by default 0.01
+
+        activation : string, optional
+            Activation function to use in each of the units of the network,
+            except for the output units, which activation function is specific
+            to the kind of task the network is going to solve. Available
+            activation functions are {'relu', 'Lrelu', 'logistic'}, which
+            description is provided in 'ActivationFunctions.py'.
+            By default 'logistic'
+
+        alpha : float, optional
+            Regularization coefficient, by default 0.0
+
+        momentum : float, optional
+            Momentum coefficient, only used when for 'sgd' solver. Should be in
+            [0,1), by default 0.0
+
+        nesterovs_momentum : bool, optional
+            Whether to use Nesterov's momentum update, only used for 'sgd' solver,
+            by default False
+
+        tol : float, optional
+            Tolerance on the gradient norm, allows to stop the training process
+            when the gradient norm goes below this treshold, by default 1e-5
+
+        batch_size : int, optional
+            Number of samples to use for each update of the network parameters,
+            must be in [1, max] where max is maximum number of samples in the
+            training set. The special value 'None' automatically selects the max
+            amount of samples in the provided training set. By default None
+
+        verbose : bool, optional
+            Debug flag to make the network print stats during the training process,
+            such as the current epoch and the values of the loss and scoring metric
+            at the current epoch, by default False
+
+        beta_1 : float, optional
+            Exponential decay rate for first moment vector, only used for the
+            'adam' solver. Accepted values range in [0,1), by default 0.9
+
+        beta_2 : float, optional
+            Exponential decay rate for the second moment vector, only used for
+            'adam' solver. Accepted values range in [0,1), by default 0.999
+        """
 
         self.rng = default_rng(seed)     # needed for reproducibility
 
         # Network hyperparameters
         self.batch_size = batch_size
         self.learning_rate_init = learning_rate_init
-        self.tol = tol
         self.max_iter = max_iter
         self.solver = solver
-        self.seed = seed
-        self.verbose = verbose
         self.momentum = momentum
         self.nesterovs_momentum = nesterovs_momentum
         self.alpha = alpha
@@ -64,27 +149,23 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.beta_1 = beta_1
         self.beta_2 = beta_2
         self.last_act = None       # Must be defined by subclassing the Network
+        self.verbose = verbose
 
         # Performance attributes
         self.grad_est = []
         self.grad_est_per_epoch = []
+        self.weights_per_epoch = [] # FIXME: remove from master
+        self.grads_per_epoch = []   # FIXME: remove from master
+        self.weights_norm = []      # FIXME: remove from master
+        self.layer_grad_norm = []   # FIXME: remove from master
         self.val_scores = []
         self.train_scores = []
         self.val_loss = []
         self.train_loss = []
+        self.loss_noreg = []        # FIXME: remove from master
+        self.reg = []               # FIXME: remove from master
         self.gap = []
         self.f_star = 999
-        self.grad_star = 999
-        self.grad_gap = []
-        self.grad_rate = []
-        self.r_i = []
-        #self._no_improvement_count = 0
-        self.loss_k = -1
-        self.loss_k1 = -1
-        self.loss_k2 = -1
-        self.conv_rate = []
-        self.r_list = []
-        self.q_list = []
 
         # Execution Statistics
         self.evaluate_avg = [0, 0]
@@ -94,7 +175,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.total_time = 0
         self.update_avg = 0
 
-        # Initialize optimizer
+        # Optimizer specific initialization
         optimizer_params = {
             'learning_rate_init': learning_rate_init,
             'tol': tol
@@ -110,25 +191,31 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
     def _feedforward_batch(self, inp):
-        """Performs a feedforward pass through the network and returns the
-        related output.
+        """Performs a foward pass through the network for :inp: input data.
+        Returns the network's output for the given input, as well as the 'net'
+        function and output of each units in the network.
 
         Parameters
         ----------
         inp : np.ndarray
-            Network input used to perform the feedforward pass.
+            Network input used to perform the forward pass through the network.
 
         Returns
         -------
         units_out : np.ndarray
-            output related to the current input :inp:
+            Output computed by the neural network for the provided input data
+            :inp:.
 
         nets : list
-            list of unit's input for each layer of the network.
+            list of unit's activation function input for each layer of the network.
+            The input of the activation function is computed as the product
+            between the previous layer's output and the weights of the current
+            layer, summed the bias term.
 
         out : list
-            list of unit's output for each layer of the network.
-        """
+            List of unit's output for each layer of the network. The values are
+            computed as the activation function of the unit's 'net' term.
+        """        
         start = dt.now()
 
         out = inp
@@ -148,6 +235,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         nets.append(net)
         units_out.append(out)
 
+        # Save stats for performance analysis
         end = end_time(start)
         self.feedforward_avg[0] += 1
         self.feedforward_avg[1] += end
@@ -156,27 +244,33 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
     def _backpropagation_batch(self, x, y):
-        """Performs a backward pass by using the chain rule to compute the
-        gradient for each weight and bias in the network for the current
-        input/output samples.
+        """Performs a backward pass by using the chain rule of calculus to 
+        compute the gradient for each weight and bias in the network for the
+        current input/output samples.
+
+        Implements the backpropagation algorithm to compute the gradients of
+        the objective function which is being optimized by the current network.
+        Follows the implementation provided in
+        [Thomas M. Mitchell. Machine Learning. 1997.]
 
         Parameters
         ----------
         x : np.ndarray
-            Samples that will be used to estimate the current gradient values.
+            Data samples, used to compute the network's output.
 
         y : np.ndarray
-            Expected output for the :x: samples. Used for loss computation.
+            Expected output for the :x: samples. Used for determining the amount
+            of error for the given samples and to compute the gradients.
 
         Returns
         -------
         nabla_b : list
-            List of np.ndarray containing for each layer the gradients for
-            each bias in the network.
+            List of np.ndarray containing for each layer the gradients with
+            respect to each bias in the network.
 
         nabla_w : list
-            List of np.ndarray containing for each layer the gradients for
-            each weight in the network.
+            List of np.ndarray containing for each layer the gradients with
+            respect to each weight in the network.
         """
         delta = 0
         size = len(x)
@@ -215,12 +309,14 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
     def _create_batches(self):
-        """Creates a list of mini-batches that will be used during optimization.
+        """Utility function used to create batches of data for the training
+        process, based on the hyperparameter :batch_size:.
 
         Returns
         -------
         mini_batches : list
-            a list of mini-batches
+            A list of mini-batches of size :batch_size:, note that the last
+            batch may contain less than :batch_size: samples.
         """
         mini_batches = []
 
@@ -244,33 +340,43 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
     def _update_batches(self):
-        """Creates batches and updates the Neural Network weights and biases
-        by performing updates using the solver associated to the current
-        network.
+        """Utility function used to update the network's weights and biases
+        using the configured optimization algorithm. Computes the gradients
+        of the network function based on the inputs in each of the mini-batches
+        and forwards both the parameters and the gradients to the optimizer
+        in order to apply the specific update rule for the chosen :solver:.
+
+        This method is called once for each epoch of the training process and
+        performs updates using all the data in the training dataset using the
+        provided batch configuration (either mini-batch or full-batch).
         """
         mini_batches = self._create_batches()
-        self.grad_est = []
+        self.grad_est = 0
         self.num_batches = len(mini_batches)
 
         for mini_batch in mini_batches:
             params = self.weights + self.biases
-            size = len(mini_batch[0])
 
             # Compute current gradient
             nabla_b, nabla_w = self._compute_grad(mini_batch)
             grads = nabla_w + nabla_b
+            # FIXME: remove from master
+            self.grads_per_epoch.append(nabla_w)
 
+            # Update parameters with solver-specific update rule
             self.opti.update_parameters(params, grads)
 
 
     def _compute_grad(self, mini_batch):
         """Computes the gradient values and norm for the current :mini_batch:
-        samples by using the backpropagation approach.
+        samples by using the backpropagation algorithm. It also keeps track of
+        the gradients norm for the current epoch, which will later be used to
+        compute the average gradient norm for the current epoch.
 
         Parameters
         ----------
         mini_batch : np.ndarray
-            mini-batch samples for which to compute the gradient.
+            Data samples used to compute the gradient of the network function.
 
         Returns
         -------
@@ -285,41 +391,49 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                                     mini_batch[0],mini_batch[1])
         self.ngrad = np.linalg.norm(
                         np.hstack([el.ravel() for el in nabla_w + nabla_b]))
-        self.grad_est.append(self.ngrad)
+        # FIXME: remove from master
+        for i in range(len(nabla_w)):
+            self.layer_grad_norm[i].append(np.linalg.norm(nabla_w[i]))
+
+        self.grad_est += self.ngrad
 
         return nabla_b, nabla_w
 
 
-    def fit(self, X, y, test_data=None, f_star_set=None, grad_star=None):
+    def fit(self, X, y, test_data=None, f_star_set=None):
         """Trains the neural network on (:X:, :y:) samples for a given
-        number of max_iter by fine-tuning the weights and biases by using the
-        update rules relative to the provided solver. The way updates are
-        performed is also determined by the configurations relative to
-        batch size and learning_rate_init hyperparameters.
+        number of iterations by fine-tuning the weights and biases using the
+        update rules relative to the provided solver. The network's weights
+        are initialized following the Glorot initialization scheme. 
 
         Parameters
         ----------
         X : np.ndarray
-            training samples to use to train the neural network.
+            Training samples to use to train the neural network. The shape of
+            the samples is used to determine the number of input units in the
+            first layer of the network.
 
         y : np.ndarray
-            expected outputs for the given training samples :X:
+            Expected outputs for the given training samples :X:. The shape of the
+            ground truth is used to determine the number of output units in the
+            last layer of the network.
 
         test_data : tuple, optional
             If provided, test samples and expected outputs are used to evaluate
-            the instantaneous performance of the current network at each epoch
-            of training, by default None
+            the instantaneous generalization performance of the current network
+            at each epoch of training, by default None.
 
         f_star_set : float, optional
             If set the method will also compute the gap = (f_i - f_*) / f_*
-            for the model and then plot it , by default None.
+            for the model at each training epoch, by default None.
+        
         Returns
         -------
-        Object
-            returns the fitted network object
+        self : Object
+            Returns the fitted network.
         """
 
-        # Initialize batch size w.r.t. training data
+        # Initialize batches
         self.X = X
         self.y = y
         self.test_data = test_data
@@ -330,7 +444,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             else self.training_size)
         self.batches = int(self.training_size/self.batch_size)
 
-        # Set up activation function and solver
+        # Set up activation function
         self.act = ACTIVATIONS[self.activation]
         self.der = self.act.derivative
 
@@ -341,28 +455,42 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.num_layers = len(self._hidden_layer_sizes)
 
         # Initialize network parameters
-        self.biases = [np.array(self.rng.normal(0,0.5,l)) for l in self._hidden_layer_sizes[1:]]
+        self.biases = [
+            np.array(self.rng.normal(0,0.5,l))
+            for l in self._hidden_layer_sizes[1:]
+        ]
         self.weights = [
             np.array(self.rng.uniform(-np.sqrt(2/x+y), np.sqrt(2/x+y), (y,x)))
-            for x, y in zip(self._hidden_layer_sizes[:-1], self._hidden_layer_sizes[1:])]
+            for x, y in
+            zip(self._hidden_layer_sizes[:-1], self._hidden_layer_sizes[1:])
+        ]
 
+        # FIXME: remove from master
+        self.weights_per_epoch.append([w.copy() for w in self.weights])
+        self.weights_norm = [[] for _ in self.weights]
+        self.layer_grad_norm = [[] for _ in self.weights]
+        
         start = dt.now()
         self.fitted = True
+        # Training loop
         try:
-            for e in range(1, self.max_iter+1):
+            for e in tqdm(range(1, self.max_iter+1)):
+                # FIXME: remove from master
+                for i in range(len(self.weights)):
+                    self.weights_norm[i].append(np.linalg.norm(self.weights[i]))
                 s = dt.now()
                 self._update_batches()
                 en = end_time(s)
                 self.update_avg += en
 
                 # Compute current gradient estimate
-                self.grad_est_per_epoch.append(np.average(self.grad_est))
-                if f_star_set:
-                    self.evaluate(e, f_star_set, grad_star)
-                else:
-                    self.evaluate(e)
+                self.grad_est_per_epoch.append(self.grad_est / self.num_batches)
+                self.evaluate(e, f_star_set)
 
-                self.score = self.train_loss[-1]
+                # FIXME: remove from master
+                self.weights_per_epoch.append([w.copy() for w in self.weights])
+
+                # Check if we reached the desired gradient tolerance
                 iteration_end = self.opti.iteration_end(self.ngrad)
 
                 epoch_time = end_time(start)
@@ -371,40 +499,44 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 if iteration_end:
                     print("Reached desired precision in gradient norm,stopping.")
                     break
-        except ValueError:
+        except Exception as VE:
+            print(VE)
             self.fitted = False
         finally:
             end = end_time(start)
             self.total_time = end
+
+            if not f_star_set:
+                best = np.min(self.train_loss)
+                self.gap = [(curr - best) / best for curr in self.train_loss]
             return self
 
 
 
-    def evaluate(self, e, f_star_set=None, grad_star=None):
-        """Returns statistics for the current epoch if test data are provided
-        while training the network. It prints the current epoch, gradient norm
-        for convergence analysis and the current score computed as loss value.
+    def evaluate(self, e, f_star_set=None):
+        """Returns statistics for the current epoch in terms of training and
+        validation objective functions (including the regularization term).
+        Additionally, it prints the gradient's norm for the current epoch and the
+        gap term if the :f_star_set: parameter is set.
 
         Parameters
         ----------
         e : int
-            current epoch.
+            Current epoch.
 
         f_star_set : float, optional
-            If set the method will also compute the gap = (f_i - f_*) / f_*
-            for the model and then plot it , by default None.
+            Best estimated value for the objective function optimized by this
+            network, if set the method will also compute the
+            gap = (f_i - f_*) / f_* for the current model, by default None.
         """
 
         start = dt.now()
 
-        self._evaluate((self.X, self.y), self.test_data, f_star_set, grad_star)
+        self._evaluate((self.X, self.y), self.test_data, f_star_set)
 
         str_gap = ""
-        str_rate = ""
         if self.gap:
             str_gap = f"|| gap: {self.gap[-1]:7.5e}"
-        if f_star_set is not None and len(self.conv_rate) > 0:
-            str_rate = f"|| rate: {self.conv_rate[-1]:7.5e}"
 
         val_loss = ""
         if self.test_data is not None:
@@ -416,18 +548,18 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 f"Loss: {val_loss}{self.train_loss[-1]:7.5e} ||"
                 f"Score: {self.val_scores[-1]:5.3g}, "
                 f"{self.train_scores[-1]:<5.3g} ||"
-                f"f_star: {self.f_star:7.5e} "+str_gap+str_rate)
+                f"f_star: {self.f_star:7.5e} "+str_gap)
 
         end = end_time(start)
         self.evaluate_avg[0] += 1
         self.evaluate_avg[1] += end
 
 
-    def _evaluate(self, train_data, test_data=None, f_star_set=None, grad_star=None):
+    def _evaluate(self, train_data, test_data=None, f_star_set=None):
         """Evaluates the performances of the Network in the current state,
         propagating the test and training examples through the network via a
         complete feedforward step. It evaluates the performance using the
-        associated loss for this Network.
+        associated loss and regularization term for this Network.
 
         Parameters
         ----------
@@ -437,22 +569,20 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         test_data : tuple
             Couple of np.ndarray representing test samples and associated
-            outputs. Used to test the generalization capabilities of the network.
+            outputs. Used to test the performances of the network at the current
+            phase of the learning process.
 
         f_star_set : float, optional
-            If set the method will also compute the gap = (f_i - f_*) / f_*
-            for the model and then plot it , by default None.
-
+            Best estimated value for the objective function optimized by this
+            network, if set the method will also compute the
+            gap = (f_i - f_*) / f_* for the current model, by default None.
         """
         if test_data:
             preds_test = self.predict(test_data[0])
             truth_test = test_data[1]
 
             loss_test = self.loss(truth_test, self.last_pred)
-            values_test = 0
-            for w in self.weights:
-                w = w.ravel()
-                values_test += np.linalg.norm(w, 2, 0)
+            values_test = np.sum([np.sum(np.abs(w)) for w in self.weights])
             loss_test += 0.5*self.alpha*values_test/self.training_size
 
             self.val_loss.append(loss_test)
@@ -462,72 +592,39 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         truth_train = train_data[1]
 
         loss = self.loss(truth_train, self.last_pred)
-        values = 0
-        for w in self.weights:
-            w = w.ravel()
-            values += np.linalg.norm(w, 2, 0)
+        values = np.sum([np.sum(np.abs(w)) for w in self.weights])
+        # FIXME: remove from master
+        self.loss_noreg.append(loss)
         loss += (0.5 * self.alpha) * values / self.training_size
+        # FIXME: remove from master
+        self.reg.append((0.5 * self.alpha) * values / self.training_size)
+        self.train_loss.append(loss)
+        self.train_scores.append(self.scoring(truth_train, preds_train))
 
-        #improvement of at least tol
         if loss < self.f_star:
             self.f_star = loss
-
-        if self.grad_est_per_epoch[-1] < self.grad_star:
-            self.grad_star = self.grad_est_per_epoch[-1]
 
         if f_star_set:
             current_gap = np.abs((loss - f_star_set))/np.abs(f_star_set)
             self.gap.append(current_gap)
 
-            grad_gap = np.abs(self.grad_est_per_epoch[-1] - grad_star)/np.abs(grad_star)
-            self.grad_gap.append(grad_gap)
-            if len(self.grad_gap) > 1:
-                prev_gap = self.grad_gap[-2]
-                if self.grad_gap[-2] == 0:
-                    prev_gap = 0.0001
-                self.r_i.append(grad_gap/prev_gap)
-        self.train_loss.append(loss)
-        self.train_scores.append(self.scoring(truth_train, preds_train))
 
-        self.loss_k = self.loss_k1
-        self.loss_k1 = self.loss_k2
-        self.loss_k2 = loss
-
-        # if f_star_set and len(self.train_loss) > 3:
-        #     abs_err_top = np.abs((self.loss_k2 - f_star_set + 1e-16)/(self.loss_k1 - f_star_set + 1e-16))
-        #     abs_err_bot = np.abs((self.loss_k1 - f_star_set + 1e-16)/(self.loss_k - f_star_set + 1e-16))
-        #     # p = np.log(abs_err_top) / np.log(abs_err_bot)
-        #     p = np.log(abs_err_top  + 1e-16) / np.log(abs_err_bot + 1e-16)
-        #     self.conv_rate.append(p)
-        #     self.r_list.append((self.loss_k2 - f_star_set)/((self.loss_k1 - f_star_set)**self.conv_rate[-1] + 1e-8))
-
-        # if f_star_set and len(self.train_loss) > 1:
-        #     self.grad_rate.append(self.grad_gap[-1]/(self.grad_gap[-2] + 1e-8))
-
-
-    def best_score(self, name="", save=False):
-        """Returns performance statistics related to achieved performances
-        and gradient norm.
-
-        Parameters
-        ----------
-        name : str, optional
-            Only used when save=True, represents the name to use to save
-            the statistics on a file, by default ""
-
-        save : bool, optional
-            specifies whether to create a file with the computed statistics,
-            by default False
+    def best_score(self):
+        """Returns performance statistics recorded during the training process.
+        Prints a table containing time statistics as well as performance metrics
+        achieved on the training and test sets (if provided upon fitting the 
+        network). The table is printed to the console.
 
         Returns
         -------
         stats : string
-            statistics computed during the network training.
+            Statistics computed during the network training.
         """
 
         if not self.fitted:
             return 'This model is not fitted yet.\n\n'
 
+        # FIXME: è il modo giusto di calcolare il best loss???
         best_score = ()
         if len(self.val_scores) > 0:
             idx = np.argmax(self.val_scores)
@@ -565,18 +662,48 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             f"total ev time: {self.evaluate_avg[1]}, "
             f"avg ev: {self.evaluate_avg[1]/self.evaluate_avg[0]}\n\n")
 
-        if save:
-            file_path = f"src/NN/res/stats/stats.txt"
-            with open(file_path, 'a') as f:
-                f.write(f"{name}\n")
-                f.write(stats)
-
         return stats
 
 
     @abstractmethod
     def predict(self, data):
+        """Computes the prediction of the network for the given data. This must
+        be implemented by each subclass for the specific task, i.e. classification
+        or regression.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Sample for which to compute the prediction.
+        """        
         pass
+
+
+    def saveModel(self, name):
+        """Saves the model in a file.
+
+        Parameters
+        ----------
+        name : string
+            Name of the file to save the model.
+        """
+        file_path = f"./res/models/{name}.pkl"
+        with open(file_path, 'wb+') as f:
+            pickle.dump(self, f)
+
+
+    def loadModel(self, name):
+        """Loads the model from a file.
+
+        Parameters
+        ----------
+        name : string
+            Name of the file to load the model.
+        """
+        file_path = f"./res/models/{name}.pkl"
+        with open(file_path, 'rb') as f:
+            self = pickle.load(f)
+        return self
 
 
     def plot_results(self, name, score=False, save=False, time=False, log=False):
@@ -586,21 +713,22 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         Parameters
         ----------
         name : string
-            prefix file name to use when saving the plot.
+            Prefix file name to use when saving the plot.
 
         score : bool, optional
-            whether to use the score instead of the loss, by default False
+            Whether to use the score instead of the objective function,
+            by default False
 
         save : bool, optional
-            whether to save the plot on the file specified with the name
+            Whether to save the plot on the file specified with the name
             parameter, by default False
 
         time : bool, optional
-            whether build plots according to number of max_iter or time of
+            Whether build plots according to number of max_iter or time of
             execution, by default False
 
         log : bool, optional
-            whether to use a logplot or not, by default False
+            Whether to use a logplot or not, by default False
         """
 
         if not self.fitted:
@@ -608,7 +736,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         # Conditional configuration
         x_label = 'Execution Time' if time else 'Epochs'
-        curve_type = 'Loss' if not score else 'Score'
+        curve_type = 'Objective function' if not score else 'Score'
 
         if self.test_data is not None:
             val_res = self.val_scores if score else self.val_loss
@@ -616,8 +744,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         x = self.epochs_time if time else list(range(len(train_res)))
 
         if self.test_data is not None:
-            plt.plot(x, val_res, label='Validation loss')
-        plt.plot(x, train_res, label='Training loss')
+            plt.plot(x, val_res, label='Validation')
+        plt.plot(x, train_res, label='Training')
 
         plt.xlabel(x_label)
         plt.ylabel (curve_type)
@@ -629,31 +757,26 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
         if save:
-            # plt.savefig(
-            #     f"src/NN/res/stats/{name}"
-            #     f"ep{self.max_iter}s{self.hidden_layer_sizes}b{self.batch_size}e{self.learning_rate_init}"
-            #     f"alpha{self.alpha}m{self.momentum}.png")
-            plt.savefig(
-                f"plots/loss_{name}.png")
+            plt.savefig(f"tests/NN/plots/loss_{name}.png")
         else:
             plt.show()
         plt.clf()
 
 
-    def plot_grad(self, name, save=False, time=False, gap=False):
-        """Builds a plot of the gradient values achieved during training of the
-        current network.
+    def plot_grad(self, name, save=False, time=False):
+        """Builds a plot of the gradient norm values achieved during training
+        of the current network.
 
         Parameters
         ----------
         name : string
-            prefix file name for the plot file, only used when save=True.
+            Prefix file name for the plot file, only used when save=True.
 
         save : bool, optional
-            whether to save the plot on file or not, by default False
+            Whether to save the plot on file or not, by default False
 
         time : bool, optional
-            whether to plot gradient w.r.t. max_iter or execution time,
+            Whether to plot gradient norm w.r.t. max_iter or execution time,
             by default False
         """
 
@@ -662,15 +785,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         x = self.epochs_time if time else list(range(len(self.epochs_time)))
         x_label = 'Execution Time' if time else 'Epochs'
-        title = ''
-        if gap:
-            title = 'Gradient norm gap'
-            name = name + '_gap'
-            plt.plot(x, self.grad_gap, label='')
-        else:
-            title = 'Gradient norm'
-            plt.plot(x, self.grad_est_per_epoch, label='')
-#         plt.legend(loc='best')
+        title = f'Gradient norm over {x_label}'
+        plt.plot(x, self.grad_est_per_epoch)
         plt.xlabel (x_label)
         plt.ylabel ('Gradient\'s norm')
         plt.title (title)
@@ -678,79 +794,37 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         plt.draw()
 
         if save:
-            # plt.savefig(
-            #     f"src/NN/res/stats/{name}ep{self.max_iter}s{self.hidden_layer_sizes}"
-            #     f"b{self.batch_size}e{self.learning_rate_init}alpha{self.alpha}"
-            #     f"m{self.momentum}.png")
-            plt.savefig(
-                f"plots/grad_{name}.png")
-        else:
-            plt.show()
-        plt.clf()
-
-    def plot_rate(self, name, save=False):
-        if not self.fitted:
-            return 'This model is not fitted yet.\n\n'
-
-        x = list(range(3, len(self.r_list) + 3))
-        x_label = 'Epochs'
-
-        plt.plot(x, self.r_list, label='rate')
-        plt.legend(loc='best')
-        plt.xlabel (x_label)
-        plt.ylabel ('Convergence rate')
-        plt.title ('Convergence rate per epoch')
-        plt.yscale('log')
-        plt.draw()
-
-        if save:
-            plt.savefig(
-                f"./plots/rate_{name}.png")
-        else:
-            plt.show()
-        plt.clf()
-
-    def plot_grad_rate(self, name, save=False):
-        if not self.fitted:
-            return 'This model is not fitted yet.\n\n'
-
-        x = list(range(1, len(self.grad_gap[1:]) + 1))
-        x_label = 'Epochs'
-
-        grad_rate = []
-        for i in range(len(self.grad_gap[1:])):
-            grad_rate.append(self.grad_gap[i]/self.grad_gap[i-1])
-
-        plt.plot(x, grad_rate, label='rate')
-        plt.legend(loc='best')
-        plt.xlabel (x_label)
-        plt.ylabel ('Convergence rate')
-        plt.title ('Convergence rate per epoch')
-        plt.yscale('log')
-        plt.draw()
-
-        if save:
-            plt.savefig(
-                f"./plots/grad_rate_{name}.png")
+            plt.savefig(f"tests/NN/plots/grad_{name}.png")
         else:
             plt.show()
         plt.clf()
 
 
     def plot_gap(self, dataset, solver, save=True):
-        epochs = range(len(self.gap))
+        """Plots the gap term for the objective function of the current
+        network over each epoch of the training process.
 
-        plt.plot(epochs, self.gap, label='gap')
+        Parameters
+        ----------
+        dataset : string
+            Name of the dataset over which the network was trained.
+        solver : string
+            Solver used to train the network.
+        save : bool, optional
+            Whether to save the plot to a file, by default True
+        """        
+
+        plt.plot(self.gap, label='gap')
         plt.legend(loc='best')
-        plt.xlabel ('epochs')
-        plt.ylabel ('gap term')
+        plt.xlabel ('Epochs')
+        plt.ylabel ('Gap term')
         plt.title ('Gap term '+dataset+' with '+solver)
         plt.yscale('log')
         plt.draw()
 
         if save:
             plt.savefig(
-                f"./plots/gap_{dataset}_{solver}.png")
+                f"tests/NN/plots/gap_{dataset}_{solver}.png")
         else:
             plt.show()
         plt.clf()
@@ -759,64 +833,20 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 class NC(Network, BaseEstimator):
     def __init__(
-        self, hidden_layer_sizes=None, solver='sgd', seed=0, max_iter=300, learning_rate_init=0.1,
+        self, hidden_layer_sizes=[2,], solver='sgd', seed=0, max_iter=300, learning_rate_init=0.1,
         activation='logistic', alpha=0.0001, momentum=0.5, nesterovs_momentum=False,
-        tol=1e-5, batch_size=None, verbose=False, beta_1=0.9, beta_2=0.999):
+        tol=1e-5, batch_size=None, beta_1=0.9, beta_2=0.999, verbose=False):
         """Initializes the network with the specified hyperparameters. Network
         weights and biases will be initialized at fitting time following the shape
-        of the training data and the specified hidden_layer_sizes, which represents the
-        amount of units to include in each hidden layer of the current network.
-        Each layer will be initialized randomly following the LeCun uniform
-        initializer formula. Implements a neural network for classification
+        of the training data and the specified hidden_layer_sizes, which
+        represents the amount of units to include in each hidden layer of the
+        current network. Each layer will be initialized randomly following Glorot
+        uniform initializer formula. Implements a neural network for classification
         tasks, since it uses the logistic activation function in the output
         layer.
 
-        Parameters
-        ----------
-        hidden_layer_sizes : tuple, optional
-            Tuple (l1, l2, ..., ln) containig the number of units for each
-            layer of the network to be built, by default None
-
-        solver : str, optional
-            string indicating which solver should be used for the training
-            of the current network. Must be in {'SGM', 'sgd'}, by default 'sgd'
-
-        seed : int, optional
-            seed for random number generator used for initializing this network
-            weights and biases. Needed for reproducibility, by default 0
-
-        max_iter : int, optional
-            the maximum number of max_iter the training can run until stopping
-            if no termination conditions are met, by default 1000
-
-        learning_rate_init : float, optional
-            learning rate for 'sgd' solver, starting step sizes for 'SGM'
-            solver, by default 0.1
-
-        activation : function, optional
-            specifies which activation function to use for the hidden layers
-            of the network, must be in {'Lrelu', 'relu', 'logistic'},
-            by default 'Lrelu'
-
-        alpha : int, optional
-            l2 regularization coefficient, by default 0.0001
-
-        momentum : int, optional
-            momentum coefficient, by default 0.5
-
-        nesterovs_momentum : bool, optional
-            boolean flag indicating wether nesterovs_momentum momentum must be used
-            during optimization of the current network, by default False
-
-        tol : float, optional
-            stopping condition for precision in gradient norm, by default 1e-5
-
-        batch_size : int or None, optional
-            amount of samples to use for each evaluation of the gradient during
-            optimization, by default None
-
-        verbose : bool, optional
-            debugging flag, by default False
+        For description of the hyperparameters, see the documentation of the
+        Network base class.
         """
 
         super().__init__(hidden_layer_sizes=hidden_layer_sizes,
@@ -849,7 +879,7 @@ class NC(Network, BaseEstimator):
         Parameters
         ----------
         data : np.ndarray
-            samples to use for prediction.
+            Samples to use for prediction.
 
         Returns
         -------
@@ -864,64 +894,20 @@ class NC(Network, BaseEstimator):
 
 class NR(Network, BaseEstimator):
     def __init__(
-        self, hidden_layer_sizes=None, solver='sgd', seed=0, max_iter=1000, learning_rate_init=0.01,
+        self, hidden_layer_sizes=[2,], solver='sgd', seed=0, max_iter=1000, learning_rate_init=0.01,
         activation='logistic', alpha=0.0001, momentum=0.5, nesterovs_momentum=False, tol=1e-5,
-        batch_size=None, verbose=False, beta_1=0.9, beta_2=0.999):
+        batch_size=None, beta_1=0.9, beta_2=0.999, verbose=False):
         """Initializes the network with the specified hyperparameters. Network
         weights and biases will be initialized at fitting time following the shape
-        of the training data and the specified hidden_layer_sizes, which represents the
-        amount of units to include in each hidden layer of the current network.
-        Each layer will be initialized randomly following the LeCun uniform
-        initializer formula. Implements a neural network for regression
+        of the training data and the specified hidden_layer_sizes, which
+        represents the amount of units to include in each hidden layer of the
+        current network. Each layer will be initialized randomly following Glorot
+        uniform initializer formula. Implements a neural network for regression
         tasks, since it uses the linear activation function in the output
         layer.
 
-        Parameters
-        ----------
-        hidden_layer_sizes : tuple, optional
-            Tuple (l1, l2, ..., ln) containig the number of units for each
-            layer of the network to be built, by default None
-
-        solver : str, optional
-            string indicating which solver should be used for the training
-            of the current network. Must be in {'SGM', 'sgd'}, by default 'sgd'
-
-        seed : int, optional
-            seed for random number generator used for initializing this network
-            weights and biases. Needed for reproducibility, by default 0
-
-        max_iter : int, optional
-            the maximum number of max_iter the training can run until stopping
-            if no termination conditions are met, by default 1000
-
-        learning_rate_init : float, optional
-            learning rate for 'sgd' solver, starting step sizes for 'SGM'
-            solver, by default 0.01
-
-        activation : function, optional
-            specifies which activation function to use for the hidden layers
-            of the network, must be in {'Lrelu', 'relu', 'logistic'},
-            by default 'Lrelu'
-
-        alpha : int, optional
-            l2 regularization coefficient, by default 0.0001
-
-        momentum : int, optional
-            momentum coefficient, by default 0.5
-
-        nesterovs_momentum : bool, optional
-            boolean flag indicating wether nesterovs_momentum momentum must be used
-            during optimization of the current network, by default False
-
-        tol : float, optional
-            stopping condition for precision in gradient norm, by default 1e-5
-
-        batch_size : int or None, optional
-            amount of samples to use for each evaluation of the gradient during
-            optimization, by default None
-
-        verbose : bool, optional
-            debugging flag, by default False
+        For description of the hyperparameters, see the documentation of the
+        Network base class.
         """
         super().__init__(hidden_layer_sizes=hidden_layer_sizes,
                         solver=solver,
@@ -953,12 +939,13 @@ class NR(Network, BaseEstimator):
         Parameters
         ----------
         data : np.ndarray
-            samples to use for prediction.
+            Samples to use for prediction.
 
         Returns
         -------
         np.ndarray
             Regression prediction values for the given :data: samples.
         """
+
         self.last_pred = self._feedforward_batch(data)[2]
         return self.last_pred
