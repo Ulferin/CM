@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Author: Federico Finocchio -- ID: 516818
-# Author: Luca Santarella -- ID:
+# Author: Federico Finocchio
+# Author: Luca Santarella
 # email: f.finocchio@studenti.unipi.it
 # email: l.santarella@studenti.unipi.it
 # Course: Computational Mathematics for Learning and Data Analysis
@@ -12,7 +12,8 @@
 # solve the Least Square problem of the form  min ||Ax - b||.
 # In order to generate more accurate time statistics, all the tests performed via
 # this script file will be performed for a total of 5 times and the average of
-# all the results will be written to the result file in tests/LS/.
+# all the results will be written to the result file in tests/LS/. Moreover,
+# plots will be generated for the executed tests and saved in tests/LS/plots.
 
 # NOTE: all the results for the tests performed using this script file will be
 #       saved on a specific file with a standard name relative to the performed
@@ -33,7 +34,7 @@
 #                     dimension 'm' with a fixed 'n'. Starting from 'm' to 'lastm'
 #                     with a 'stepm' increment, test each of the randomly generated
 #                     datasets up to A in R^[lastm x n] ;
-#                     Generates a file named test_scaling_<lastm>_<n>.txt
+#                     Generates a file named test_scaling<lastm>_<n>.txt
 #
 #        - 'CUP':  to test the two algorithms over the dataset provided for the ML
 #                  cup, as specified in the report file.
@@ -49,8 +50,7 @@
 #    · lastm: last value for the m dimension, to be used only for 'SCALING' test;
 
 
-# Example
-#
+# Example Scaling test
 # $ ./testLS.sh 'SCALING' 1000 100 1000 10000
 #
 # Will perform the 'SCALING' test starting from m=1000 and n=100 up to
