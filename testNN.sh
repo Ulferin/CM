@@ -51,7 +51,7 @@ grid="$3"       # whether to perform a grid search over the specified setting
 
 if $grid
 then
-    python -m src.NN.testNET $optimizer $dataset 'grid' > "test_grid_${dataset}_${optimizer}.txt"
+    python -m src.NN.testNET $optimizer $dataset 'grid' > "./tests/NN/test_grid_${dataset}_${optimizer}.txt"
 else
-    python -m src.NN.testNET $optimizer $dataset >> "test_${dataset}_${optimizer}.txt"
+    python -m src.NN.testNET $optimizer $dataset >> "./tests/NN/test_${dataset}_${optimizer}.txt"
 fi
