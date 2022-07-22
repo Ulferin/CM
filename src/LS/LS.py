@@ -91,8 +91,6 @@ class LS():
             The triangular matrix R for the thin-QR factorization.
         """      
 
-        eps = np.linalg.norm(A)/10**16
-
         m, n = A.shape
         R = A.astype(float)
         u_list = []
@@ -100,12 +98,6 @@ class LS():
         # note that this is always equal to n in our case
         for j in range(np.min((m,n))):
             s, u = self.householder_vector(R[j:,j])
-
-            # zero division in machine precision
-            # this change will cause the matrix R to have 0s in the diagonal
-            if np.abs(s) < eps:
-                s = 0
-                u = np.zeros(len(u))
 
             u_list.append(u.reshape(-1,1))
 

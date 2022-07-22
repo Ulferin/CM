@@ -122,12 +122,12 @@ grids = {
     'cup': {
 
         'sgd': {
-            'hidden_layer_sizes': [[5, 10]],
-            'alpha': [0.3],
+            'hidden_layer_sizes': [[2,3], [3, 5], [5, 10]],
+            'alpha': [0.0001, 0.001, 0.1, 0.3],
             'momentum': [0.5, 0.9],
-            'nesterovs_momentum': [True, False],
+            'nesterovs_momentum': [True],
             'max_iter': [10000],
-            'batch_size': [10, 64, 128, None],
+            'batch_size': [10, 64, None],
             'learning_rate_init':[0.001, 0.005, 0.01, 0.02, 0.05, 0.1],
             'tol': [1e-4],
             'activation': ['logistic'],
@@ -149,12 +149,12 @@ grids = {
     'monk': {
 
         'sgd': {
-            'hidden_layer_sizes': [[3,5]],
-            'alpha': [0.001],
-            'momentum': [0, 0.5, 0.9],
-            'nesterovs_momentum': [False, True],
-            'max_iter': [3000],
-            'batch_size': [10, 32, 64, None],
+            'hidden_layer_sizes': [[2,3], [3,5]],
+            'alpha': [0.00001, 0.0001, 0.001, 0.01],
+            'momentum': [0.5, 0.9],
+            'nesterovs_momentum': [True],
+            'max_iter': [10000],
+            'batch_size': [10, 32, None],
             'learning_rate_init':[0.001, 0.005, 0.01, 0.05, 0.1],
             'tol': [1e-6],
             'solver': ['sgd'],
@@ -216,7 +216,7 @@ if __name__ == '__main__':
               f"best params: {gs.best_params_}\n")
 
         results = utils.crossValToDf(gs.cv_results_, scoring=scoring)
-        results.to_csv(f'./src/NN/res/scores/{full_name}_{test}.csv')
+        results.to_csv(f'./tests/NN/grids/{full_name}_{test}.csv')
 
         # Retraining w/ best parameters
         print("Retraining network with best parameters:")

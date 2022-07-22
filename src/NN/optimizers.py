@@ -137,20 +137,23 @@ class sgd(Optimizer):
         if len(self.v) == 0:
             self.v = [np.zeros_like(param) for param in parameters]
 
+        self.vold = self.v
+
         # Updates velocities with the current momentum coefficient
         self.v = [
             self.momentum * velocity - self.learning_rate_init*g
             for velocity, g
-            in zip(self.v, grads)
+            in zip(self.vold, grads)
         ]
 
         for param, update in zip((p for p in parameters), self.v):
             param += update
+
         
         # nesterovs_momentum update
         if self.nesterovs_momentum:
-            for param, velocity in zip((p for p in parameters), self.v):
-                param += self.momentum * velocity
+            for param, velocity, vold in zip((p for p in parameters), self.v, self.vold):
+                param += self.momentum * (velocity - vold)
 
 
 
