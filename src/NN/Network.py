@@ -150,20 +150,16 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         self.beta_2 = beta_2
         self.last_act = None       # Must be defined by subclassing the Network
         self.verbose = verbose
+        self.seed = seed
+        self.tol = tol
 
         # Performance attributes
         self.grad_est = []
         self.grad_est_per_epoch = []
-        self.weights_per_epoch = [] # FIXME: remove from master
-        self.grads_per_epoch = []   # FIXME: remove from master
-        self.weights_norm = []      # FIXME: remove from master
-        self.layer_grad_norm = []   # FIXME: remove from master
         self.val_scores = []
         self.train_scores = []
         self.val_loss = []
         self.train_loss = []
-        self.loss_noreg = []        # FIXME: remove from master
-        self.reg = []               # FIXME: remove from master
         self.gap = []
         self.f_star = 999
 
@@ -360,8 +356,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             # Compute current gradient
             nabla_b, nabla_w = self._compute_grad(mini_batch)
             grads = nabla_w + nabla_b
-            # FIXME: remove from master
-            self.grads_per_epoch.append(nabla_w)
 
             # Update parameters with solver-specific update rule
             self.opti.update_parameters(params, grads)
@@ -391,10 +385,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                                     mini_batch[0],mini_batch[1])
         self.ngrad = np.linalg.norm(
                         np.hstack([el.ravel() for el in nabla_w + nabla_b]))
-        # FIXME: remove from master
-        for i in range(len(nabla_w)):
-            self.layer_grad_norm[i].append(np.linalg.norm(nabla_w[i]))
-
         self.grad_est += self.ngrad
 
         return nabla_b, nabla_w
@@ -464,20 +454,13 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             for x, y in
             zip(self._hidden_layer_sizes[:-1], self._hidden_layer_sizes[1:])
         ]
-
-        # FIXME: remove from master
-        self.weights_per_epoch.append([w.copy() for w in self.weights])
-        self.weights_norm = [[] for _ in self.weights]
-        self.layer_grad_norm = [[] for _ in self.weights]
         
         start = dt.now()
         self.fitted = True
         # Training loop
         try:
             for e in tqdm(range(1, self.max_iter+1)):
-                # FIXME: remove from master
-                for i in range(len(self.weights)):
-                    self.weights_norm[i].append(np.linalg.norm(self.weights[i]))
+
                 s = dt.now()
                 self._update_batches()
                 en = end_time(s)
@@ -486,9 +469,6 @@ class Network(BaseEstimator, metaclass=ABCMeta):
                 # Compute current gradient estimate
                 self.grad_est_per_epoch.append(self.grad_est / self.num_batches)
                 self.evaluate(e, f_star_set)
-
-                # FIXME: remove from master
-                self.weights_per_epoch.append([w.copy() for w in self.weights])
 
                 # Check if we reached the desired gradient tolerance
                 iteration_end = self.opti.iteration_end(self.ngrad)
@@ -593,11 +573,8 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
         loss = self.loss(truth_train, self.last_pred)
         values = np.sum([np.sum(np.abs(w)) for w in self.weights])
-        # FIXME: remove from master
-        self.loss_noreg.append(loss)
         loss += (0.5 * self.alpha) * values / self.training_size
-        # FIXME: remove from master
-        self.reg.append((0.5 * self.alpha) * values / self.training_size)
+
         self.train_loss.append(loss)
         self.train_scores.append(self.scoring(truth_train, preds_train))
 
