@@ -121,24 +121,24 @@ grids = {
     'cup': {
 
         'sgd': {
-            'hidden_layer_sizes': [[2,3], [3, 5], [5, 10]],
-            'alpha': [0.0001, 0.001, 0.1, 0.3],
+            'hidden_layer_sizes': [[3, 5], [5, 10]],
+            'alpha': [0.001, 0.1, 0.3],
             'momentum': [0.5, 0.9],
             'nesterovs_momentum': [True],
             'max_iter': [10000],
-            'batch_size': [10, 64, None],
-            'learning_rate_init':[0.001, 0.005, 0.01, 0.02, 0.05, 0.1],
+            'batch_size': [32, 128, None],
+            'learning_rate_init':[0.001, 0.01, 0.02, 0.05, 0.1],
             'tol': [1e-4],
             'activation': ['logistic'],
             'solver': ['sgd']
         },
 
         'adam': {
-            'hidden_layer_sizes': [[5, 10]],
-            'alpha': [0.3],
+            'hidden_layer_sizes': [[3,5], [5, 10]],
+            'alpha': [0.001, 0.1, 0.3],
             'max_iter': [10000],
-            'batch_size': [None],
-            'learning_rate_init':[0.001, 0.005, 0.01, 0.02, 0.05],
+            'batch_size': [32, 128, None],
+            'learning_rate_init':[0.001, 0.005, 0.01, 0.05, 0.1],
             'tol': [1e-4],
             'activation': ['logistic'],
             'solver': ['adam']
@@ -149,23 +149,23 @@ grids = {
 
         'sgd': {
             'hidden_layer_sizes': [[2,3], [3,5]],
-            'alpha': [0.00001, 0.0001, 0.001, 0.01],
+            'alpha': [0.0001, 0.001, 0.01],
             'momentum': [0.5, 0.9],
             'nesterovs_momentum': [True],
             'max_iter': [10000],
             'batch_size': [10, 32, None],
-            'learning_rate_init':[0.001, 0.005, 0.01, 0.05, 0.1],
+            'learning_rate_init':[0.001, 0.005, 0.01, 0.1],
             'tol': [1e-6],
             'solver': ['sgd'],
             'activation': ['logistic'],
         },
 
         'adam': {
-            'hidden_layer_sizes': [[3,5]],
-            'alpha': [0.001],
+            'hidden_layer_sizes': [[2,3], [3,5]],
+            'alpha': [0.0001, 0.001, 0.01],
             'max_iter': [5000],
-            'batch_size': [10, 32, 64, None],
-            'learning_rate_init':[0.001, 0.005, 0.01, 0.05, 0.1],
+            'batch_size': [10, 32, None],
+            'learning_rate_init':[0.001, 0.005, 0.01, 0.1],
             'tol': [1e-6],
             'activation': ['logistic'],
             'solver': ['adam']
