@@ -40,7 +40,7 @@ Academic Year: 2021/2022
 │   │   ├───ActivationFunctions.py
 │   │   ├───metrics.py
 │   │   ├───Network.py
-│   │   ├───optimizers.py
+│   │   ├───Optimizers.py
 │   │   ├───testNET.py
 │   │   └───plotsNN.ipynb
 │   │
