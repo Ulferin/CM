@@ -2,7 +2,6 @@ import sys
 
 import numpy as np
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
-from sklearn.metrics import mean_squared_error, classification_report
 
 from src.NN.Network import NR, NC
 import src.utils as utils
