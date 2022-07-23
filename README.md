@@ -1,9 +1,10 @@
 ### Computational Mathematics for Learning and Data Analysis
 ***
 *Project for "Computational Mathematics for Learning and Data Analysis"* course
-Federico Finocchio: f.finocchio@studenti.unipi.it
-Luca Santarella: l.santarella@studenti.unipi.it
-Academic Year: 2021/2022
+
+Federico Finocchio: f.finocchio@studenti.unipi.it   
+Luca Santarella: l.santarella@studenti.unipi.it   
+Academic Year: 2021/2022   
 
 **Abstract**
 *Assigned project: ML project 3*
