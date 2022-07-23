@@ -1,4 +1,4 @@
-### Computational Mathematics for Learning and Data Analysis
+# Computational Mathematics for Learning and Data Analysis
 ***
 *Project for "Computational Mathematics for Learning and Data Analysis"* course
 
@@ -7,14 +7,14 @@ Luca Santarella: l.santarella@studenti.unipi.it
 Academic Year: 2021/2022   
 
 **Abstract**
-*Assigned project: ML project 3*
-**(M1)** is a neural network with topology and activation function of your choice (differentiable or not), but mandatory L1 regularization.
-**(M2)** is a standard L2 linear regression (least squares).
-**(A1)** is a standard momentum descent (heavy ball) approach applied to **(M1)**.
-**(A2)** is an algorithm of the class of accelerated gradient methods applied to **(M1)**.
-**(A3)** is a basic version of the direct linear least squares solver of your choice (normal equations, QR, or SVD) applied to **(M2)**.
+*Assigned project: ML project 3*   
+**(M1)** is a neural network with topology and activation function of your choice (differentiable or not), but mandatory L1 regularization.   
+**(M2)** is a standard L2 linear regression (least squares).   
+**(A1)** is a standard momentum descent (heavy ball) approach applied to **(M1)**.   
+**(A2)** is an algorithm of the class of accelerated gradient methods applied to **(M1)**.   
+**(A3)** is a basic version of the direct linear least squares solver of your choice (normal equations, QR, or SVD) applied to **(M2)**.   
 ***
-#### Project Structure
+## Project Structure
 ```bash
 ├───MLProject3.pdf
 ├───README.pdf
@@ -47,9 +47,9 @@ Academic Year: 2021/2022
         └───plots
 ```
 ---
-#### Running the experiments
+## Running the experiments
 We provide bash scripts to test the imlemented algorithms and get statistics on their execution.
-##### Neural network
+### Neural network
 The network configurations used for the tests are those specified in `src/NN/testNET.py`. In this file two dictionaries are defined:
 - *params*: defines the values for the configuration of neural network's parameters for a specific dataset and solver combination.
 - *grids*: defines the ranges of parameters, for each solver/dataset pair, that will be tested in the gridsearch test.
@@ -89,7 +89,7 @@ At the end of the grid search, the following file will be save:
 - `monk2_sgd.csv`: contains the results for all the tested configurations in terms of the scoring defined for the specific task.
 
 ---
-##### Least Square solver and QR factorization
+### Least Square solver and QR factorization
 
 To run tests for the LS solver and QR factorization, we provide the `testLS.sh` bash script. Three kinds of tests can be run with this script file, namely:
 - ***random test***: runs a test to solve `M @ x = b` over a random `m x n` matrix `M` and `m x 1` dependent variable vector `b`. Both LS solver and QR factorization are tested. For the computation of the LS solution, two vectors are used as dependent variables `b`, a random `m x 1` vector and a "hand-made" linear vector produced by generating a "toy" solution vector `sol` and multiplying the data matrix by the generated solution (`b = M @ sol`). 
