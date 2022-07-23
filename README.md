@@ -48,7 +48,7 @@ Academic Year: 2021/2022
 ```
 ---
 ## Running the experiments
-We provide bash scripts to test the imlemented algorithms and get statistics on their execution.
+We provide bash scripts to test the implemented algorithms and get statistics on their execution.
 ### Neural network
 The network configurations used for the tests are those specified in `src/NN/testNET.py`. In this file two dictionaries are defined:
 - *params*: defines the values for the configuration of neural network's parameters for a specific dataset and solver combination.
