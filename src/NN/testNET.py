@@ -236,11 +236,9 @@ if __name__ == '__main__':
             params[dataset][test]['nesterovs_momentum'] = False
 
         if dataset == 'cup':
-            net = NR(**params[dataset][test], verbose=True)
-            net_eval = NR(**params[dataset][test], verbose=True)
+            net = NR(**params[dataset][test], verbose=False)
         else:
-            net = NC(**params[dataset][test], verbose=True)
-            net_eval = NC(**params[dataset][test], verbose=True)
+            net = NC(**params[dataset][test], verbose=False)
 
         print("Evaluating f_* ...")
         net.fit(X_train, y_train, test_data=(X_test, y_test))

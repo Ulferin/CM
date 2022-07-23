@@ -61,7 +61,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         the necessity to make the implemented classes compatible with the model
         selection utilities provided by the sklearn framework.
 
-       Parameters
+        Parameters
         ----------
         hidden_layer_sizes : list, optional
             Network topology, defined as list of integers representing the amount
@@ -518,16 +518,16 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         if self.gap:
             str_gap = f"|| gap: {self.gap[-1]:7.5e}"
 
-        val_loss = ""
+        val_loss = "-"
         if self.test_data is not None:
-            val_loss = f"{self.val_loss[-1]:7.5e}, "
+            val_loss = f"{self.val_loss[-1]:7.5e}"
 
         if self.verbose:
             print(
                 f"{e:<7} || Gradient norm: {self.grad_est_per_epoch[-1]:7.5e} || "
-                f"Loss: {val_loss}{self.train_loss[-1]:7.5e} ||"
-                f"Score: {self.val_scores[-1]:5.3g}, "
-                f"{self.train_scores[-1]:<5.3g} ||"
+                f"Objective fun. (train/val): {self.train_loss[-1]:7.5e}/{val_loss}||"
+                f"Score (train/val): {self.train_scores[-1]:<5.3g}/ "
+                f"{self.val_scores[-1]:5.3g}||"
                 f"f_star: {self.f_star:7.5e} "+str_gap)
 
         end = end_time(start)
@@ -601,25 +601,24 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         if not self.fitted:
             return 'This model is not fitted yet.\n\n'
 
-        # FIXME: è il modo giusto di calcolare il best loss???
         best_score = ()
         if len(self.val_scores) > 0:
-            idx = np.argmax(self.val_scores)
-            best_score = (self.val_scores[idx], self.train_scores[idx])
-            idx = np.argmin(self.val_loss)
-            best_loss = (self.val_loss[idx], self.train_loss[idx])
+            best_score = (np.max(self.train_scores), np.max(self.val_scores))
+            best_loss = (np.min(self.train_loss), np.min(self.val_loss))
         else:
-            best_score = (-1, np.max(self.train_scores))
-            best_loss = (-1, np.min(self.train_loss))
+            best_score = (np.max(self.train_scores), -1)
+            best_loss = ( np.min(self.train_loss), -1)
 
         stats = (
-            f"ep: {self.max_iter:<7} | s: {self.hidden_layer_sizes} | b: {self.batch_size} | "
-            f"e:{self.learning_rate_init:5} | alpha:{self.alpha:5} | m:{self.momentum:5} | "
+            f"Max epochs: {self.max_iter:<7} | sizes: {self.hidden_layer_sizes}"
+            f" | batch size: {self.batch_size} | "
+            f"eta: {self.learning_rate_init:5} | reg coeff: {self.alpha:5} | "
+            f"momentum coeff: {self.momentum:5} | "
             f"nesterovs_momentum: {self.nesterovs_momentum}\n"
 
-            f"Grad: {self.grad_est_per_epoch[-1]:7.5e} | "
-            f"Loss: {best_loss[0]:7.5e}, {best_loss[1]:7.5e} | "
-            f"Score: {best_score[0]:5.3g}, {best_score[1]:<5.3g}\n"
+            f"Grad norm: {self.grad_est_per_epoch[-1]:7.5e} | "
+            f"Objective fun. (train/val): {best_loss[0]:7.5e}/{best_loss[1]:7.5e} | "
+            f"Score (train/val): {best_score[0]:5.3g}/{best_score[1]:<5.3g}\n"
 
             f"ended in: {self.total_time}, "
             f"avg per ep: {self.total_time/self.max_iter}\n"
@@ -627,17 +626,17 @@ class Network(BaseEstimator, metaclass=ABCMeta):
             f"total update: {self.update_avg}, "
             f"avg updt: {self.update_avg/(self.max_iter*self.batches)}\n"
 
-            f"total ff: {self.feedforward_avg[0]}, "
-            f"total ff time: {self.feedforward_avg[1]}, "
-            f"avg ff: {self.feedforward_avg[1]/self.feedforward_avg[0]}\n"
+            f"total feedfwd passes: {self.feedforward_avg[0]}, "
+            f"total feedfwd time: {self.feedforward_avg[1]}, "
+            f"avg feedfwd time: {self.feedforward_avg[1]/self.feedforward_avg[0]}\n"
 
-            f"total bp: {self.backprop_avg[0]}, "
-            f"total bp time: {self.backprop_avg[1]}, "
-            f"avg bp: {self.backprop_avg[1]/self.backprop_avg[0]}\n"
+            f"total backprop passes: {self.backprop_avg[0]}, "
+            f"total backprop time: {self.backprop_avg[1]}, "
+            f"avg backprop time: {self.backprop_avg[1]/self.backprop_avg[0]}\n"
 
-            f"total ev: {self.evaluate_avg[0]}, "
-            f"total ev time: {self.evaluate_avg[1]}, "
-            f"avg ev: {self.evaluate_avg[1]/self.evaluate_avg[0]}\n\n")
+            f"total evaluations: {self.evaluate_avg[0]}, "
+            f"total evaluations time: {self.evaluate_avg[1]}, "
+            f"avg evaluation time: {self.evaluate_avg[1]/self.evaluate_avg[0]}\n\n")
 
         return stats
 
@@ -664,7 +663,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         name : string
             Name of the file to save the model.
         """
-        file_path = f"./res/models/{name}.pkl"
+        file_path = f"./tests/NN/models/{name}.pkl"
         with open(file_path, 'wb+') as f:
             pickle.dump(self, f)
 
@@ -677,7 +676,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
         name : string
             Name of the file to load the model.
         """
-        file_path = f"./res/models/{name}.pkl"
+        file_path = f"./tests/NN/models/{name}.pkl"
         with open(file_path, 'rb') as f:
             self = pickle.load(f)
         return self
@@ -734,7 +733,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
 
 
         if save:
-            plt.savefig(f"tests/NN/plots/loss_{name}.png")
+            plt.savefig(f"tests/NN/plots/objectivefun_{name}.png")
         else:
             plt.show()
         plt.clf()
