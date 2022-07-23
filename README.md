@@ -14,11 +14,15 @@ Academic Year: 2021/2022
 **(A2)** is an algorithm of the class of accelerated gradient methods applied to **(M1)**.   
 **(A3)** is a basic version of the direct linear least squares solver of your choice (normal equations, QR, or SVD) applied to **(M2)**.   
 ***
+
 ## Project Structure
 ```bash
 ├───MLProject3.pdf
 ├───README.pdf
 ├───README.md
+├───requirements.txt
+├───testLS.sh
+├───testNN.sh
 ├───data
 │   ├───ML-CUP20-TR.csv
 │   ├───monks-1.train
@@ -31,14 +35,16 @@ Academic Year: 2021/2022
 │   │   ├───LS.py
 │   │   ├───testLS.py
 │   │   ├───utils.py
-│   │   └───plots_QR.ipynb
-│   └───NN
-│       ├───ActivationFunctions.py
-│       ├───metrics.py
-│       ├───Network.py
-│       ├───optimizers.py
-│       ├───testNET.py
-│       └───plots_NN.ipynb
+│   │   └───plotsQR.ipynb
+│   ├───NN
+│   │   ├───ActivationFunctions.py
+│   │   ├───metrics.py
+│   │   ├───Network.py
+│   │   ├───Optimizers.py
+│   │   ├───testNET.py
+│   │   └───plotsNN.ipynb
+│   │
+│   └───utils.py
 └───tests
     ├───LS
     │   └───plots
@@ -46,9 +52,9 @@ Academic Year: 2021/2022
         ├───grids
         └───plots
 ```
----
+
 ## Running the experiments
-We provide bash scripts to test the imlemented algorithms and get statistics on their execution.
+We provide bash scripts to test the implemented algorithms and get statistics on their execution.
 ### Neural network
 The network configurations used for the tests are those specified in `src/NN/testNET.py`. In this file two dictionaries are defined:
 - *params*: defines the values for the configuration of neural network's parameters for a specific dataset and solver combination.
@@ -85,7 +91,7 @@ This execution will create the following files:
 ./testNN.sh 'monk2' 'sgd' true
 ```
 Runs a grid search (hence `true` as third parameter) over the `monk2` dataset by using the parameters for the `sgd` optimizer defined in `src/NN/testNET.py` in the `grids` dictionary.
-At the end of the grid search, the following file will be save:
+At the end of the grid search, the following file will be saved:
 - `monk2_sgd.csv`: contains the results for all the tested configurations in terms of the scoring defined for the specific task.
 
 ---

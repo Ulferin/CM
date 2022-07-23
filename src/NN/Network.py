@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 
 from src.NN.ActivationFunctions import ReLU, Sigmoid, LeakyReLU, Linear
 from src.NN.metrics import mean_squared_error, accuracy_score
-from src.NN.optimizers import sgd, Adam
+from src.NN.Optimizers import sgd, Adam
 from src.utils import end_time
 
 
@@ -35,7 +35,7 @@ class Network(BaseEstimator, metaclass=ABCMeta):
     """Abstract base class representing a standard Neural Network, also known as
     Multilayer Perceptron. Provides an interface for derived networks solving
     classification and regression tasks. It allows to 'plug-in' various
-    optimization methods, implemented in 'optimizers.py'. Must be extended to
+    optimization methods, implemented in 'Optimizers.py'. Must be extended to
     specify which kind of task the network should solve.
 
     Two derived classes are implemented:
