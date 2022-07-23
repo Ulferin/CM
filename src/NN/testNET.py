@@ -217,12 +217,6 @@ if __name__ == '__main__':
         results = utils.crossValToDf(gs.cv_results_, scoring=scoring)
         results.to_csv(f'./tests/NN/grids/{full_name}_{test}.csv')
 
-        # Retraining w/ best parameters
-        print("Retraining network with best parameters:")
-        net = net(**gs.best_params_)
-        net.fit(X_train, y_train, test_data=(X_test, y_test))
-        print(net.best_score())
-
     else:
         plot_name = f"{dataset}_{test}"
         solver = test
