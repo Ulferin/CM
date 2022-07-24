@@ -163,7 +163,7 @@ grids = {
         'adam': {
             'hidden_layer_sizes': [[2,3], [3,5]],
             'alpha': [0.0001, 0.001, 0.01],
-            'max_iter': [5000],
+            'max_iter': [10000],
             'batch_size': [10, 32, None],
             'learning_rate_init':[0.001, 0.005, 0.01, 0.1],
             'tol': [1e-6],
