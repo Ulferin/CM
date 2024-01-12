@@ -16,6 +16,8 @@ Academic Year: 2021/2022
 **(A2)** is an algorithm of the class of accelerated gradient methods applied to **(M1)**.  
 **(A3)** is a basic version of the direct linear least squares solver of your choice (normal equations, QR, or SVD) applied to **(M2)**.
 
+Full project report [here](https://github.com/Ulferin/CM/blob/master/report/CM.pdf)
+
 ---
 
 ## Project Structure
